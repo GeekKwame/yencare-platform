@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YɛnCare - Your Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#f9f9f9",
+                    "surface-high": "#FFFFFF",
+                    "on-surface-variant": "#4c4546",
+                    "secondary-fixed-dim": "#c7c6c6",
+                    "on-secondary": "#ffffff",
+                    "background": "#f9f9f9",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f3f3f3",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-surface": "#303030",
+                    "primary-container": "#1b1b1b",
+                    "surface-low": "#F2F2F2",
+                    "on-primary-container": "#848484",
+                    "on-primary": "#ffffff",
+                    "placeholder": "#999999",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "tertiary-container": "#1b1b1b",
+                    "on-secondary-fixed-variant": "#464747",
+                    "surface-bright": "#f9f9f9",
+                    "on-primary-fixed-variant": "#474747",
+                    "on-background": "#1b1b1b",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "tertiary-fixed": "#e2e2e2",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#e4e2e2",
+                    "surface-border": "#000000",
+                    "on-tertiary": "#ffffff",
+                    "secondary": "#5e5e5e",
+                    "on-primary-fixed": "#1b1b1b",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "primary": "#000000",
+                    "secondary-container": "#e1dfdf",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "surface-container-highest": "#e2e2e2",
+                    "surface-container-high": "#e8e8e8",
+                    "on-surface": "#1b1b1b",
+                    "error-text": "#000000",
+                    "on-tertiary-container": "#848484",
+                    "outline": "#7e7576",
+                    "surface-container": "#eeeeee",
+                    "inverse-primary": "#c6c6c6",
+                    "inverse-on-surface": "#f1f1f1",
+                    "tertiary": "#000000",
+                    "surface-variant": "#e2e2e2",
+                    "primary-fixed": "#e2e2e2",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#626262",
+                    "surface-tint": "#5e5e5e",
+                    "outline-variant": "#cfc4c5",
+                    "surface-dim": "#dadada"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-desktop": "24px",
+                    "max-width-form": "560px",
+                    "margin-desktop": "64px",
+                    "gutter-mobile": "16px",
+                    "margin-mobile": "20px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-sm": [
+                            "Hanken Grotesk"
+                    ],
+                    "reference-code": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "queue-hero": [
+                            "Hanken Grotesk"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "reference-code": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "queue-hero": [
+                            "72px",
+                            {
+                                    "lineHeight": "80px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f9f9f9;
+            color: #1b1b1b;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        [data-weight="fill"] {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen flex flex-col items-center">
+<!-- Top Navigation for Linear Flow (Suppressed full shell, just a back action) -->
+<header class="w-full h-16 flex items-center px-margin-mobile md:px-margin-desktop bg-surface border-b border-surface-border">
+<a class="flex items-center text-on-background hover:bg-surface-container-low transition-colors px-2 py-1 rounded-DEFAULT active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined mr-2" data-icon="arrow_back">arrow_back</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+</header>
+<!-- Main Content Area -->
+<main class="w-full flex-grow flex flex-col items-center px-margin-mobile py-8 md:py-16">
+<!-- Form Container -->
+<div class="w-full max-w-max-width-form bg-surface-high border border-surface-border p-6 md:p-8 rounded-lg">
+<div class="mb-8">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-2">Your Details</h1>
+<p class="font-body-md text-body-md text-secondary">Step 1 of booking</p>
+</div>
+<form action="#" class="space-y-6" method="POST">
+<!-- Full Name Field -->
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface mb-2" for="fullName">Full Name</label>
+<input class="w-full bg-surface-high border border-surface-border rounded-DEFAULT px-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-placeholder focus:outline-none focus:ring-0 focus:border-surface-border focus:border-2 transition-all" id="fullName" name="fullName" placeholder="e.g. Ama Mensah" required="" type="text"/>
+</div>
+<!-- Phone Field with Prefix -->
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface mb-2" for="phoneNumber">Phone Number</label>
+<div class="flex">
+<span class="inline-flex items-center px-4 bg-surface-low border border-r-0 border-surface-border rounded-l-DEFAULT font-body-md text-body-md text-secondary select-none">
+                            +233
+                        </span>
+<input class="w-full bg-surface-high border border-surface-border rounded-r-DEFAULT px-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-placeholder focus:outline-none focus:ring-0 focus:border-surface-border focus:border-2 transition-all" id="phoneNumber" name="phoneNumber" pattern="[0-9]{9}" placeholder="XX XXX XXXX" required="" type="tel"/>
+</div>
+<p class="font-label-sm text-label-sm text-secondary mt-2 flex items-center">
+<span class="material-symbols-outlined text-[16px] mr-1" data-icon="info">info</span>
+                        Used to send a confirmation text.
+                    </p>
+</div>
+<!-- Actions -->
+<div class="pt-6 border-t border-surface-border">
+<button class="w-full min-h-[44px] bg-primary text-on-primary font-label-md text-label-md rounded-DEFAULT py-3 px-6 hover:opacity-90 active:scale-95 transition-all flex justify-center items-center" type="submit">
+                        Continue
+                    </button>
+</div>
+</form>
+</div>
+</main>
+</body></html>

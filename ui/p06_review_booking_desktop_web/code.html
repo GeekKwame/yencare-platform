@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YɛnCare - Review Booking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-border": "#000000",
+                        "inverse-on-surface": "#f1f1f1",
+                        "surface": "#f9f9f9",
+                        "tertiary-fixed": "#e2e2e2",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#1b1b1b",
+                        "primary-fixed": "#e2e2e2",
+                        "tertiary": "#000000",
+                        "placeholder": "#999999",
+                        "secondary-container": "#e1dfdf",
+                        "on-secondary-fixed-variant": "#464747",
+                        "surface-low": "#F2F2F2",
+                        "inverse-surface": "#303030",
+                        "surface-high": "#FFFFFF",
+                        "error-text": "#000000",
+                        "on-tertiary-container": "#848484",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#1b1b1b",
+                        "surface-container": "#eeeeee",
+                        "inverse-primary": "#c6c6c6",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#000000",
+                        "surface-container-high": "#e8e8e8",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#5e5e5e",
+                        "surface-container-low": "#f3f3f3",
+                        "surface-variant": "#e2e2e2",
+                        "on-background": "#1b1b1b",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#cfc4c5",
+                        "tertiary-container": "#1b1b1b",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "secondary-fixed": "#e4e2e2",
+                        "on-primary-fixed-variant": "#474747",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#626262",
+                        "background": "#f9f9f9",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-surface-variant": "#4c4546",
+                        "secondary": "#5e5e5e",
+                        "on-primary-container": "#848484",
+                        "outline": "#7e7576",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "surface-dim": "#dadada",
+                        "surface-container-highest": "#e2e2e2",
+                        "primary-container": "#1b1b1b",
+                        "surface-bright": "#f9f9f9",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter-mobile": "16px",
+                        "margin-mobile": "20px",
+                        "gutter-desktop": "24px",
+                        "margin-desktop": "64px",
+                        "max-width-form": "560px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "queue-hero": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "reference-code": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "queue-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "reference-code": ["24px", { "lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-background min-h-screen font-body-md text-body-md antialiased">
+<!-- TopAppBar Semantic Shell: Hidden on transactional/linear flow -->
+<!-- Navigation intentionally suppressed per rule: Linear/Transactional intent (Booking flow). Canvas prioritization. -->
+<main class="flex flex-col items-center justify-center min-h-screen p-gutter-desktop">
+<!-- YɛnCare Logo - Standalone for transactional flow -->
+<div class="absolute top-0 left-0 p-gutter-desktop flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="medical_services">medical_services</span>
+<span class="font-headline-md text-headline-md text-primary">YɛnCare</span>
+</div>
+<div class="w-full max-w-[480px] bg-surface-high border border-surface-border p-8 rounded-DEFAULT">
+<div class="mb-8 border-b border-surface-border pb-4">
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Review Details</h1>
+<p class="font-body-md text-body-md text-secondary">Please confirm the appointment information below before proceeding.</p>
+</div>
+<div class="space-y-6 mb-10">
+<div class="flex flex-col gap-1 border-b border-surface-variant pb-4">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Patient Name</span>
+<span class="font-body-lg text-body-lg text-primary">Kwame Mensah</span>
+</div>
+<div class="flex flex-col gap-1 border-b border-surface-variant pb-4">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Phone Number</span>
+<span class="font-body-lg text-body-lg text-primary">+233 54 123 4567</span>
+</div>
+<div class="flex flex-col gap-1 border-b border-surface-variant pb-4">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Doctor</span>
+<span class="font-body-lg text-body-lg text-primary">Dr. Abena Osei (General Practice)</span>
+</div>
+<div class="grid grid-cols-2 gap-4 border-b border-surface-variant pb-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Date</span>
+<span class="font-body-lg text-body-lg text-primary">Oct 24, 2023</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Time</span>
+<span class="font-body-lg text-body-lg text-primary">09:30 AM</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-8">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-6 rounded-DEFAULT border border-surface-border hover:bg-surface-tint transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                    Confirm booking
+                </button>
+<button class="w-full bg-surface-high text-primary font-label-md text-label-md py-4 px-6 rounded-DEFAULT border border-surface-border hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                    Go Back
+                </button>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Review Booking - YɛnCare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e2e2e2",
+                        "on-tertiary-container": "#848484",
+                        "error-text": "#000000",
+                        "secondary": "#5e5e5e",
+                        "tertiary-container": "#1b1b1b",
+                        "inverse-primary": "#c6c6c6",
+                        "primary-fixed": "#e2e2e2",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "inverse-on-surface": "#f1f1f1",
+                        "tertiary": "#000000",
+                        "surface-low": "#F2F2F2",
+                        "on-primary-container": "#848484",
+                        "on-surface-variant": "#4c4546",
+                        "on-background": "#1b1b1b",
+                        "placeholder": "#999999",
+                        "surface-high": "#FFFFFF",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "outline": "#7e7576",
+                        "surface-border": "#000000",
+                        "on-surface": "#1b1b1b",
+                        "outline-variant": "#cfc4c5",
+                        "on-secondary-fixed-variant": "#464747",
+                        "surface-variant": "#e2e2e2",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "on-primary-fixed-variant": "#474747",
+                        "surface-dim": "#dadada",
+                        "surface": "#f9f9f9",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#e1dfdf",
+                        "on-secondary-container": "#626262",
+                        "on-error-container": "#93000a",
+                        "primary": "#000000",
+                        "surface-container": "#eeeeee",
+                        "secondary-fixed": "#e4e2e2",
+                        "surface-bright": "#f9f9f9",
+                        "background": "#f9f9f9",
+                        "inverse-surface": "#303030",
+                        "primary-container": "#1b1b1b",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#1b1b1b",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "surface-container-high": "#e8e8e8",
+                        "surface-container-low": "#f3f3f3",
+                        "surface-tint": "#5e5e5e",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width-form": "560px",
+                        "gutter-desktop": "24px",
+                        "gutter-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "20px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "queue-hero": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "reference-code": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "queue-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "reference-code": ["24px", { "lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background min-h-screen flex flex-col font-body-md text-on-background">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 z-50 border-b border-surface-border bg-white dark:bg-background">
+<div class="flex justify-between items-center px-margin-desktop py-4 max-w-full mx-auto">
+<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background">YɛnCare</div>
+<nav class="hidden md:flex gap-6">
+<!-- Transactional page: suppressing main navigation logic as requested for focused journeys, 
+                     but retaining the literal structure of the JSON component for consistency if required. 
+                     Since the prompt specifies it's a linear transactional flow ("Review Booking", P06), 
+                     we typically hide the global nav tabs to focus the user on the task. However, the JSON 
+                     dictates the structure. Following "Automatic Suppression" rule, we suppress the nav tabs. -->
+</nav>
+<div class="flex gap-4">
+<button class="font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors px-4 py-2 rounded">Sign in</button>
+<button class="font-label-md text-label-md bg-white border border-surface-border hover:bg-surface-container-low transition-colors px-4 py-2 rounded text-primary">Check-in</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center py-12 px-margin-desktop">
+<div class="w-full max-w-max-width-form bg-surface-high border-2 border-surface-border p-8">
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2 text-center">Review Booking</h1>
+<p class="font-body-md text-body-md text-secondary text-center mb-8 pb-6 border-b border-surface-border">Please review your appointment details before confirming.</p>
+<!-- Summary Details -->
+<div class="space-y-6 mb-8">
+<!-- Patient Name -->
+<div class="flex justify-between items-start border-b border-surface-variant pb-4">
+<div>
+<span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Patient Name</span>
+<span class="font-body-lg text-body-lg text-primary">Ama Mensah</span>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">person</span>
+</div>
+<!-- Phone Number -->
+<div class="flex justify-between items-start border-b border-surface-variant pb-4">
+<div>
+<span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Phone Number</span>
+<span class="font-body-lg text-body-lg text-primary">+233 54 123 4567</span>
+<p class="font-label-sm text-label-sm text-secondary mt-1">We will send a confirmation text to this number.</p>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">call</span>
+</div>
+<!-- Doctor -->
+<div class="flex justify-between items-start border-b border-surface-variant pb-4">
+<div>
+<span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Doctor</span>
+<span class="font-body-lg text-body-lg text-primary">Dr. Kwame Osei</span>
+<span class="block font-label-sm text-label-sm text-secondary mt-1">General Practice</span>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">stethoscope</span>
+</div>
+<!-- Date & Time -->
+<div class="flex justify-between items-start pb-4">
+<div>
+<span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Date &amp; Time</span>
+<span class="font-body-lg text-body-lg text-primary">Thursday, 24 Oct 2024</span>
+<span class="block font-body-lg text-body-lg text-primary">09:30 AM</span>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">calendar_month</span>
+</div>
+</div>
+<!-- CTAs -->
+<div class="flex flex-col gap-4 mt-8 pt-8 border-t border-surface-border">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-none hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
+                    Confirm booking
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">check</span>
+</button>
+<button class="w-full bg-white text-primary border border-surface-border font-label-md text-label-md py-4 rounded-none hover:bg-surface-container-low transition-colors">
+                    Go Back
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-auto border-t border-surface-border bg-surface-container-lowest dark:bg-background">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop py-8 gap-4">
+<div class="text-label-md font-label-md font-bold text-primary">YɛnCare</div>
+<div class="flex gap-6">
+<a class="font-label-sm text-label-sm text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Patient Rights</a>
+</div>
+<div class="font-label-sm text-label-sm text-secondary dark:text-on-surface-variant">
+                © 2024 YɛnCare Clinic. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

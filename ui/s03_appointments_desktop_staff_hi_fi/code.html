@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Appointments - Staff Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-fixed-variant": "#464747",
+                      "secondary-container": "#e1dfdf",
+                      "tertiary-fixed-dim": "#c6c6c6",
+                      "on-surface-variant": "#4c4546",
+                      "inverse-on-surface": "#f1f1f1",
+                      "surface-container-highest": "#e2e2e2",
+                      "surface-high": "#FFFFFF",
+                      "surface-low": "#F2F2F2",
+                      "secondary-fixed": "#e4e2e2",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#474747",
+                      "surface-container-high": "#e8e8e8",
+                      "on-background": "#1b1b1b",
+                      "placeholder": "#999999",
+                      "surface-variant": "#e2e2e2",
+                      "primary-container": "#1b1b1b",
+                      "surface-container-low": "#f3f3f3",
+                      "inverse-surface": "#303030",
+                      "on-surface": "#1b1b1b",
+                      "error-text": "#000000",
+                      "primary-fixed": "#e2e2e2",
+                      "on-secondary-container": "#626262",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-fixed-variant": "#474747",
+                      "on-primary-container": "#848484",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary": "#ffffff",
+                      "primary": "#000000",
+                      "secondary": "#5e5e5e",
+                      "inverse-primary": "#c6c6c6",
+                      "outline": "#7e7576",
+                      "surface": "#f9f9f9",
+                      "secondary-fixed-dim": "#c7c6c6",
+                      "primary-fixed-dim": "#c6c6c6",
+                      "tertiary-fixed": "#e2e2e2",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#1b1b1b",
+                      "tertiary": "#000000",
+                      "surface-border": "#000000",
+                      "background": "#f9f9f9",
+                      "surface-bright": "#f9f9f9",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-dim": "#dadada",
+                      "tertiary-container": "#1b1b1b",
+                      "on-tertiary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#1b1b1b",
+                      "on-tertiary-container": "#848484",
+                      "outline-variant": "#cfc4c5",
+                      "surface-tint": "#5e5e5e",
+                      "surface-container": "#eeeeee"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "gutter-mobile": "16px",
+                      "gutter-desktop": "24px",
+                      "base": "8px",
+                      "max-width-form": "560px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-lg-mobile": [
+                              "Hanken Grotesk"
+                      ],
+                      "queue-hero": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "reference-code": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "queue-hero": [
+                              "72px",
+                              {
+                                      "lineHeight": "80px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "reference-code": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-md h-full flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar (Staff Desktop) -->
+<nav class="hidden md:flex flex-col h-screen p-4 gap-4 docked h-full left-0 w-[240px] bg-surface-container dark:bg-surface-container-low border-r-2 border-primary dark:border-surface-variant flex-shrink-0">
+<!-- Header Info -->
+<div class="mb-8 px-2 flex flex-col gap-2">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">YɛnCare</h1>
+<div class="flex items-center gap-3 mt-4">
+<img alt="Staff Profile" class="w-10 h-10 rounded-full border border-primary object-cover" data-alt="A small, high-contrast, black-and-white minimalist avatar profile picture of a clinic administrator, set against a stark white background. The image style is purely clinical and brutalist, with no gradients or soft lighting, emphasizing efficiency and clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_GBhcCmU7nuCdrvw2unJXXbs96E96dYcXNU-S17zFewUqxywObXRORTU3x0qmuWnGyfQwE3DFfdAyDv5CqCglv7jBVEl2nGIVd7mrEyY3jyP5E0Rwt0meBI1X0_0wNOhgqj6yPRRv8D4rrw-jZ2aAjMxnRBjscRnDL73A5xPVpUnANMw0Pz_YzL10auqdRlUf9DfLlpJ6pAGhoe77POr_Tv4_VU2Edg1GQY2tGszjIbzFcOl6o7q7"/>
+<div>
+<div class="font-label-md text-label-md text-primary">Clinical Admin</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Staff Portal</div>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-2 flex-grow">
+<!-- Today (Inactive) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant border-transparent hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95 border-2" href="#">
+<span class="material-symbols-outlined" data-icon="today">today</span>
+<span>Today</span>
+</a>
+<!-- Appointments (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT font-label-md text-label-md bg-primary dark:bg-primary-fixed text-on-primary dark:text-on-primary-fixed font-bold border-2 border-primary hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span>Appointments</span>
+</a>
+<!-- Queue (Inactive) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT font-label-md text-label-md text-on-surface-variant dark:text-on-surface-variant border-transparent hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95 border-2" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+<span>Queue</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="mb-4">
+<button class="w-full bg-surface text-primary border-2 border-primary py-3 px-4 rounded-DEFAULT font-label-md text-label-md hover:bg-surface-container-highest transition-colors">
+                New Appointment
+            </button>
+</div>
+<!-- Footer / Sign Out -->
+<div class="pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-4 py-2 font-label-md text-label-md text-error hover:bg-error-container hover:text-on-error-container transition-colors rounded-DEFAULT border-2 border-transparent" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow flex flex-col h-full overflow-hidden bg-background">
+<!-- Top Action Bar -->
+<header class="flex items-center justify-between px-gutter-desktop py-6 border-b-2 border-primary bg-surface flex-shrink-0">
+<h2 class="font-headline-lg text-headline-lg text-primary">All Appointments</h2>
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-low border border-primary rounded-DEFAULT font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-placeholder" placeholder="Search patients, codes..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 border-2 border-primary bg-surface hover:bg-surface-container-highest transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined">filter_list</span>
+                     Filter
+                 </button>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-grow overflow-auto p-gutter-desktop">
+<!-- Filter Tabs -->
+<div class="flex gap-2 mb-6 border-b border-outline-variant">
+<button class="px-4 py-2 font-label-md text-label-md border-b-2 border-primary text-primary font-bold">All</button>
+<button class="px-4 py-2 font-label-md text-label-md border-b-2 border-transparent text-on-surface-variant hover:text-primary">Booked</button>
+<button class="px-4 py-2 font-label-md text-label-md border-b-2 border-transparent text-on-surface-variant hover:text-primary">Checked In</button>
+<button class="px-4 py-2 font-label-md text-label-md border-b-2 border-transparent text-on-surface-variant hover:text-primary">Completed</button>
+</div>
+<!-- Data Table Container -->
+<div class="bg-surface border-2 border-primary rounded-DEFAULT overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-low border-b-2 border-primary">
+<tr>
+<th class="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Patient Name</th>
+<th class="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Phone</th>
+<th class="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Reference Code</th>
+<th class="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Doctor</th>
+<th class="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-4 py-3 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant font-body-md text-body-md">
+<!-- Row 1: Booked -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-4 py-4 font-semibold">Kofi Mensah</td>
+<td class="px-4 py-4 text-on-surface-variant">+233 24 123 4567</td>
+<td class="px-4 py-4 font-reference-code text-reference-code text-[16px] tracking-normal">YNC-A892</td>
+<td class="px-4 py-4">Dr. Addo</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 border border-primary bg-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">event</span>
+                                    Booked
+                                </span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="px-4 py-1.5 bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-opacity">Check-in</button>
+</td>
+</tr>
+<!-- Row 2: Checked In -->
+<tr class="hover:bg-surface-container-lowest transition-colors bg-surface-container-low">
+<td class="px-4 py-4 font-semibold">Ama Serwaa</td>
+<td class="px-4 py-4 text-on-surface-variant">+233 50 987 6543</td>
+<td class="px-4 py-4 font-reference-code text-reference-code text-[16px] tracking-normal">YNC-B104</td>
+<td class="px-4 py-4">Dr. Osei</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 border border-primary bg-surface-container-highest font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">how_to_reg</span>
+                                    Checked In
+                                </span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="px-4 py-1.5 border border-primary text-primary font-label-md text-label-md hover:bg-surface-container-highest transition-colors">View</button>
+</td>
+</tr>
+<!-- Row 3: Completed -->
+<tr class="hover:bg-surface-container-lowest transition-colors text-on-surface-variant">
+<td class="px-4 py-4 font-semibold text-on-surface-variant">Kwame Nkrumah</td>
+<td class="px-4 py-4">+233 20 555 1212</td>
+<td class="px-4 py-4 font-reference-code text-reference-code text-[16px] tracking-normal">YNC-C441</td>
+<td class="px-4 py-4">Dr. Addo</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 border border-outline bg-surface-variant font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    Completed
+                                </span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="px-4 py-1.5 border border-outline text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest transition-colors">Details</button>
+</td>
+</tr>
+<!-- Row 4: Booked -->
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-4 py-4 font-semibold">Yaa Asantewaa</td>
+<td class="px-4 py-4 text-on-surface-variant">+233 27 333 8888</td>
+<td class="px-4 py-4 font-reference-code text-reference-code text-[16px] tracking-normal">YNC-D772</td>
+<td class="px-4 py-4">Dr. Osei</td>
+<td class="px-4 py-4">
+<span class="inline-flex items-center gap-1 px-2 py-1 border border-primary bg-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">event</span>
+                                    Booked
+                                </span>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="px-4 py-1.5 bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-opacity">Check-in</button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination / Footer -->
+<div class="px-4 py-3 border-t-2 border-primary bg-surface-low flex justify-between items-center text-label-sm font-label-sm text-on-surface-variant">
+<span>Showing 1 to 4 of 24 appointments</span>
+<div class="flex gap-2">
+<button class="px-2 py-1 border border-primary disabled:opacity-50" disabled="">Prev</button>
+<button class="px-2 py-1 border border-primary bg-primary text-on-primary">1</button>
+<button class="px-2 py-1 border border-primary bg-surface hover:bg-surface-container-highest">2</button>
+<button class="px-2 py-1 border border-primary bg-surface hover:bg-surface-container-highest">3</button>
+<button class="px-2 py-1 border border-primary bg-surface hover:bg-surface-container-highest">Next</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
