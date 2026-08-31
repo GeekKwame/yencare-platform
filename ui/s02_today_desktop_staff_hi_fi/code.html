@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S02 Today (Desktop Staff) - YɛnCare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "primary-container": "#1b1b1b",
+                    "surface-tint": "#5e5e5e",
+                    "surface-container": "#eeeeee",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "primary": "#000000",
+                    "primary-fixed": "#e2e2e2",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed": "#e2e2e2",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "error-text": "#000000",
+                    "tertiary": "#000000",
+                    "inverse-primary": "#c6c6c6",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f9f9f9",
+                    "surface-dim": "#dadada",
+                    "surface-container-low": "#f3f3f3",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "on-background": "#1b1b1b",
+                    "surface-border": "#000000",
+                    "on-primary": "#ffffff",
+                    "on-primary-fixed": "#1b1b1b",
+                    "on-surface-variant": "#4c4546",
+                    "placeholder": "#999999",
+                    "on-secondary-fixed-variant": "#464747",
+                    "on-primary-fixed-variant": "#474747",
+                    "error": "#ba1a1a",
+                    "surface-high": "#FFFFFF",
+                    "secondary": "#5e5e5e",
+                    "on-tertiary-container": "#848484",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "outline": "#7e7576",
+                    "inverse-surface": "#303030",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#1b1b1b",
+                    "secondary-container": "#e1dfdf",
+                    "on-primary-container": "#848484",
+                    "secondary-fixed": "#e4e2e2",
+                    "surface-container-high": "#e8e8e8",
+                    "on-secondary": "#ffffff",
+                    "surface-bright": "#f9f9f9",
+                    "tertiary-container": "#1b1b1b",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-low": "#F2F2F2",
+                    "inverse-on-surface": "#f1f1f1",
+                    "secondary-fixed-dim": "#c7c6c6",
+                    "surface-container-highest": "#e2e2e2",
+                    "outline-variant": "#cfc4c5",
+                    "surface-variant": "#e2e2e2",
+                    "on-secondary-container": "#626262",
+                    "background": "#f9f9f9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-mobile": "16px",
+                    "base": "8px",
+                    "gutter-desktop": "24px",
+                    "max-width-form": "560px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-lg-mobile": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-sm": [
+                            "Hanken Grotesk"
+                    ],
+                    "reference-code": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "queue-hero": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-md": [
+                            "Hanken Grotesk"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "reference-code": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "queue-hero": [
+                            "72px",
+                            {
+                                    "lineHeight": "80px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex flex-col h-screen p-4 gap-4 bg-surface-container dark:bg-surface-container-low text-primary dark:text-on-surface font-label-md text-label-md border-r-2 border-primary dark:border-surface-variant w-[240px] sticky top-0 shrink-0">
+<!-- Header -->
+<div class="flex items-center gap-3 mb-6 p-2">
+<div class="w-10 h-10 rounded-full bg-surface-variant border border-primary overflow-hidden flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
+</div>
+<div class="overflow-hidden">
+<div class="font-bold truncate text-on-surface">Clinical Admin</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant truncate">Staff Portal</div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 flex flex-col gap-2">
+<!-- Active Tab: Today -->
+<a class="flex items-center gap-3 p-3 rounded bg-primary dark:bg-primary-fixed text-on-primary dark:text-on-primary-fixed font-bold border-2 border-primary hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="today">today</span>
+<span>Today</span>
+</a>
+<!-- Inactive Tab: Appointments -->
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant dark:text-on-surface-variant border-transparent border-2 hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span>Appointments</span>
+</a>
+<!-- Inactive Tab: Queue -->
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant dark:text-on-surface-variant border-transparent border-2 hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="reorder">reorder</span>
+<span>Queue</span>
+</a>
+</nav>
+<!-- CTA -->
+<button class="w-full py-3 px-4 bg-surface text-primary border-2 border-primary font-bold rounded flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors mb-4">
+<span class="material-symbols-outlined">add</span>
+            New Appointment
+        </button>
+<!-- Footer Tab: Sign Out -->
+<a class="flex items-center gap-3 p-3 mt-auto rounded text-on-surface-variant dark:text-on-surface-variant border-transparent border-2 hover:border-primary dark:hover:border-primary-fixed transition-all scale-98 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Sign Out</span>
+</a>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col w-full">
+<!-- Optional Top Nav for Mobile (Keeping it clean for Desktop focus, but adding responsive padding) -->
+<div class="px-margin-mobile md:px-margin-desktop py-8 md:py-12 flex-1 overflow-y-auto">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+<div>
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Monday, October 23</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Dashboard Overview</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 bg-surface text-primary border border-primary font-label-md text-label-md rounded hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">search</span>
+                        Find appointment
+                    </button>
+<button class="px-6 py-3 bg-primary text-on-primary font-label-md text-label-md rounded border border-primary hover:bg-surface-variant hover:text-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">group</span>
+                        Open queue
+                    </button>
+</div>
+</div>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+<!-- Metric Card 1 -->
+<div class="p-6 bg-surface-low border border-primary rounded flex flex-col justify-between h-32 col-span-2 md:col-span-1">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Appointments Today</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">142</div>
+</div>
+<!-- Metric Card 2 -->
+<div class="p-6 bg-surface-low border border-primary rounded flex flex-col justify-between h-32">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Not Arrived</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">45</div>
+</div>
+<!-- Metric Card 3 -->
+<div class="p-6 bg-surface-low border border-primary rounded flex flex-col justify-between h-32">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> Waiting
+                    </div>
+<div class="font-headline-lg text-headline-lg text-on-surface">12</div>
+</div>
+<!-- Metric Card 4 -->
+<div class="p-6 bg-surface-low border border-primary rounded flex flex-col justify-between h-32">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">campaign</span> Called
+                    </div>
+<div class="font-headline-lg text-headline-lg text-on-surface">3</div>
+</div>
+<!-- Metric Card 5 -->
+<div class="p-6 bg-surface-low border border-primary rounded flex flex-col justify-between h-32">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Completed
+                    </div>
+<div class="font-headline-lg text-headline-lg text-on-surface">82</div>
+</div>
+</div>
+<!-- Data Table Section -->
+<div class="mb-8 border border-primary rounded bg-surface overflow-hidden">
+<div class="p-4 md:p-6 bg-surface-container-low border-b border-primary flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-on-surface">Next Arrivals</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-low font-label-md text-label-md text-on-surface-variant border-b border-primary">
+<th class="py-4 px-6 font-semibold">Time</th>
+<th class="py-4 px-6 font-semibold">Patient Name</th>
+<th class="py-4 px-6 font-semibold">Doctor</th>
+<th class="py-4 px-6 font-semibold text-right">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<!-- Row 1 -->
+<tr class="border-b border-surface-variant hover:bg-surface-container transition-colors">
+<td class="py-4 px-6">09:00 AM</td>
+<td class="py-4 px-6 font-medium">Kwame Osei</td>
+<td class="py-4 px-6 text-on-surface-variant">Dr. Mensah (GP)</td>
+<td class="py-4 px-6 text-right">
+<button class="px-4 py-2 bg-primary text-on-primary font-label-sm text-label-sm rounded border border-primary hover:bg-surface-variant hover:text-primary transition-colors">
+                                        Check-in
+                                    </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-surface-variant hover:bg-surface-container transition-colors">
+<td class="py-4 px-6">09:15 AM</td>
+<td class="py-4 px-6 font-medium">Abena Appiah</td>
+<td class="py-4 px-6 text-on-surface-variant">Dr. Ansah (Dental)</td>
+<td class="py-4 px-6 text-right">
+<button class="px-4 py-2 bg-primary text-on-primary font-label-sm text-label-sm rounded border border-primary hover:bg-surface-variant hover:text-primary transition-colors">
+                                        Check-in
+                                    </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-surface-variant hover:bg-surface-container transition-colors">
+<td class="py-4 px-6">09:30 AM</td>
+<td class="py-4 px-6 font-medium">Kofi Baah</td>
+<td class="py-4 px-6 text-on-surface-variant">Dr. Mensah (GP)</td>
+<td class="py-4 px-6 text-right">
+<button class="px-4 py-2 bg-primary text-on-primary font-label-sm text-label-sm rounded border border-primary hover:bg-surface-variant hover:text-primary transition-colors">
+                                        Check-in
+                                    </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-4 px-6">09:45 AM</td>
+<td class="py-4 px-6 font-medium">Ama Serwaa</td>
+<td class="py-4 px-6 text-on-surface-variant">Dr. Yeboah (Eye)</td>
+<td class="py-4 px-6 text-right">
+<button class="px-4 py-2 bg-primary text-on-primary font-label-sm text-label-sm rounded border border-primary hover:bg-surface-variant hover:text-primary transition-colors">
+                                        Check-in
+                                    </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</body></html>

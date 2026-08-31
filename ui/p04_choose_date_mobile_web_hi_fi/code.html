@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Select Date - YɛnCare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#464747",
+                    "secondary-container": "#e1dfdf",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "on-surface-variant": "#4c4546",
+                    "inverse-on-surface": "#f1f1f1",
+                    "surface-container-highest": "#e2e2e2",
+                    "surface-high": "#FFFFFF",
+                    "surface-low": "#F2F2F2",
+                    "secondary-fixed": "#e4e2e2",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#474747",
+                    "surface-container-high": "#e8e8e8",
+                    "on-background": "#1b1b1b",
+                    "placeholder": "#999999",
+                    "surface-variant": "#e2e2e2",
+                    "primary-container": "#1b1b1b",
+                    "surface-container-low": "#f3f3f3",
+                    "inverse-surface": "#303030",
+                    "on-surface": "#1b1b1b",
+                    "error-text": "#000000",
+                    "primary-fixed": "#e2e2e2",
+                    "on-secondary-container": "#626262",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "on-primary-container": "#848484",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "on-primary": "#ffffff",
+                    "primary": "#000000",
+                    "secondary": "#5e5e5e",
+                    "inverse-primary": "#c6c6c6",
+                    "outline": "#7e7576",
+                    "surface": "#f9f9f9",
+                    "secondary-fixed-dim": "#c7c6c6",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "tertiary-fixed": "#e2e2e2",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#1b1b1b",
+                    "tertiary": "#000000",
+                    "surface-border": "#000000",
+                    "background": "#f9f9f9",
+                    "surface-bright": "#f9f9f9",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#dadada",
+                    "tertiary-container": "#1b1b1b",
+                    "on-tertiary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "on-tertiary-container": "#848484",
+                    "outline-variant": "#cfc4c5",
+                    "surface-tint": "#5e5e5e",
+                    "surface-container": "#eeeeee"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "gutter-mobile": "16px",
+                    "gutter-desktop": "24px",
+                    "base": "8px",
+                    "max-width-form": "560px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "queue-hero": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "reference-code": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "queue-hero": ["72px", {"lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "reference-code": ["24px", {"lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pt-16">
+<!-- TopAppBar -->
+<header class="bg-surface text-primary font-headline-md text-headline-md docked full-width top-0 border-b border-surface-border flat no shadows fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined hover:bg-surface-container-low transition-colors active:scale-95 duration-100 cursor-pointer" data-icon="medical_services">medical_services</span>
+</div>
+<div class="font-headline-md text-headline-md text-primary">YɛnCare</div>
+<div class="w-6"></div> <!-- Spacer for centering -->
+</header>
+<!-- Main Content -->
+<main class="flex-grow px-margin-mobile py-6 max-w-max-width-form mx-auto w-full flex flex-col gap-8">
+<!-- Header Info -->
+<div class="flex flex-col gap-2">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Step 3 of 4</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Select a date for your appointment</h1>
+</div>
+<!-- Calendar Container -->
+<div class="bg-surface-high border border-surface-border rounded-lg p-4 flex flex-col gap-6">
+<!-- Month Navigation -->
+<div class="flex items-center justify-between">
+<button class="w-10 h-10 flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<div class="font-headline-md text-headline-md text-primary">October 2024</div>
+<button class="w-10 h-10 flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Days of Week -->
+<div class="grid grid-cols-7 gap-1 text-center">
+<span class="font-label-sm text-label-sm text-secondary">S</span>
+<span class="font-label-sm text-label-sm text-secondary">M</span>
+<span class="font-label-sm text-label-sm text-secondary">T</span>
+<span class="font-label-sm text-label-sm text-secondary">W</span>
+<span class="font-label-sm text-label-sm text-secondary">T</span>
+<span class="font-label-sm text-label-sm text-secondary">F</span>
+<span class="font-label-sm text-label-sm text-secondary">S</span>
+</div>
+<!-- Calendar Grid -->
+<div class="grid grid-cols-7 gap-1 gap-y-2">
+<!-- Empty slots for previous month -->
+<div></div>
+<div></div>
+<!-- Days -->
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">1</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">2</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">3</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">4</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">5</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">6</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">7</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">8</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">9</button>
+<!-- Selected Date -->
+<div class="flex flex-col items-center gap-1">
+<button class="w-10 h-10 flex items-center justify-center rounded-full font-body-md text-body-md text-on-primary bg-primary shadow-[0_0_0_2px_theme(colors.surface-high),0_0_0_4px_theme(colors.primary)]">10</button>
+<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1"></span>
+</div>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">11</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">12</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">13</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">14</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">15</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">16</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">17</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">18</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">19</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">20</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">21</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">22</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">23</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">24</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">25</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">26</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">27</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">28</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">29</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-primary border border-surface-border hover:bg-surface-container-low">30</button>
+<button class="w-10 h-10 mx-auto flex items-center justify-center rounded-full font-body-md text-body-md text-tertiary-fixed-dim line-through decoration-1" disabled="">31</button>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-4 border-t border-surface-variant justify-center">
+<span class="w-3 h-3 rounded-full border border-surface-border"></span>
+<span class="font-label-sm text-label-sm text-secondary">Available</span>
+<span class="w-3 h-3 rounded-full bg-primary ml-4"></span>
+<span class="font-label-sm text-label-sm text-secondary">Selected</span>
+</div>
+</div>
+</main>
+<!-- Bottom Action Bar -->
+<div class="fixed bottom-0 w-full bg-surface-high border-t border-surface-border p-margin-mobile flex justify-center z-40 max-w-md mx-auto left-1/2 transform -translate-x-1/2">
+<button class="w-full h-12 bg-primary text-on-primary font-label-md text-label-md rounded border-2 border-primary hover:bg-inverse-surface transition-colors active:scale-95">
+            Continue
+        </button>
+</div>
+<!-- Padding for bottom action bar -->
+<div class="h-24"></div>
+</body></html>
