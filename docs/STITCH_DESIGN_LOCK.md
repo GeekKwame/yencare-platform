@@ -69,7 +69,14 @@ Prefer `*_web_hi_fi` / `*_staff_hi_fi`. If hi-fi is missing, use the `_web` wire
 | P11 | `ui/p11_appointment_details_mobile_web_hi_fi` | Booked: Reschedule + Cancel. Do not lead with Check my queue |
 | P12 | `ui/p12_cancel_confirm_mobile_web_hi_fi` | |
 | P13 | `ui/p13_appointment_cancelled_mobile_web_hi_fi` | |
-| P18 | `ui/p18_queue_status_mobile_web` + desktop hi-fi | Waiting variant is good. Still need Booked / Called / Completed |
+| P14 | `ui/p14_reschedule_date_mobile_web_hi_fi` | Date only. Do not confirm on this screen |
+| P15 | `ui/p15_reschedule_time_mobile_web_hi_fi` | Time only |
+| P16 | `ui/p16_reschedule_review_mobile_web_hi_fi` | Old vs new. CTA: Confirm new time. Drop “free of charge” |
+| P17 | `ui/p17_appointment_updated_mobile_web_hi_fi` | Keep `YC-4821`. Show the phone number in the SMS line |
+| P18 Waiting | `ui/p18_queue_status_mobile_web` + desktop hi-fi | Position + rough wait |
+| P18 Booked | `ui/p18_queue_status_booked_mobile_web_hi_fi` | Keep the “not in the queue yet” copy. Drop tab bar, Get Directions, Cancel |
+| P18 Called | `ui/p18_queue_status_called_mobile_web_hi_fi` | Keep “It is your turn.” Use `YC-4821`, not `YB-9824`. Drop tab bar and room |
+| P18 Completed | `ui/p18_queue_status_completed_mobile_web_hi_fi` | Keep “Your visit is finished.” Optional: Book another |
 | G01 | `ui/g01_network_error_mobile` | Rebuild as web banner + Try again, not app chrome |
 
 ### Staff — implement
@@ -79,7 +86,10 @@ Prefer `*_web_hi_fi` / `*_staff_hi_fi`. If hi-fi is missing, use the `_web` wire
 | S01 | `ui/s01_sign_in_desktop_staff` | No hi-fi yet — fine |
 | S02 | `ui/s02_today_desktop_staff_hi_fi` | Counts only. Drop + New Appointment |
 | S03 | `ui/s03_appointments_desktop_staff_hi_fi` | Search + Check in. Drop pagination if today-only |
+| S04 | `ui/s04_appointment_detail_desktop_staff_hi_fi` | Check in is the primary action. Drop QR, symptoms/notes, Settings, `#AM-942` |
 | S05 | `ui/s05_live_queue_desktop_staff_hi_fi` | Call / Complete. Drop No Show and token IDs; use name + `YC-` |
+| S05 empty | `ui/s05_live_queue_empty_desktop_staff_hi_fi` | Keep “No patients in the queue.” Button can go to Appointments, not a new check-in product |
+| S07 | `ui/s07_session_expired_desktop_staff_hi_fi` | Sign in again |
 
 Tokens / type: `ui/y_ncare_structured_wireframe/DESIGN.md`
 
@@ -109,20 +119,23 @@ Tokens / type: `ui/y_ncare_structured_wireframe/DESIGN.md`
 
 ---
 
-## 5. Still missing (P0 gaps)
+## 5. Remaining gaps and drift (do not copy into React)
 
-Generate in Stitch later **or** implement from the UX spec without a frame:
+P0 frames now exist. These leftovers are still wrong if implemented as drawn:
 
-| Gap | What to ship |
-| --- | ------------ |
-| P14–P17 Reschedule | Same as date → time → review; show old vs new time |
-| P18 Booked | “You are not in the queue yet. Check in at reception.” |
-| P18 Called | “It is your turn. Please go in to see Dr. Kwame Boateng.” |
-| P18 Completed | “Your visit is finished.” |
-| P10 Not found | State of P09 |
-| S04 Appointment detail | Staff record + Check in / Call / Complete |
-| S05 empty | “No patients in the queue.” |
-| S07 Session expired | Supporting UX |
+| Issue | What to do |
+| ----- | ---------- |
+| P10 Not found | Still a state of Find appointment — no extra frame required |
+| Bottom tab bar on P18 Booked / Called (Home, Book, My Visits, Queue) | Native app. Use the web header |
+| Get Directions on P18 Booked | Maps are out of MVP |
+| References `YB-9824`, `#AM-942` | Use `YC-4821` |
+| Doctors Mensah / Osei / Boateng mixed | Lock Dr. Kwame Boateng |
+| Dates 2023 / 2024 / Nov vs Oct | Lock Tuesday 15 September 2026, 10:00 |
+| S04 symptoms, QR check-in, Settings | Out of pitch (not an EMR) |
+| P16 “Rescheduling is free of charge” | Do not claim fees |
+| P14 Confirm on the date screen | Date → time → review, then confirm |
+| `ui/y_ncare_clinic_appointment_booking/` | Duplicate of Your details — ignore |
+| `ui/stitch_figma_product_design_workflow/` | Zip dump — do not commit again |
 
 ---
 
@@ -130,8 +143,8 @@ Generate in Stitch later **or** implement from the UX spec without a frame:
 
 | Person | Build from |
 | ------ | ---------- |
-| Raymond | P01–P09, P11–P13, P18 (patient web) |
-| Harry | S01–S03, S05, then S04 from spec |
+| Raymond | P01–P09, P11–P18 (patient web) |
+| Harry | S01–S05, S07 |
 | Shared | Status badge, reference block, buttons, Ghana phone field |
 
 Gate 2 needs patient book + SMS confirmation end to end. Staff polish can follow, but do not wait for Figma credits.
