@@ -211,69 +211,70 @@
 <!-- TopAppBar -->
 <header class="fixed top-0 w-full z-50 bg-surface-container-lowest dark:bg-on-background border-b-2 border-surface-border">
 <div class="flex justify-between items-center w-full px-margin-mobile py-4">
-<button class="text-primary dark:text-on-primary hover:bg-surface-container-highest dark:hover:bg-inverse-surface active:scale-95 transition-transform p-1 rounded">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="flex items-center gap-2 text-primary dark:text-on-primary">
 <span class="material-symbols-outlined">medical_services</span>
-</button>
-<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-on-primary">
-                YɛnCare
-            </h1>
-<button class="text-primary dark:text-on-primary hover:bg-surface-container-highest dark:hover:bg-inverse-surface active:scale-95 transition-transform p-1 rounded">
-<span class="material-symbols-outlined">account_circle</span>
-</button>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-on-primary">YɛnCare</span>
+</a>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary font-label-sm text-label-sm">Home</a>
 </div>
 </header>
 <!-- Main Content Canvas -->
-<main class="flex-grow flex flex-col px-margin-mobile py-8 md:hidden relative overflow-hidden">
+<main class="flex-grow flex flex-col px-margin-mobile py-8 md:hidden relative overflow-hidden pb-24">
 <!-- Status Indicator Area -->
-<div class="flex flex-col items-center justify-center flex-grow space-y-8 z-10">
+<div class="flex flex-col items-center justify-center flex-grow space-y-6 z-10">
 <!-- Alert Badge -->
 <div class="inline-flex items-center space-x-2 border border-surface-border bg-surface-container-lowest px-4 py-2 rounded">
 <span class="material-symbols-outlined text-primary fill text-[20px]">notifications_active</span>
-<span class="font-label-md text-label-md text-primary uppercase tracking-wider">Status: Called</span>
+<span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold">Status: Called</span>
 </div>
 <!-- Hero Message -->
-<div class="text-center space-y-4 max-w-[320px] mx-auto">
-<div class="pulse-element inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary text-on-primary mb-4">
+<div class="text-center space-y-3 max-w-[320px] mx-auto">
+<div class="pulse-element inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary text-on-primary mb-2">
 <span class="material-symbols-outlined text-[48px]">door_open</span>
 </div>
 <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">
                     It is your turn.
                 </h2>
-<p class="font-body-lg text-body-lg text-on-surface-variant">
+<p class="font-body-lg text-body-lg text-on-surface-variant font-medium">
                     Please go in to see Dr. Kwame Boateng.
                 </p>
 </div>
 <!-- Appointment Reference Box -->
-<div class="w-full border-2 border-surface-border bg-surface-container-lowest p-6 mt-8">
+<div class="w-full border-2 border-surface-border bg-surface-container-lowest p-6 mt-4">
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1">Appointment Ref</p>
-<p class="font-reference-code text-reference-code text-primary">#YB-9824</p>
+<p class="font-reference-code text-reference-code text-primary font-bold text-2xl tracking-widest">YC-4821</p>
 <div class="h-[1px] bg-surface-border w-full my-4"></div>
 <div class="flex justify-between items-center">
 <div>
 <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mb-1">Room</p>
-<p class="font-body-md text-body-md font-semibold text-primary">Consultation 3</p>
+<p class="font-body-md text-body-md font-semibold text-primary">Consultation Room 3</p>
 </div>
-<span class="material-symbols-outlined text-primary">arrow_forward</span>
+<span class="material-symbols-outlined text-primary">meeting_room</span>
 </div>
 </div>
+<!-- Complete visit CTA -->
+<a href="../p18_queue_status_completed_mobile_web_hi_fi/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 border-2 border-primary active:scale-[0.98] transition-transform flex justify-center items-center gap-2 hover:bg-inverse-surface mt-4">
+<span class="material-symbols-outlined" data-icon="task_alt">task_alt</span>
+                Simulate Consultation Completed
+</a>
 </div>
 </main>
 <!-- BottomNavBar (Hidden on md and above) -->
 <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center bg-surface-container-lowest dark:bg-on-background px-2 py-3 z-50 border-t-2 border-surface-border md:hidden">
-<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-90 transition-all duration-150 rounded-lg" href="#">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-90 transition-all duration-150 rounded-lg" href="../p01_home_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1">home</span>
 <span class="font-label-sm text-label-sm">Home</span>
 </a>
-<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-90 transition-all duration-150 rounded-lg" href="#">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-90 transition-all duration-150 rounded-lg" href="../p02_your_details_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1">add_circle</span>
 <span class="font-label-sm text-label-sm">Book</span>
 </a>
-<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-90 transition-all duration-150 rounded-lg" href="#">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim px-3 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-90 transition-all duration-150 rounded-lg" href="../p09_find_appointment_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1">event_note</span>
-<span class="font-label-sm text-label-sm">My Visits</span>
+<span class="font-label-sm text-label-sm">Find</span>
 </a>
 <!-- Active Tab: Queue -->
-<a class="flex flex-col items-center justify-center bg-primary dark:bg-on-primary text-on-primary dark:text-primary rounded-lg px-3 py-1 active:scale-90 transition-all duration-150" href="#">
+<a class="flex flex-col items-center justify-center bg-primary dark:bg-on-primary text-on-primary dark:text-primary rounded-lg px-3 py-1 active:scale-90 transition-all duration-150" href="../p18_queue_status_called_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1 fill">hourglass_empty</span>
 <span class="font-label-sm text-label-sm">Queue</span>
 </a>

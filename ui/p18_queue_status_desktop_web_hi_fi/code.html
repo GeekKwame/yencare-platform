@@ -117,33 +117,36 @@
 <body class="bg-surface min-h-screen flex flex-col text-on-surface">
 <!-- Suppressed navigation shell for task-focused view, retaining brand anchor -->
 <header class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 bg-surface border-b-2 border-primary">
-<div class="text-headline-md font-headline-md font-bold text-primary">
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary hover:opacity-80">
             YɛnCare
-        </div>
+</a>
+<div class="flex items-center gap-6">
 <div class="text-label-md font-label-md text-on-surface-variant flex items-center gap-2">
 <span class="material-symbols-outlined text-[20px]">person</span>
             Ama Mensah
-        </div>
+</div>
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-label-sm font-label-sm text-secondary hover:text-primary">Return Home</a>
+</div>
 </header>
 <main class="flex-1 flex flex-col items-center justify-center p-gutter-desktop w-full">
 <!-- Main High-Fidelity Queue Card Container -->
 <div class="w-full max-w-[480px] bg-surface-container-lowest border-2 border-primary p-8 md:p-12 flex flex-col items-center">
 <!-- Status Badge -->
-<div class="flex items-center gap-2 border border-primary px-4 py-2 mb-10 bg-surface-container-low rounded-sm">
+<div class="flex items-center gap-2 border border-primary px-4 py-2 mb-8 bg-surface-container-low rounded-sm">
 <span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
-<span class="text-label-md font-label-md text-primary uppercase tracking-wider">Checked In</span>
+<span class="text-label-md font-label-md text-primary uppercase tracking-wider font-bold">Waiting in Queue</span>
 </div>
 <!-- Headline -->
-<h1 class="text-headline-md font-headline-md text-on-surface mb-4 text-center">
+<h1 class="text-headline-md font-headline-md text-on-surface mb-2 text-center">
                 You are number
             </h1>
 <!-- Hero Number -->
-<div class="text-queue-hero font-queue-hero text-primary mb-10 text-center leading-none">
+<div class="text-queue-hero font-queue-hero text-primary mb-8 text-center leading-none text-7xl font-bold">
                 4
             </div>
 <!-- Wait Info Box -->
-<div class="w-full bg-surface-low border-2 border-primary p-6 mb-8 flex flex-col items-center text-center">
-<p class="text-body-lg font-body-lg text-primary mb-2">
+<div class="w-full bg-surface-low border-2 border-primary p-6 mb-6 flex flex-col items-center text-center">
+<p class="text-body-lg font-body-lg text-primary mb-2 font-semibold">
                     Typical wait from here is about 40 minutes.
                 </p>
 <p class="text-label-sm font-label-sm text-on-surface-variant">
@@ -151,14 +154,14 @@
                 </p>
 </div>
 <!-- Instruction -->
-<p class="text-body-md font-body-md text-on-surface text-center mb-10 max-w-[80%]">
+<p class="text-body-md font-body-md text-on-surface text-center mb-8 max-w-[80%]">
                 Stay nearby. We will call you when it is your turn.
             </p>
 <!-- Action Button -->
-<button class="w-full bg-primary text-on-primary py-4 px-6 border-2 border-primary hover:bg-surface-container-low hover:text-primary transition-colors duration-200 flex items-center justify-center gap-3 mb-6 group active:scale-[0.98]">
+<a href="../p18_queue_status_called_mobile_web_hi_fi/code.html" class="w-full bg-primary text-on-primary py-4 px-6 border-2 border-primary hover:bg-inverse-surface transition-colors duration-200 flex items-center justify-center gap-3 mb-4 group active:scale-[0.98]">
 <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500" data-icon="refresh">refresh</span>
-<span class="font-label-md text-label-md uppercase tracking-wider">Refresh Status</span>
-</button>
+<span class="font-label-md text-label-md uppercase tracking-wider">Refresh Status (Simulate Called)</span>
+</a>
 <!-- Timestamp -->
 <p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1">
 <span class="material-symbols-outlined text-[14px]" data-icon="update">update</span>

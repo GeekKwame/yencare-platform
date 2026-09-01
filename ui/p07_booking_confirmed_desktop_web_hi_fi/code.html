@@ -112,20 +112,20 @@
 <!-- TopAppBar -->
 <header class="w-full sticky top-0 z-50 border-b border-surface-border bg-white dark:bg-background">
 <div class="flex justify-between items-center px-margin-desktop py-4 max-w-full mx-auto">
-<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background flex items-center gap-2">
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background flex items-center gap-2 hover:opacity-80">
 <span>YɛnCare</span>
-</div>
+</a>
 <nav class="hidden md:flex items-center gap-8 font-label-md text-label-md">
-<a class="text-primary border-b-2 border-primary pb-1 active:opacity-80" href="#">Book appointment</a>
-<a class="text-secondary hover:text-primary transition-colors active:opacity-80" href="#">Find appointment</a>
+<a class="text-primary border-b-2 border-primary pb-1" href="../p02_your_details_desktop_web_hi_fi/code.html">Book appointment</a>
+<a class="text-secondary hover:text-primary transition-colors" href="../p09_find_appointment_mobile_web_hi_fi/code.html">Find appointment</a>
 </nav>
 <div class="flex items-center gap-4">
-<button class="font-label-md text-label-md text-primary bg-surface-high border border-surface-border px-4 py-2 hover:bg-surface-container-low transition-colors active:opacity-80">
-                    Sign in
-                </button>
-<button class="font-label-md text-label-md text-on-primary bg-primary px-4 py-2 hover:opacity-90 transition-opacity active:opacity-80">
-                    Check-in
-                </button>
+<a href="../s01_sign_in_desktop_staff/code.html" class="font-label-md text-label-md text-primary bg-surface-high border border-surface-border px-4 py-2 hover:bg-surface-container-low transition-colors">
+                    Staff Sign in
+</a>
+<a href="../p18_queue_status_desktop_web_hi_fi/code.html" class="font-label-md text-label-md text-on-primary bg-primary px-4 py-2 hover:opacity-90 transition-opacity">
+                    Queue Status
+</a>
 </div>
 </div>
 </header>
@@ -142,27 +142,30 @@
 <!-- Reference Code Card -->
 <div class="w-full bg-surface-low border-2 border-primary p-8 flex flex-col items-center justify-center mb-8 relative">
 <span class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-2">Reference Code</span>
-<span class="font-reference-code text-reference-code text-primary text-[48px] leading-tight">YC-4821</span>
-<button aria-label="Copy reference code" class="absolute top-4 right-4 text-secondary hover:text-primary transition-colors">
-<span class="material-symbols-outlined">content_copy</span>
-</button>
+<span class="font-reference-code text-reference-code text-primary text-[48px] leading-tight font-bold tracking-widest">YC-4821</span>
 </div>
 <!-- SMS Caveat Box -->
 <div class="w-full bg-surface-container-high border border-surface-border p-4 flex items-start gap-4 mb-12 text-left">
 <span class="material-symbols-outlined text-primary mt-1">sms</span>
 <div>
 <h3 class="font-label-md text-label-md text-primary mb-1">We sent a confirmation text</h3>
-<p class="font-body-md text-body-md text-secondary">An SMS with your reference code and appointment details has been sent to +233 54 123 4567.</p>
+<p class="font-body-md text-body-md text-secondary">An SMS with your reference code and appointment details has been sent to +233 24 123 4567.</p>
 </div>
 </div>
 <!-- CTAs -->
-<div class="w-full flex flex-col sm:flex-row gap-4">
-<button class="flex-1 bg-primary text-on-primary font-label-md text-label-md py-4 border border-primary hover:opacity-90 transition-opacity active:opacity-80">
+<div class="w-full flex flex-col gap-4">
+<a href="../p11_appointment_details_mobile_web_hi_fi/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 border border-primary hover:opacity-90 transition-opacity text-center flex items-center justify-center gap-2">
+                    View appointment
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+<div class="flex flex-col sm:flex-row gap-4">
+<a href="../p18_queue_status_desktop_web_hi_fi/code.html" class="flex-1 bg-surface-high text-primary font-label-md text-label-md py-4 border border-primary hover:bg-surface-container-low transition-colors text-center">
                     Check my queue
-                </button>
-<button class="flex-1 bg-surface-high text-primary font-label-md text-label-md py-4 border border-primary hover:bg-surface-container-low transition-colors active:opacity-80">
+</a>
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-4 hover:bg-surface-container-low transition-colors text-center">
                     Return home
-                </button>
+</a>
+</div>
 </div>
 </div>
 </main>

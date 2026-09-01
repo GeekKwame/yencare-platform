@@ -114,51 +114,50 @@
 <body class="bg-background text-on-background min-h-screen flex flex-col antialiased">
 <!-- TopAppBar -->
 <header class="bg-surface dark:bg-background text-primary dark:text-on-background font-headline-md text-headline-md docked full-width top-0 border-b border-surface-border flat no shadows fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16">
-<div class="flex items-center gap-2 cursor-pointer active:scale-95 duration-100" data-icon="medical_services">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="flex items-center gap-2 cursor-pointer active:scale-95 duration-100" data-icon="medical_services">
 <span class="material-symbols-outlined text-primary dark:text-on-background">medical_services</span>
-</div>
-<div class="font-headline-md text-headline-md text-primary dark:text-on-background">YɛnCare</div>
-<div class="w-6 h-6"></div> <!-- Spacer for center alignment -->
+<span class="font-headline-md text-headline-md text-primary dark:text-on-background">YɛnCare</span>
+</a>
+<span class="font-label-sm text-label-sm text-secondary">Review</span>
 </header>
 <!-- Main Content -->
 <main class="flex-grow pt-[88px] px-margin-mobile pb-32 flex flex-col max-w-max-width-form mx-auto w-full">
 <div class="mb-6">
-<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Step 5 of 5</span>
 <h1 class="font-headline-lg-mobile text-headline-lg-mobile mt-2">Review Booking</h1>
+<p class="font-body-md text-body-md text-secondary mt-1">Please check your appointment details before confirming.</p>
 </div>
 <!-- Booking Details Card -->
 <div class="bg-surface-low border border-surface-border rounded-lg p-6 mb-8 flex flex-col gap-6">
 <div class="flex flex-col gap-1 pb-4 border-b border-surface-dim">
 <span class="font-label-sm text-label-sm text-secondary">Patient Name</span>
-<span class="font-body-lg text-body-lg text-on-surface">Kwame Mensah</span>
+<span class="font-body-lg text-body-lg text-on-surface font-semibold">Ama Mensah</span>
 </div>
 <div class="flex flex-col gap-1 pb-4 border-b border-surface-dim">
 <span class="font-label-sm text-label-sm text-secondary">Phone Number</span>
-<span class="font-body-lg text-body-lg text-on-surface">+233 54 123 4567</span>
+<span class="font-body-lg text-body-lg text-on-surface font-semibold">+233 24 123 4567</span>
 <span class="font-label-sm text-label-sm text-secondary mt-1">We will send a confirmation text to this number.</span>
 </div>
 <div class="flex flex-col gap-1 pb-4 border-b border-surface-dim">
 <span class="font-label-sm text-label-sm text-secondary">Doctor</span>
 <div class="flex items-center gap-3 mt-1">
-<div class="w-10 h-10 rounded-full bg-surface-container-high border border-surface-border overflow-hidden">
-<img class="w-full h-full object-cover" data-alt="Professional headshot of an African female doctor in a clinical setting, wearing a white coat, neutral clinical background, high key lighting, light mode aesthetic, realistic, highly detailed photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiMP0OraxWwcC2Qc7LUw3PFdceCydopWwy5cXDSw6IIcmHIX-avjzobQR4h6-bKiLSxZVClGuUX7L8HnxW4wOXtltkVe4kHlWrRldK0OUYj8mFkNFO6PKyy-AtPcPZBtJ72H0a5_HsP0WXie5DWozPRgWTL_u5vUOV-12GAuWT5AtXP8Fy7yIN-YWzPB8cvaujr7CLQ4uZXxSLtNN99_DMB-dk0w0k4wXekHp5difzDcw7HfF6pGTa"/>
-</div>
-<span class="font-body-lg text-body-lg text-on-surface">Dr. Abena Osei</span>
+<span class="font-body-lg text-body-lg text-on-surface font-semibold">Dr. Kwame Boateng</span>
+<span class="text-xs bg-surface-container-high px-2 py-0.5 rounded border border-surface-border text-secondary">General Clinic</span>
 </div>
 </div>
 <div class="flex flex-col gap-1">
 <span class="font-label-sm text-label-sm text-secondary">Date &amp; Time</span>
-<span class="font-body-lg text-body-lg text-on-surface">Oct 24, 2023 at 10:00 AM</span>
+<span class="font-body-lg text-body-lg text-on-surface font-semibold">Tue, 15 Sep 2026 at 10:00 AM</span>
 </div>
 </div>
 </main>
 <!-- Bottom Action Bar (Contextual) -->
-<div class="fixed bottom-0 left-0 w-full bg-surface-high border-t border-surface-border p-4 flex flex-col gap-3 z-40 md:hidden">
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-DEFAULT border border-primary active:opacity-80 transition-opacity flex justify-center items-center">
+<div class="fixed bottom-0 left-0 w-full bg-surface-high border-t border-surface-border p-4 flex flex-col gap-3 z-40">
+<a href="../p07_booking_confirmed_mobile_web_hi_fi/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-DEFAULT border border-primary active:opacity-80 transition-opacity flex justify-center items-center gap-2">
             Confirm booking
-        </button>
-<button class="w-full bg-surface-high text-primary font-label-md text-label-md py-4 rounded-DEFAULT border border-surface-border active:bg-surface-container-low transition-colors flex justify-center items-center">
+            <span class="material-symbols-outlined text-sm">check</span>
+</a>
+<a href="../p05_choose_time_mobile_web_hi_fi/code.html" class="w-full bg-surface-high text-primary font-label-md text-label-md py-4 rounded-DEFAULT border border-surface-border active:bg-surface-container-low transition-colors flex justify-center items-center">
             Go Back
-        </button>
+</a>
 </div>
 </body></html>

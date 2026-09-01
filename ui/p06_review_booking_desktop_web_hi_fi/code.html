@@ -112,17 +112,10 @@
 <!-- TopAppBar -->
 <header class="w-full sticky top-0 z-50 border-b border-surface-border bg-white dark:bg-background">
 <div class="flex justify-between items-center px-margin-desktop py-4 max-w-full mx-auto">
-<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background">YɛnCare</div>
-<nav class="hidden md:flex gap-6">
-<!-- Transactional page: suppressing main navigation logic as requested for focused journeys, 
-                     but retaining the literal structure of the JSON component for consistency if required. 
-                     Since the prompt specifies it's a linear transactional flow ("Review Booking", P06), 
-                     we typically hide the global nav tabs to focus the user on the task. However, the JSON 
-                     dictates the structure. Following "Automatic Suppression" rule, we suppress the nav tabs. -->
-</nav>
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background hover:opacity-80">YɛnCare</a>
 <div class="flex gap-4">
-<button class="font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors px-4 py-2 rounded">Sign in</button>
-<button class="font-label-md text-label-md bg-white border border-surface-border hover:bg-surface-container-low transition-colors px-4 py-2 rounded text-primary">Check-in</button>
+<a href="../s01_sign_in_desktop_staff/code.html" class="font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors px-4 py-2 rounded">Staff Sign in</a>
+<a href="../p18_queue_status_desktop_web_hi_fi/code.html" class="font-label-md text-label-md bg-white border border-surface-border hover:bg-surface-container-low transition-colors px-4 py-2 rounded text-primary">Queue Status</a>
 </div>
 </div>
 </header>
@@ -145,7 +138,7 @@
 <div class="flex justify-between items-start border-b border-surface-variant pb-4">
 <div>
 <span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Phone Number</span>
-<span class="font-body-lg text-body-lg text-primary">+233 54 123 4567</span>
+<span class="font-body-lg text-body-lg text-primary">+233 24 123 4567</span>
 <p class="font-label-sm text-label-sm text-secondary mt-1">We will send a confirmation text to this number.</p>
 </div>
 <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">call</span>
@@ -154,8 +147,8 @@
 <div class="flex justify-between items-start border-b border-surface-variant pb-4">
 <div>
 <span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Doctor</span>
-<span class="font-body-lg text-body-lg text-primary">Dr. Kwame Osei</span>
-<span class="block font-label-sm text-label-sm text-secondary mt-1">General Practice</span>
+<span class="font-body-lg text-body-lg text-primary">Dr. Kwame Boateng</span>
+<span class="block font-label-sm text-label-sm text-secondary mt-1">General Clinic</span>
 </div>
 <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">stethoscope</span>
 </div>
@@ -163,21 +156,21 @@
 <div class="flex justify-between items-start pb-4">
 <div>
 <span class="block font-label-sm text-label-sm text-on-tertiary-container uppercase tracking-wider mb-1">Date &amp; Time</span>
-<span class="font-body-lg text-body-lg text-primary">Thursday, 24 Oct 2024</span>
-<span class="block font-body-lg text-body-lg text-primary">09:30 AM</span>
+<span class="font-body-lg text-body-lg text-primary">Tuesday, 15 Sep 2026</span>
+<span class="block font-body-lg text-body-lg text-primary">10:00 AM</span>
 </div>
 <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">calendar_month</span>
 </div>
 </div>
 <!-- CTAs -->
 <div class="flex flex-col gap-4 mt-8 pt-8 border-t border-surface-border">
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-none hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
+<a href="../p07_booking_confirmed_desktop_web_hi_fi/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-none hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
                     Confirm booking
                     <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">check</span>
-</button>
-<button class="w-full bg-white text-primary border border-surface-border font-label-md text-label-md py-4 rounded-none hover:bg-surface-container-low transition-colors">
+</a>
+<a href="../p04_05_date_time_desktop_web_hi_fi/code.html" class="w-full bg-white text-primary border border-surface-border font-label-md text-label-md py-4 rounded-none hover:bg-surface-container-low transition-colors text-center">
                     Go Back
-                </button>
+</a>
 </div>
 </div>
 </main>

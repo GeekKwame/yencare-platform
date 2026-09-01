@@ -119,17 +119,18 @@
 <body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col md:hidden">
 <!-- Top Navigation (Transactional/Task-focused, suppressing global shell) -->
 <header class="bg-surface-container-lowest text-primary px-margin-mobile py-4 border-b-2 border-surface-border flex items-center sticky top-0 z-40">
-<button aria-label="Go back" class="mr-4 active:scale-95 transition-transform p-2 -ml-2">
+<a aria-label="Go back" class="mr-4 active:scale-95 transition-transform p-2 -ml-2" href="../p11_appointment_details_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined text-headline-md">arrow_back</span>
-</button>
-<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold flex-1">Reschedule</h1>
+</a>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold flex-1">Reschedule Date</h1>
+<a class="text-secondary hover:text-primary font-label-sm text-label-sm" href="../p01_home_mobile_web_hi_fi/code.html">Home</a>
 </header>
 <!-- Main Content Canvas -->
-<main class="flex-1 px-margin-mobile py-6 flex flex-col gap-6">
+<main class="flex-1 px-margin-mobile py-6 flex flex-col gap-6 max-w-max-width-form mx-auto w-full pb-28">
 <!-- Header Text -->
 <section>
 <h2 class="font-headline-md text-headline-md mb-2">Select a new date</h2>
-<p class="font-body-md text-body-md text-on-surface-variant">Choose an available date for your follow-up appointment with Dr. Mensah.</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Choose an available date for your appointment with Dr. Kwame Boateng.</p>
 </section>
 <!-- Calendar Component (Bento/Card Style) -->
 <section class="bg-surface-container-lowest border border-surface-border p-4 rounded-xl shadow-sm">
@@ -138,7 +139,7 @@
 <button aria-label="Previous month" class="p-2 border border-surface-border rounded active:scale-95 transition-transform">
 <span class="material-symbols-outlined">chevron_left</span>
 </button>
-<h3 class="font-label-md text-label-md uppercase tracking-widest font-bold">November 2024</h3>
+<h3 class="font-label-md text-label-md uppercase tracking-widest font-bold">September 2026</h3>
 <button aria-label="Next month" class="p-2 border border-surface-border rounded active:scale-95 transition-transform">
 <span class="material-symbols-outlined">chevron_right</span>
 </button>
@@ -155,51 +156,33 @@
 </div>
 <!-- Calendar Grid -->
 <div class="grid grid-cols-7 gap-1 md:gap-2">
-<!-- Empty slots for alignment -->
 <div class="aspect-square"></div>
-<div class="aspect-square"></div>
-<div class="aspect-square"></div>
-<!-- Past Days (Disabled) -->
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed" disabled="">1</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed" disabled="">2</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed" disabled="">3</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed" disabled="">4</button>
-<!-- Today (Disabled as it might be too late to book) -->
-<button class="aspect-square flex flex-col items-center justify-center border border-dashed border-surface-border rounded bg-surface-container-low cursor-not-allowed opacity-50" disabled="">
-<span class="font-body-md text-body-md">5</span>
-</button>
-<!-- Available Days (Selectable) -->
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">6</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">1</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">2</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">3</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">4</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">5</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">6</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">7</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">8</button>
-<!-- Weekend (Disabled) -->
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">9</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">10</button>
-<!-- Selected Day -->
-<button class="aspect-square flex items-center justify-center bg-primary text-on-primary border-2 border-primary rounded font-body-md text-body-md font-bold shadow-md ring-2 ring-offset-2 ring-primary">11</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">12</button>
-<!-- Fully Booked Day (Indicated by strike or different style) -->
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded bg-surface-container-highest cursor-not-allowed relative overflow-hidden" disabled="">
-<span class="font-body-md text-body-md text-on-surface-variant">13</span>
-<div class="absolute inset-0 border-t border-surface-border w-[141%] -rotate-45 origin-top-left"></div>
-</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">9</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">10</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">11</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">12</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">13</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">14</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">15</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">16</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">17</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">18</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">19</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">20</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">16</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">17</button>
+<!-- Selected New Day: 18 Sep 2026 -->
+<button class="aspect-square flex items-center justify-center bg-primary text-on-primary border-2 border-primary rounded font-body-md text-body-md font-bold shadow-md ring-2 ring-offset-2 ring-primary">18</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">19</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">20</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">21</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">22</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">23</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">24</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">23</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">24</button>
 <button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">25</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">26</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">27</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">28</button>
-<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">29</button>
-<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">30</button>
 </div>
 <!-- Legend -->
 <div class="mt-6 flex flex-wrap gap-4 justify-center">
@@ -209,47 +192,19 @@
 </div>
 <div class="flex items-center gap-2">
 <div class="w-4 h-4 bg-primary rounded"></div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Selected</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Selected (Fri, Sep 18)</span>
 </div>
-<div class="flex items-center gap-2">
-<div class="w-4 h-4 border border-surface-border bg-surface-container-highest relative overflow-hidden rounded">
-<div class="absolute inset-0 border-t border-surface-border w-[141%] -rotate-45 origin-top-left"></div>
-</div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Full</span>
-</div>
-</div>
-</section>
-<!-- Time Slots (Contextual, appearing after date selection) -->
-<section class="mt-2 animate-fade-in">
-<h3 class="font-label-md text-label-md mb-3 flex items-center gap-2">
-<span class="material-symbols-outlined text-[18px]">schedule</span>
-                Available Times for Nov 11
-            </h3>
-<div class="grid grid-cols-2 gap-3">
-<button class="py-3 px-4 border border-surface-border rounded-lg bg-surface-container-lowest text-center font-body-md text-body-md active:bg-surface-variant transition-colors hover:bg-surface-container-low">
-                    09:00 AM
-                </button>
-<button class="py-3 px-4 border border-surface-border rounded-lg bg-surface-container-lowest text-center font-body-md text-body-md active:bg-surface-variant transition-colors hover:bg-surface-container-low">
-                    09:30 AM
-                </button>
-<button class="py-3 px-4 border border-surface-border rounded-lg bg-surface-container-lowest text-center font-body-md text-body-md active:bg-surface-variant transition-colors hover:bg-surface-container-low">
-                    10:00 AM
-                </button>
-<button class="py-3 px-4 border-2 border-primary bg-primary-fixed text-primary font-bold rounded-lg text-center font-body-md text-body-md shadow-sm">
-                    11:30 AM
-                </button>
-<button class="py-3 px-4 border border-surface-border rounded-lg bg-surface-container-lowest text-center font-body-md text-body-md active:bg-surface-variant transition-colors hover:bg-surface-container-low">
-                    02:00 PM
-                </button>
 </div>
 </section>
 </main>
-<!-- Fixed Bottom Action (Clinical Minimalism - Large Touch Target) -->
-<div class="fixed bottom-0 left-0 w-full p-margin-mobile bg-surface-container-lowest border-t-2 border-surface-border z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-<button class="w-full bg-primary text-on-primary py-4 px-6 rounded-lg font-headline-md text-headline-md min-h-[56px] active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-sm">
-            Confirm Reschedule
-            <span class="material-symbols-outlined">event_available</span>
-</button>
+<!-- Fixed Bottom Action -->
+<div class="fixed bottom-0 left-0 w-full p-margin-mobile bg-surface-container-lowest border-t-2 border-surface-border z-50">
+<div class="max-w-max-width-form mx-auto">
+<a class="w-full bg-primary text-on-primary py-4 px-6 rounded-lg font-label-md text-label-md min-h-[56px] active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-sm" href="../p15_reschedule_time_mobile_web_hi_fi/code.html">
+            Continue to Select Time
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
 </div>
 <!-- Spacer to prevent content from hiding behind fixed bottom bar -->
 <div class="h-28"></div>

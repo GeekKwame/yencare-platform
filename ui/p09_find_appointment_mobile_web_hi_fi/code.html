@@ -119,11 +119,14 @@
 <body class="bg-surface dark:bg-background text-on-surface dark:text-on-background font-body-md min-h-screen flex flex-col pt-16 pb-24 md:pb-0">
 <!-- TopAppBar -->
 <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface dark:bg-background border-b border-surface-border transition-colors duration-200">
-<div class="flex items-center gap-2 text-primary dark:text-on-background active:scale-95 duration-100 cursor-pointer hover:bg-surface-container-low p-2 rounded-DEFAULT transition-colors">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="flex items-center gap-2 text-primary dark:text-on-background active:scale-95 duration-100 cursor-pointer hover:bg-surface-container-low p-2 rounded-DEFAULT transition-colors">
 <span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
 <span class="font-headline-md text-headline-md font-bold tracking-tight">YɛnCare</span>
-</div>
-<div class="md:hidden"></div>
+</a>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">home</span>
+Home
+</a>
 </header>
 <!-- Main Content Canvas -->
 <main class="flex-grow flex flex-col items-center px-gutter-mobile pt-8">
@@ -134,7 +137,7 @@
 <p class="font-body-md text-body-md text-secondary">Enter your details below to check your queue status or update your booking.</p>
 </div>
 <!-- Form Container -->
-<form class="flex flex-col gap-6" onsubmit="event.preventDefault(); this.querySelector('button[type=submit]').classList.add('opacity-80', 'cursor-not-allowed'); this.querySelector('.btn-text').textContent = 'Searching...';">
+<form action="../p11_appointment_details_mobile_web_hi_fi/code.html" class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='../p11_appointment_details_mobile_web_hi_fi/code.html';">
 <!-- Phone Number Input -->
 <div class="flex flex-col gap-1.5">
 <label class="font-label-md text-label-md text-on-surface" for="phone">Phone Number</label>
@@ -142,7 +145,7 @@
 <div class="flex items-center justify-center bg-surface-low border-r border-surface-border px-3 h-full font-body-md text-body-md text-secondary">
                             +233
                         </div>
-<input class="w-full h-full bg-transparent border-none focus:ring-0 px-3 font-body-md text-body-md text-primary placeholder:text-placeholder" id="phone" name="phone" pattern="[0-9]{9,10}" placeholder="Phone Number" required="" type="tel"/>
+<input class="w-full h-full bg-transparent border-none focus:ring-0 px-3 font-body-md text-body-md text-primary placeholder:text-placeholder" id="phone" name="phone" pattern="[0-9]{9,10}" placeholder="Phone Number" required="" type="tel" value="241234567"/>
 </div>
 </div>
 <!-- Appointment Reference Input -->
@@ -150,7 +153,7 @@
 <label class="font-label-md text-label-md text-on-surface" for="reference">Appointment Reference</label>
 <div class="relative flex items-center border border-surface-border bg-surface-high rounded-DEFAULT focus-within:border-2 h-12">
 <span class="material-symbols-outlined absolute left-3 text-secondary">tag</span>
-<input class="w-full h-full bg-transparent border-none focus:ring-0 pl-10 pr-3 font-reference-code text-reference-code text-primary placeholder:text-placeholder placeholder:font-body-md placeholder:text-body-md uppercase" id="reference" name="reference" placeholder="E.G. YC-8492" required="" type="text"/>
+<input class="w-full h-full bg-transparent border-none focus:ring-0 pl-10 pr-3 font-reference-code text-reference-code text-primary placeholder:text-placeholder uppercase" id="reference" name="reference" placeholder="E.G. YC-4821" required="" type="text" value="YC-4821"/>
 </div>
 <p class="font-label-sm text-label-sm text-secondary mt-1 flex items-center gap-1">
 <span class="material-symbols-outlined text-[16px]">info</span>
@@ -163,51 +166,17 @@
 <span class="material-symbols-outlined">arrow_forward</span>
 </button>
 </form>
-<!-- Support Link -->
-<div class="mt-8 flex justify-center">
-<a class="font-label-md text-label-md text-secondary flex items-center gap-2 hover:text-primary transition-colors border border-transparent hover:border-surface-border px-4 py-2 rounded-DEFAULT bg-surface-high" href="#">
-<span class="material-symbols-outlined">support_agent</span>
-                    Need help? Contact Support
-                </a>
-</div>
 </div>
 </main>
 <!-- BottomNavBar (Mobile Only) -->
 <nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-high dark:bg-surface-container-lowest border-t border-surface-border">
-<a class="flex flex-col items-center justify-center text-secondary dark:text-on-surface-variant px-6 py-1 hover:bg-surface-container-high active:opacity-80 transition-opacity rounded-lg" href="#">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-on-surface-variant px-6 py-1 hover:bg-surface-container-high active:opacity-80 transition-opacity rounded-lg" href="../p02_your_details_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
 <span class="font-label-md text-label-md mt-1">Book</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-lg px-6 py-1 hover:bg-surface-container-high active:opacity-80 transition-opacity" href="#">
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-lg px-6 py-1 hover:bg-surface-container-high active:opacity-80 transition-opacity" href="../p09_find_appointment_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined" data-icon="search" data-weight="fill">search</span>
 <span class="font-label-md text-label-md mt-1">Find</span>
 </a>
 </nav>
-<!-- NavigationDrawer (Desktop Only - Hidden on Mobile) -->
-<aside class="hidden md:flex flex-col h-screen w-[240px] fixed left-0 top-0 bg-surface-low dark:bg-surface-container border-r border-surface-border py-gutter-desktop z-40">
-<div class="px-6 mb-8 mt-16">
-<div class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
-<span class="material-symbols-outlined">medical_services</span>
-                YɛnCare
-            </div>
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-full bg-secondary-container border border-surface-border flex items-center justify-center overflow-hidden">
-<span class="material-symbols-outlined text-secondary">person</span>
-</div>
-<div>
-<div class="font-label-md text-label-md text-primary">Patient Portal</div>
-</div>
-</div>
-</div>
-<nav class="flex-grow flex flex-col gap-2">
-<a class="text-on-surface-variant dark:text-secondary px-4 py-3 mx-2 hover:bg-surface-container-high transition-colors rounded-DEFAULT flex items-center gap-3 font-body-md text-body-md" href="#">
-<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
-                 Book
-             </a>
-<a class="bg-primary text-on-primary font-bold px-4 py-3 mx-2 rounded-DEFAULT flex items-center gap-3 font-body-md text-body-md cursor-pointer transition-all hover:bg-surface-container-highest" href="#">
-<span class="material-symbols-outlined" data-icon="search" data-weight="fill">search</span>
-                 Find
-             </a>
-</nav>
-</aside>
 </body></html>

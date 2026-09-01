@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YɛnCare — Interactive Connected Wireframes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-black text-white flex items-center justify-center font-bold text-xl">
+                    Y
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">YɛnCare Wireframe Prototype Suite</h1>
+                    <p class="text-xs text-slate-500 font-medium">Fully connected, interactive HTML wireframes</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="p01_home_desktop_web_hi_fi/code.html" class="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition">
+                    Start Desktop Experience &rarr;
+                </a>
+                <a href="p01_home_mobile_web_hi_fi/code.html" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition">
+                    Start Mobile Experience &rarr;
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hub -->
+    <main class="max-w-7xl mx-auto px-6 py-10 space-y-12">
+
+        <!-- Intro Banner -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 mb-3">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> All Wireframes Connected
+                </span>
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Interactive Clinical & Patient Journeys</h2>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                    Every HTML wireframe in the <code class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 text-xs font-mono">ui/</code> directory has been connected with functional navigation links, buttons, form submissions, and status transitions.
+                </p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-100 text-xs">
+                    <div><span class="text-slate-400 block">Patient Name:</span> <strong class="text-slate-800">Ama Mensah</strong></div>
+                    <div><span class="text-slate-400 block">Phone Number:</span> <strong class="text-slate-800">+233 24 123 4567</strong></div>
+                    <div><span class="text-slate-400 block">Doctor:</span> <strong class="text-slate-800">Dr. Kwame Boateng</strong></div>
+                    <div><span class="text-slate-400 block">Reference Code:</span> <strong class="text-slate-800">YC-4821</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Journey 1: Desktop Web Booking -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-700">desktop_windows</span>
+                        1. Desktop Web Booking Journey
+                    </h3>
+                    <p class="text-xs text-slate-500">Full 6-step desktop booking and appointment confirmation experience</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                <a href="p01_home_desktop_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 1</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P01 Home</h4>
+                    <p class="text-xs text-slate-500 mt-1">Hero CTA & navigation</p>
+                </a>
+                <a href="p02_your_details_desktop_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 2</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P02 Patient Info</h4>
+                    <p class="text-xs text-slate-500 mt-1">Name & phone validation</p>
+                </a>
+                <a href="p03_choose_doctor_desktop_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 3</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P03 Doctor Select</h4>
+                    <p class="text-xs text-slate-500 mt-1">Dr. Kwame Boateng</p>
+                </a>
+                <a href="p04_05_date_time_desktop_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 4 & 5</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P04/05 Date & Time</h4>
+                    <p class="text-xs text-slate-500 mt-1">Tue 15 Sep · 10:00 AM</p>
+                </a>
+                <a href="p06_review_booking_desktop_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 6</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P06 Review</h4>
+                    <p class="text-xs text-slate-500 mt-1">Summary verification</p>
+                </a>
+                <a href="p07_booking_confirmed_desktop_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group bg-emerald-50/50">
+                    <span class="text-xs font-bold text-emerald-600 block mb-1">Success</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P07 Confirmed</h4>
+                    <p class="text-xs text-slate-500 mt-1">YC-4821 reference code</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Journey 2: Mobile Web Booking -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-700">smartphone</span>
+                        2. Mobile Web Booking Journey
+                    </h3>
+                    <p class="text-xs text-slate-500">Step-by-step mobile web patient booking experience</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+                <a href="p01_home_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 1</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P01 Home</h4>
+                    <p class="text-xs text-slate-500 mt-1">Mobile landing</p>
+                </a>
+                <a href="p02_your_details_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 2</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P02 Details</h4>
+                    <p class="text-xs text-slate-500 mt-1">Name & phone</p>
+                </a>
+                <a href="p03_choose_doctor_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 3</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P03 Doctor</h4>
+                    <p class="text-xs text-slate-500 mt-1">Doctor picker</p>
+                </a>
+                <a href="p04_choose_date_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 4</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P04 Date</h4>
+                    <p class="text-xs text-slate-500 mt-1">Date calendar</p>
+                </a>
+                <a href="p05_choose_time_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 5</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P05 Time</h4>
+                    <p class="text-xs text-slate-500 mt-1">Slot selection</p>
+                </a>
+                <a href="p06_review_booking_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">Step 6</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P06 Review</h4>
+                    <p class="text-xs text-slate-500 mt-1">Confirm summary</p>
+                </a>
+                <a href="p07_booking_confirmed_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group bg-emerald-50/50">
+                    <span class="text-xs font-bold text-emerald-600 block mb-1">Success</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P07 Confirmed</h4>
+                    <p class="text-xs text-slate-500 mt-1">Code YC-4821</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Journey 3: Manage, Reschedule & Cancel -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-700">manage_history</span>
+                        3. Find Appointment, Reschedule & Cancellation Flow
+                    </h3>
+                    <p class="text-xs text-slate-500">Lookup by reference code, view details, reschedule date/time, or cancel</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="p09_find_appointment_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-indigo-600 block mb-1">Lookup</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P09 Find Appointment</h4>
+                    <p class="text-xs text-slate-500 mt-1">Preset with 0241234567 & YC-4821</p>
+                </a>
+                <a href="p11_appointment_details_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-indigo-600 block mb-1">Hub</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P11 Appointment Details</h4>
+                    <p class="text-xs text-slate-500 mt-1">Actions: Queue, Reschedule, Cancel</p>
+                </a>
+                <a href="p14_reschedule_date_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-amber-600 block mb-1">Reschedule</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P14 &rarr; P15 &rarr; P16 &rarr; P17</h4>
+                    <p class="text-xs text-slate-500 mt-1">Complete 4-step reschedule flow</p>
+                </a>
+                <a href="p12_cancel_confirm_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-rose-600 block mb-1">Cancel</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P12 &rarr; P13 Cancellation</h4>
+                    <p class="text-xs text-slate-500 mt-1">Confirmation & cancelled state</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Journey 4: Virtual Queue Lifecycle -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-700">hourglass_empty</span>
+                        4. Virtual Live Queue Lifecycle (4 States)
+                    </h3>
+                    <p class="text-xs text-slate-500">Step through the real-time patient queue progression</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="p18_queue_status_booked_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-500 block mb-1">State 1</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P18 Booked</h4>
+                    <p class="text-xs text-slate-500 mt-1">Before arrival at clinic</p>
+                </a>
+                <a href="p18_queue_status_mobile_web/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-blue-600 block mb-1">State 2</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P18 Waiting (#4)</h4>
+                    <p class="text-xs text-slate-500 mt-1">Checked-in & waiting in queue</p>
+                </a>
+                <a href="p18_queue_status_called_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-amber-600 block mb-1">State 3</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P18 Called</h4>
+                    <p class="text-xs text-slate-500 mt-1">It's your turn · Room 3</p>
+                </a>
+                <a href="p18_queue_status_completed_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group bg-emerald-50/50">
+                    <span class="text-xs font-bold text-emerald-600 block mb-1">State 4</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">P18 Completed</h4>
+                    <p class="text-xs text-slate-500 mt-1">Visit finished successfully</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Journey 5: Staff Portal Experience -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-700">admin_panel_settings</span>
+                        5. Staff Clinical Desktop Portal
+                    </h3>
+                    <p class="text-xs text-slate-500">Receptionist and doctor operational dashboard and queue manager</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                <a href="s01_sign_in_desktop_staff/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">S01</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Staff Sign In</h4>
+                    <p class="text-xs text-slate-500 mt-1">Authentication</p>
+                </a>
+                <a href="s02_today_desktop_staff_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">S02</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Today Dashboard</h4>
+                    <p class="text-xs text-slate-500 mt-1">Metrics & arrivals</p>
+                </a>
+                <a href="s03_appointments_desktop_staff_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">S03</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Appointments</h4>
+                    <p class="text-xs text-slate-500 mt-1">Patient roster</p>
+                </a>
+                <a href="s04_appointment_detail_desktop_staff_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">S04</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Patient Detail</h4>
+                    <p class="text-xs text-slate-500 mt-1">Check-in process</p>
+                </a>
+                <a href="s05_live_queue_desktop_staff_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">S05</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Live Queue</h4>
+                    <p class="text-xs text-slate-500 mt-1">Call & complete</p>
+                </a>
+                <a href="s05_live_queue_empty_desktop_staff_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-slate-400 block mb-1">S05 Empty</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Empty Queue</h4>
+                    <p class="text-xs text-slate-500 mt-1">Cleared state</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Journey 6: Edge Cases -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-700">warning</span>
+                        6. Error & Recovery Screens
+                    </h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <a href="p08_slot_taken_mobile_web_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-rose-600 block mb-1">P08</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Slot Taken Error</h4>
+                    <p class="text-xs text-slate-500 mt-1">Recovers back to time picker</p>
+                </a>
+                <a href="g01_network_error_mobile/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-rose-600 block mb-1">G01</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Network Connection Lost</h4>
+                    <p class="text-xs text-slate-500 mt-1">Retry & home return</p>
+                </a>
+                <a href="s07_session_expired_desktop_staff_hi_fi/code.html" class="p-4 bg-white border border-slate-200 rounded-xl hover:border-black hover:shadow-md transition group">
+                    <span class="text-xs font-bold text-rose-600 block mb-1">S07</span>
+                    <h4 class="text-sm font-bold text-slate-900 group-hover:text-black">Session Expired</h4>
+                    <p class="text-xs text-slate-500 mt-1">Re-authentication link to S01</p>
+                </a>
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>

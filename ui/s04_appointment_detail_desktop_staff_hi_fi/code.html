@@ -112,70 +112,62 @@
 <!-- SideNavBar (Staff Desktop) -->
 <nav class="hidden md:flex flex-col h-screen py-base gap-2 bg-surface-container-low dark:bg-surface-container fixed left-0 top-0 w-60 border-r border-outline-variant dark:border-outline z-50">
 <div class="px-margin-mobile md:px-6 pt-4 pb-8">
-<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">Staff Portal</h1>
-<p class="text-label-md font-label-md text-on-surface-variant mt-1">YɛnCare Health</p>
+<!-- Side Navigation (Staff Desktop) -->
+<nav class="hidden md:flex flex-col h-screen p-4 gap-4 docked h-full left-0 w-[240px] bg-surface-container dark:bg-surface-container-low border-r-2 border-primary dark:border-surface-variant flex-shrink-0">
+<div class="mb-4 px-2 flex flex-col gap-2">
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">YɛnCare</h1>
+<p class="text-label-md font-label-md text-on-surface-variant">Staff Portal</p>
 </div>
-<div class="flex-1 px-4 flex flex-col gap-2">
-<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="#">
+<div class="flex-1 px-2 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="../s02_today_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined" data-weight="fill">today</span>
 <span class="text-label-md font-label-md">Today</span>
 </a>
-<a class="flex items-center gap-3 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg px-4 py-3 scale-95 transition-transform duration-150" href="#">
+<a class="flex items-center gap-3 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg px-4 py-3 scale-95 transition-transform duration-150" href="../s03_appointments_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
-<span class="text-label-md font-label-md">Appointments</span>
+<span class="text-label-md font-label-md font-bold">Appointments</span>
 </a>
-<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="#">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="../s05_live_queue_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined">format_list_numbered</span>
 <span class="text-label-md font-label-md">Queue</span>
 </a>
 </div>
-<div class="px-4 pb-4 flex flex-col gap-2 mt-auto">
-<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="#">
-<span class="material-symbols-outlined">settings</span>
-<span class="text-label-md font-label-md">Settings</span>
-</a>
-<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="#">
+<div class="px-2 pb-4 flex flex-col gap-2 mt-auto">
+<a class="flex items-center gap-3 text-on-surface-variant dark:text-secondary-fixed-dim px-4 py-3 hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim/10 transition-colors rounded-lg" href="../s01_sign_in_desktop_staff/code.html">
 <span class="material-symbols-outlined">logout</span>
 <span class="text-label-md font-label-md">Sign Out</span>
 </a>
-<div class="mt-4 px-4 flex items-center gap-3 border-t border-outline-variant pt-4">
-<img alt="Staff User Avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of an African woman wearing clinical staff attire in a modern, brightly lit clinic setting. The lighting is soft and natural, emphasizing a calm and reliable demeanor. Minimalist background in grayscale tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWXd2KbA3H8A8p7DULTPeTPYjzWPrGbJMj6KCejD8vmYrTlLP4MVTdjTjkqndxiP_0g4N4r0WH9zB0RLL2ULuezfExlWvYCtV_gxiEeVq8eoUkSJx5sO_4aIn6TjpgOZbOaWfELbVljGGfSnP5ndt8BZvCA5uadN-C7EtTxxAluHD8_SZicVtv39fJdWhkPSV3hku7eiYWOSLmi1kJ9FKHuSOfeKOvqWJA07qz1EyViAWj9MqS5PpJ"/>
-<div class="flex flex-col">
-<span class="text-label-md font-label-md text-on-surface">Staff Member</span>
-<span class="text-label-sm font-label-sm text-on-surface-variant">Reception</span>
-</div>
-</div>
 </div>
 </nav>
 <!-- Main Content Area -->
-<main class="flex-1 md:ml-60 p-margin-mobile md:p-margin-desktop w-full max-w-7xl mx-auto">
+<main class="flex-1 p-margin-mobile md:p-margin-desktop w-full max-w-7xl mx-auto overflow-y-auto">
 <!-- Header -->
 <header class="flex items-center gap-4 mb-8">
-<a aria-label="Go back" class="flex items-center justify-center w-10 h-10 border border-surface-border rounded-full hover:bg-surface-variant transition-colors" href="#">
+<a aria-label="Go back" class="flex items-center justify-center w-10 h-10 border border-surface-border rounded-full hover:bg-surface-variant transition-colors" href="../s03_appointments_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined">arrow_back</span>
 </a>
 <div>
-<h2 class="text-headline-lg font-headline-lg text-primary">Appointment Details</h2>
-<p class="text-body-md font-body-md text-on-surface-variant">Review information and process check-in.</p>
+<h2 class="text-headline-lg font-headline-lg text-primary font-bold">Appointment Details</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">Review patient details and process check-in.</p>
 </div>
 </header>
-<!-- Content Grid (Bento style for Desktop, stacked for mobile) -->
+<!-- Content Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop">
-<!-- Main Details Card (Left/Top) -->
+<!-- Main Details Card -->
 <div class="lg:col-span-8 bg-surface-high border border-surface-border p-6 rounded-xl flex flex-col gap-6">
 <!-- Status & Reference -->
 <div class="flex justify-between items-start border-b border-outline-variant pb-6">
 <div>
 <div class="inline-flex items-center gap-2 px-3 py-1 border border-surface-border rounded bg-surface-low mb-4">
 <span class="material-symbols-outlined text-[16px]">book_online</span>
-<span class="text-label-md font-label-md uppercase tracking-wider">Booked</span>
+<span class="text-label-md font-label-md uppercase tracking-wider font-bold">Booked</span>
 </div>
-<h3 class="text-headline-md font-headline-md text-primary">Ama Mensah</h3>
-<p class="text-body-md font-body-md text-on-surface-variant mt-1">+233 55 123 4567 • General Consultation</p>
+<h3 class="text-headline-md font-headline-md text-primary font-bold">Ama Mensah</h3>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">+233 24 123 4567 • General Consultation</p>
 </div>
 <div class="text-right">
 <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-1">Reference Code</p>
-<p class="text-reference-code font-reference-code text-primary bg-surface-low px-4 py-2 border border-surface-border rounded">#AM-942</p>
+<p class="text-reference-code font-reference-code text-primary bg-surface-low px-4 py-2 border border-surface-border rounded font-bold text-2xl tracking-widest">YC-4821</p>
 </div>
 </div>
 <!-- Appointment Info Grid -->
@@ -185,52 +177,51 @@
 <div class="flex items-center gap-3">
 <span class="material-symbols-outlined text-primary p-2 border border-surface-border rounded bg-surface-low">calendar_month</span>
 <div>
-<p class="text-body-lg font-body-lg font-medium">Tue, Oct 24, 2023</p>
-<p class="text-body-md font-body-md text-on-surface-variant">09:30 AM (Est. duration: 30m)</p>
+<p class="text-body-lg font-body-lg font-bold">Tue, 15 Sep 2026</p>
+<p class="text-body-md font-body-md text-on-surface-variant">10:00 AM (Est. duration: 30m)</p>
 </div>
 </div>
 </div>
 <div>
 <p class="text-label-sm font-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Assigned Doctor</p>
 <div class="flex items-center gap-3">
-<img class="w-12 h-12 rounded border border-surface-border object-cover" data-alt="A clinical portrait of a male doctor in a white coat, set against a stark, high-contrast minimalist white background. The image is rendered in grayscale to match the clinical brutalism style. Professional, serious but approachable expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJRSJrvQtvlwIK52uKGsDAC8aREbPU87Wq4pQPn-Kl8vbkSBElpPj-xNu8ExeeX70Cc3awvQYvKgcf2GhrtmPjMdUKjckJUa7C7lFfOJTjQVGNs6cYXIVnRpqW_jsU9TJZHScyBB76V9f0X270XcVME29K92EcDEUptGhjnBc2B_EfWJb9NC8wrhRwkWglA3-WlhHYPWGgcwvj8Gslw8BEouR9qtRzVK982PJjtEbW2fHgTBC0DBqZ"/>
 <div>
-<p class="text-body-lg font-body-lg font-medium">Dr. Kwame Osei</p>
-<p class="text-body-md font-body-md text-on-surface-variant">General Practice • Room 4</p>
+<p class="text-body-lg font-body-lg font-bold">Dr. Kwame Boateng</p>
+<p class="text-body-md font-body-md text-on-surface-variant">General Clinic • Room 3</p>
 </div>
 </div>
 </div>
 </div>
 <!-- Notes Section -->
 <div class="mt-4 pt-6 border-t border-outline-variant">
-<p class="text-label-sm font-label-sm text-on-surface-variant mb-2 uppercase tracking-wider">Patient Notes / Symptoms</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-2 uppercase tracking-wider">Patient Notes</p>
 <p class="text-body-md font-body-md p-4 bg-surface-low border border-surface-border rounded">
-                        Experiencing mild fever and continuous headache for the past 3 days. No known allergies. Took paracetamol yesterday with temporary relief.
+                        Standard consultation for general check-up.
                     </p>
 </div>
 </div>
-<!-- Action Card (Right/Bottom) -->
+<!-- Action Card -->
 <div class="lg:col-span-4 flex flex-col gap-gutter-desktop">
 <div class="bg-surface-high border-2 border-primary p-6 rounded-xl flex flex-col items-center text-center justify-center min-h-[240px]">
-<span class="material-symbols-outlined text-[48px] mb-4">qr_code_scanner</span>
-<h3 class="text-headline-md font-headline-md mb-2">Patient Arrived?</h3>
-<p class="text-body-md font-body-md text-on-surface-variant mb-6">Confirm details and assign a queue number.</p>
-<button class="w-full bg-primary text-on-primary py-4 px-6 rounded text-label-md font-label-md uppercase tracking-wider hover:bg-opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[48px] mb-4 text-primary">qr_code_scanner</span>
+<h3 class="text-headline-md font-headline-md mb-2 font-bold">Patient Arrived?</h3>
+<p class="text-body-md font-body-md text-on-surface-variant mb-6">Confirm arrival and place patient into the live queue.</p>
+<a href="../s05_live_queue_desktop_staff_hi_fi/code.html" class="w-full bg-primary text-on-primary py-4 px-6 rounded text-label-md font-label-md uppercase tracking-wider hover:bg-inverse-surface transition-opacity flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[20px]">how_to_reg</span>
                         Check-in Patient
-                    </button>
+</a>
 </div>
 <div class="bg-surface-high border border-surface-border p-6 rounded-xl">
 <h4 class="text-label-md font-label-md uppercase tracking-wider mb-4 border-b border-outline-variant pb-2">Secondary Actions</h4>
 <div class="flex flex-col gap-3">
-<button class="w-full bg-surface-high text-primary border border-surface-border py-3 px-4 rounded text-label-md font-label-md hover:bg-surface-low transition-colors flex items-center justify-center gap-2">
+<a href="../p14_reschedule_date_mobile_web_hi_fi/code.html" class="w-full bg-surface-high text-primary border border-surface-border py-3 px-4 rounded text-label-md font-label-md hover:bg-surface-low transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[20px]">edit_calendar</span>
                             Reschedule
-                        </button>
-<button class="w-full bg-surface-high text-error border-2 border-surface-border py-3 px-4 rounded text-label-md font-label-md hover:bg-error-container transition-colors flex items-center justify-center gap-2 mt-2">
+</a>
+<a href="../p12_cancel_confirm_mobile_web_hi_fi/code.html" class="w-full bg-surface-high text-error border-2 border-surface-border py-3 px-4 rounded text-label-md font-label-md hover:bg-error-container transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[20px]">close</span>
                             Cancel Appointment
-                        </button>
+</a>
 </div>
 </div>
 </div>

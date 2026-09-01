@@ -208,21 +208,25 @@
 <body class="bg-surface-high text-on-background min-h-screen flex flex-col antialiased">
 <!-- TopAppBar -->
 <header class="bg-surface dark:bg-background border-b border-surface-border fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16">
-<div class="flex items-center gap-2 text-primary dark:text-on-background active:scale-95 duration-100 hover:bg-surface-container-low transition-colors cursor-pointer p-1 -ml-1">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="flex items-center gap-2 text-primary dark:text-on-background active:scale-95 duration-100 hover:bg-surface-container-low transition-colors cursor-pointer p-1 -ml-1">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_services</span>
 <span class="font-headline-md text-headline-md">YɛnCare</span>
-</div>
+</a>
 <!-- Simple web links as requested -->
-<nav class="hidden md:flex gap-4">
-<a class="font-label-md text-label-md text-primary dark:text-on-background underline underline-offset-4" href="#">Book</a>
-<a class="font-label-md text-label-md text-secondary dark:text-on-surface-variant hover:text-primary transition-colors" href="#">Find</a>
+<nav class="flex gap-4">
+<a class="font-label-md text-label-md text-primary dark:text-on-background underline underline-offset-4" href="../p02_your_details_mobile_web_hi_fi/code.html">Book</a>
+<a class="font-label-md text-label-md text-secondary dark:text-on-surface-variant hover:text-primary transition-colors" href="../p09_find_appointment_mobile_web_hi_fi/code.html">Find</a>
 </nav>
 </header>
 <!-- Main Content Canvas -->
 <!-- Suppressing Bottom Navigation due to linear booking flow -->
 <main class="flex-1 pt-24 pb-16 px-margin-mobile md:px-gutter-desktop max-w-max-width-form mx-auto w-full flex flex-col justify-start">
 <div class="mb-8">
-<div class="inline-flex items-center gap-2 mb-2 bg-surface-low border border-surface-border px-3 py-1 text-on-surface">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="inline-flex items-center gap-1 text-secondary hover:text-primary font-label-sm text-label-sm mb-3">
+<span class="material-symbols-outlined text-base">arrow_back</span>
+Back to home
+</a>
+<div class="flex items-center gap-2 mb-2 bg-surface-low border border-surface-border px-3 py-1 text-on-surface">
 <span class="material-symbols-outlined text-sm">linear_scale</span>
 <span class="font-label-sm text-label-sm uppercase tracking-wider">Step 1 of booking</span>
 </div>
@@ -232,11 +236,11 @@
                 Used to send a confirmation text.
             </p>
 </div>
-<form action="#" class="space-y-6 flex-1 flex flex-col">
+<form action="../p03_choose_doctor_mobile_web_hi_fi/code.html" class="space-y-6 flex-1 flex flex-col">
 <!-- Full Name Field -->
 <div class="space-y-2">
 <label class="block font-label-md text-label-md text-on-background" for="fullName">Full Name</label>
-<input class="w-full px-4 py-3 font-body-md text-body-md text-on-background placeholder:text-placeholder transition-all" id="fullName" name="fullName" placeholder="e.g. Ama Mensah" required="" type="text"/>
+<input class="w-full px-4 py-3 font-body-md text-body-md text-on-background placeholder:text-placeholder transition-all" id="fullName" name="fullName" placeholder="e.g. Ama Mensah" required="" type="text" value="Ama Mensah"/>
 </div>
 <!-- Phone Number Field -->
 <div class="space-y-2">
@@ -245,60 +249,28 @@
 <div class="bg-surface-low px-4 py-3 border-r border-surface-border flex items-center font-body-md text-body-md text-on-surface-variant">
                         +233
                     </div>
-<input class="w-full px-4 py-3 font-body-md text-body-md text-on-background placeholder:text-placeholder border-none focus:ring-0 focus:border-none focus:outline-none bg-transparent" id="phoneNumber" name="phoneNumber" pattern="[0-9]{9}" placeholder="Phone Number" required="" type="tel"/>
+<input class="w-full px-4 py-3 font-body-md text-body-md text-on-background placeholder:text-placeholder border-none focus:ring-0 focus:border-none focus:outline-none bg-transparent" id="phoneNumber" name="phoneNumber" pattern="[0-9]{9}" placeholder="Phone Number" required="" type="tel" value="241234567"/>
 </div>
 </div>
 <!-- Spacing to push button to bottom on mobile -->
 <div class="flex-1 min-h-[48px]"></div>
 <!-- CTA -->
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-6 brutalist-btn hover:bg-inverse-surface active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-auto" type="submit">
+<div class="flex flex-col gap-3 mt-auto">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-6 brutalist-btn hover:bg-inverse-surface active:scale-[0.99] transition-all flex items-center justify-center gap-2" type="submit">
                 Continue
                 <span class="material-symbols-outlined">arrow_forward</span>
 </button>
+</div>
 </form>
 </main>
-<!-- BottomNavBar (Hidden on md and above. Technically suppressed for transactional flow, but included as per shared component json instructions in prompt, though instruction also says hide transactional. Will hide by default as this is a booking flow) -->
-<nav class="hidden">
-<!-- Kept in DOM but hidden to respect both the "don't show nav in linear flow" rule and the prompt's reference to the JSON. -->
-</nav>
 <script>
-        // Simple client-side validation to enhance the brutalist feel without heavy libraries
         document.querySelector('form').addEventListener('submit', function(e) {
-            const phoneInput = document.getElementById('phoneNumber');
-            // Basic check for 9 digits (excluding +233)
-            if(phoneInput.value.replace(/\D/g,'').length !== 9) {
-                e.preventDefault();
-                phoneInput.parentElement.classList.add('border-error');
-                phoneInput.parentElement.classList.replace('focus-within:border-surface-border', 'focus-within:border-error');
-                
-                // Add error text if it doesn't exist
-                if(!document.getElementById('phone-error')) {
-                    const errorText = document.createElement('p');
-                    errorText.id = 'phone-error';
-                    errorText.className = 'font-label-sm text-label-sm text-error mt-1 flex items-center gap-1';
-                    errorText.innerHTML = '<span class="material-symbols-outlined text-[16px]">error</span> Please enter a valid 9-digit number.';
-                    phoneInput.closest('.space-y-2').appendChild(errorText);
-                }
-            } else {
-                phoneInput.parentElement.classList.remove('border-error');
-                const errorText = document.getElementById('phone-error');
-                if(errorText) errorText.remove();
-                
-                // Simulate loading state
-                const btn = this.querySelector('button[type="submit"]');
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Processing...';
-                btn.disabled = true;
-                btn.classList.add('opacity-80', 'cursor-not-allowed');
-                
-                // Simulate success after delay (for prototype purposes)
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-80', 'cursor-not-allowed');
-                    // Normally would proceed to next step here
-                }, 1000);
-            }
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Loading...';
+            setTimeout(() => {
+                window.location.href = '../p03_choose_doctor_mobile_web_hi_fi/code.html';
+            }, 300);
         });
     </script>
 </body></html>

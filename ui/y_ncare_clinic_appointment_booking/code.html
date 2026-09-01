@@ -251,14 +251,13 @@
 <!-- TopAppBar from JSON, transaction/linear intent, so navigation is suppressed but structure remains -->
 <header class="bg-white dark:bg-background text-primary dark:text-on-background font-label-md text-label-md w-full sticky top-0 z-50 border-b border-surface-border">
 <div class="flex justify-between items-center px-margin-desktop py-4 max-w-full mx-auto">
-<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background hover:opacity-80">YɛnCare</a>
+<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background">YɛnCare</div>
 <div class="flex items-center gap-4 hidden md:flex">
-<a class="text-primary font-bold border-b-2 border-primary px-2 py-1" href="../p02_your_details_desktop_web_hi_fi/code.html">Book appointment</a>
-<a class="text-secondary hover:text-primary px-2 py-1" href="../p09_find_appointment_mobile_web_hi_fi/code.html">Find appointment</a>
+<!-- Navigation suppressed as this is a linear flow -->
 </div>
 <div class="flex items-center gap-4">
-<a href="../s01_sign_in_desktop_staff/code.html" class="text-secondary hover:text-primary transition-colors font-label-md text-label-md">Staff Sign in</a>
-<a href="../p18_queue_status_desktop_web_hi_fi/code.html" class="bg-primary text-on-primary border border-primary px-4 py-2 font-label-md text-label-md hover:bg-surface-container-low hover:text-primary transition-colors active:opacity-80">Queue Status</a>
+<button class="text-secondary hover:text-primary transition-colors font-label-md text-label-md">Sign in</button>
+<button class="bg-primary text-on-primary border border-primary px-4 py-2 font-label-md text-label-md hover:bg-surface-container-low hover:text-primary transition-colors active:opacity-80">Check-in</button>
 </div>
 </div>
 </header>
@@ -268,16 +267,11 @@
 <div class="w-full max-w-[480px] bg-surface-high border border-surface-border p-8 md:p-12 flex flex-col gap-8">
 <!-- Header section -->
 <div class="flex flex-col gap-2 border-b border-surface-border pb-6">
-<div class="flex items-center gap-2 text-secondary text-sm">
-<span>Step 1 of 4</span>
-<span>•</span>
-<span>Patient Details</span>
-</div>
 <h1 class="font-headline-lg text-headline-lg text-on-surface m-0 p-0">Your Details</h1>
 <p class="font-body-md text-body-md text-secondary m-0 p-0">Please provide your contact information to secure your spot in the queue.</p>
 </div>
 <!-- Form -->
-<form class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='../p03_choose_doctor_desktop_web_hi_fi/code.html';">
+<form class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='#';">
 <!-- Full Name Field -->
 <div class="flex flex-col gap-2">
 <label class="font-label-md text-label-md text-on-surface" for="fullName">Full Name</label>
@@ -296,12 +290,8 @@
                     </p>
 </div>
 <!-- Actions -->
-<div class="mt-4 pt-6 border-t border-surface-border flex justify-between items-center gap-4">
-<a href="../p01_home_desktop_web_hi_fi/code.html" class="border border-surface-border px-6 py-3 font-label-md text-label-md text-secondary hover:text-primary transition-colors">Back</a>
-<button class="bg-primary text-on-primary border border-primary px-8 py-3 font-label-md text-label-md hover:bg-surface-container-low hover:text-primary transition-colors active:opacity-80 flex items-center gap-2" type="submit">
-Continue
-<span class="material-symbols-outlined text-sm">arrow_forward</span>
-</button>
+<div class="mt-4 pt-6 border-t border-surface-border flex justify-end">
+<button class="bg-primary text-on-primary border border-primary px-8 py-3 font-label-md text-label-md w-full md:w-auto hover:bg-surface-container-low hover:text-primary transition-colors active:opacity-80" type="submit">Continue</button>
 </div>
 </form>
 </div>

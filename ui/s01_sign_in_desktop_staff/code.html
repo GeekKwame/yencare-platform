@@ -133,37 +133,38 @@
 <p class="font-body-md text-body-md text-secondary">Access the YɛnCare clinical portal</p>
 </div>
 <!-- Form -->
-<form class="flex flex-col gap-6" onsubmit="event.preventDefault(); document.getElementById('signin-btn').innerText = 'Signing in...';">
+<form action="../s02_today_desktop_staff_hi_fi/code.html" class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='../s02_today_desktop_staff_hi_fi/code.html';">
 <!-- Username Input -->
 <div class="flex flex-col gap-2">
-<label class="font-label-md text-label-md text-primary" for="username">Username</label>
+<label class="font-label-md text-label-md text-primary" for="username">Staff Username</label>
 <div class="relative flex items-center">
 <span class="material-symbols-outlined absolute left-3 text-secondary pointer-events-none" data-icon="person">person</span>
-<input class="w-full pl-10 pr-3 py-3 bg-surface-high border border-surface-border rounded-DEFAULT font-body-md text-body-md text-on-surface placeholder:text-placeholder focus:outline-none focus:border-2 focus:border-primary transition-all" id="username" name="username" placeholder="Enter your staff ID" required="" type="text"/>
+<input class="w-full pl-10 pr-3 py-3 bg-surface-high border border-surface-border rounded-DEFAULT font-body-md text-body-md text-on-surface placeholder:text-placeholder focus:outline-none focus:border-2 focus:border-primary transition-all" id="username" name="username" placeholder="Enter your staff ID" required="" type="text" value="reception_admin"/>
 </div>
 </div>
 <!-- Password Input -->
 <div class="flex flex-col gap-2">
 <div class="flex items-center justify-between">
 <label class="font-label-md text-label-md text-primary" for="password">Password</label>
-<a class="font-label-sm text-label-sm text-secondary hover:text-primary transition-colors underline" href="#">Forgot password?</a>
+<span class="font-label-sm text-label-sm text-secondary">Demo Mode</span>
 </div>
 <div class="relative flex items-center">
 <span class="material-symbols-outlined absolute left-3 text-secondary pointer-events-none" data-icon="lock">lock</span>
-<input class="w-full pl-10 pr-3 py-3 bg-surface-high border border-surface-border rounded-DEFAULT font-body-md text-body-md text-on-surface placeholder:text-placeholder focus:outline-none focus:border-2 focus:border-primary transition-all" id="password" name="password" placeholder="Enter your password" required="" type="password"/>
+<input class="w-full pl-10 pr-3 py-3 bg-surface-high border border-surface-border rounded-DEFAULT font-body-md text-body-md text-on-surface placeholder:text-placeholder focus:outline-none focus:border-2 focus:border-primary transition-all" id="password" name="password" placeholder="Enter your password" required="" type="password" value="••••••••"/>
 </div>
 </div>
 <!-- Sign In Button -->
 <button class="w-full mt-2 py-4 bg-primary text-on-primary font-label-md text-label-md text-center flex justify-center items-center gap-2 border border-surface-border rounded-DEFAULT hover:bg-inverse-surface transition-colors active:scale-[0.98]" id="signin-btn" type="submit">
-                Sign in
+                Sign in to Clinical Portal
                 <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
 </button>
 </form>
 <!-- Footer Info -->
-<div class="mt-8 text-center border-t border-surface-container pt-6">
-<p class="font-label-sm text-label-sm text-secondary">
-                For technical support, contact the IT department.
-            </p>
+<div class="mt-8 text-center border-t border-surface-container pt-6 flex flex-col gap-2">
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="font-label-sm text-label-sm text-secondary hover:text-primary transition-colors flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+Back to Patient Portal
+</a>
 </div>
 </div>
 </body></html>

@@ -192,52 +192,55 @@
 <body class="antialiased min-h-screen flex flex-col items-center justify-start pb-24 md:hidden">
 <!-- Top Navigation (Transactional context - minimal header) -->
 <header class="w-full px-margin-mobile py-4 flex items-center justify-between border-b border-surface-border bg-surface-container-lowest sticky top-0 z-10">
-<button aria-label="Go back" class="p-2 -ml-2 rounded-full hover:bg-surface-container-highest transition-colors active:scale-95">
+<a href="../p14_reschedule_date_mobile_web_hi_fi/code.html" aria-label="Go back" class="p-2 -ml-2 rounded-full hover:bg-surface-container-highest transition-colors active:scale-95">
 <span class="material-symbols-outlined text-on-surface" data-icon="arrow_back">arrow_back</span>
-</button>
-<h1 class="font-headline-md text-headline-md text-on-surface text-center flex-1 pr-10">Reschedule</h1>
+</a>
+<h1 class="font-headline-md text-headline-md text-on-surface text-center flex-1 pr-4">Reschedule Time</h1>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary font-label-sm text-label-sm">Home</a>
 </header>
 <!-- Main Content -->
-<main class="w-full px-margin-mobile pt-6 flex flex-col gap-6">
+<main class="w-full px-margin-mobile pt-6 flex flex-col gap-6 max-w-max-width-form mx-auto pb-28">
 <!-- Context / Title -->
 <div class="flex flex-col gap-2">
 <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Select a new time</h2>
 <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
 <span class="material-symbols-outlined text-secondary" data-icon="event" style="font-variation-settings: 'FILL' 1;">event</span>
-                Wed, Nov 15, 2023
+                Friday, Sep 18, 2026
             </p>
 </div>
 <!-- Time Slots Grid (Morning) -->
 <section class="mt-4">
 <h3 class="font-label-md text-label-md text-secondary mb-3 uppercase tracking-wider">Morning</h3>
 <div class="grid grid-cols-3 gap-3">
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">08:00 AM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">08:30 AM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">09:00 AM</button>
-<button class="py-3 px-2 border-2 border-primary rounded bg-surface-container-lowest text-primary font-label-md text-label-md transition-colors text-center shadow-[inset_0_0_0_1px_theme('colors.primary')]">09:30 AM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">10:00 AM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">08:00 AM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">08:30 AM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">09:00 AM</button>
+<button class="py-3 px-2 border-2 border-primary rounded bg-surface-container-lowest text-primary font-label-md text-label-md transition-colors text-center shadow-[inset_0_0_0_1px_theme('colors.primary')] font-bold">09:30 AM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">10:00 AM</button>
 <button class="py-3 px-2 border border-surface-border rounded bg-surface-container-highest text-secondary font-body-md text-body-md opacity-50 cursor-not-allowed text-center" disabled="">10:30 AM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">11:00 AM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">11:30 AM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">11:00 AM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">11:30 AM</button>
 </div>
 </section>
 <!-- Time Slots Grid (Afternoon) -->
 <section class="mt-2">
 <h3 class="font-label-md text-label-md text-secondary mb-3 uppercase tracking-wider">Afternoon</h3>
 <div class="grid grid-cols-3 gap-3">
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">12:00 PM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">12:00 PM</button>
 <button class="py-3 px-2 border border-surface-border rounded bg-surface-container-highest text-secondary font-body-md text-body-md opacity-50 cursor-not-allowed text-center" disabled="">12:30 PM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">01:00 PM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">01:30 PM</button>
-<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">02:00 PM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">01:00 PM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">01:30 PM</button>
+<button class="py-3 px-2 border border-surface-border rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md hover:bg-surface-container-high transition-colors text-center">02:00 PM</button>
 </div>
 </section>
 </main>
 <!-- Bottom Action Area (Fixed) -->
 <div class="fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-surface-border p-margin-mobile z-50">
-<button class="w-full py-4 bg-primary text-on-primary font-label-md text-label-md rounded border border-primary hover:bg-inverse-surface transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary active:scale-95 flex items-center justify-center gap-2">
-            Confirm 09:30 AM
-            <span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
-</button>
+<div class="max-w-max-width-form mx-auto">
+<a href="../p16_reschedule_review_mobile_web_hi_fi/code.html" class="w-full py-4 bg-primary text-on-primary font-label-md text-label-md rounded border border-primary hover:bg-inverse-surface transition-colors flex items-center justify-center gap-2">
+            Continue to Review (09:30 AM)
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
 </div>
 </body></html>

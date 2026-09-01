@@ -202,29 +202,29 @@
 <!-- Navigation Tabs -->
 <nav class="flex-1 flex flex-col gap-2">
 <!-- Inactive Tab -->
-<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant border border-transparent hover:border-primary transition-all scale-98 active:scale-95" href="#">
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant border border-transparent hover:border-primary transition-all scale-98 active:scale-95" href="../s02_today_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined" data-icon="today">today</span>
 <span>Today</span>
 </a>
 <!-- Inactive Tab -->
-<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant border border-transparent hover:border-primary transition-all scale-98 active:scale-95" href="#">
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant border border-transparent hover:border-primary transition-all scale-98 active:scale-95" href="../s03_appointments_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
 <span>Appointments</span>
 </a>
 <!-- Active Tab -->
-<a class="flex items-center gap-3 p-3 rounded bg-primary text-on-primary font-bold border-2 border-primary transition-all scale-98 active:scale-95" href="#">
+<a class="flex items-center gap-3 p-3 rounded bg-primary text-on-primary font-bold border-2 border-primary transition-all scale-98 active:scale-95" href="../s05_live_queue_desktop_staff_hi_fi/code.html">
 <span class="material-symbols-outlined" data-icon="reorder">reorder</span>
 <span>Queue</span>
 </a>
 </nav>
 <!-- CTA -->
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 px-4 rounded border-2 border-primary flex items-center justify-center gap-2 hover:bg-surface hover:text-primary transition-colors">
+<a href="../p02_your_details_desktop_web_hi_fi/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 px-4 rounded border-2 border-primary flex items-center justify-center gap-2 hover:bg-surface hover:text-primary transition-colors">
 <span class="material-symbols-outlined text-[18px]">add</span>
             New Appointment
-        </button>
+</a>
 <!-- Footer -->
 <div class="mt-auto border-t-2 border-primary pt-4">
-<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant border border-transparent hover:border-primary transition-all scale-98 active:scale-95" href="#">
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant border border-transparent hover:border-primary transition-all scale-98 active:scale-95" href="../s01_sign_in_desktop_staff/code.html">
 <span class="material-symbols-outlined" data-icon="logout">logout</span>
 <span>Sign Out</span>
 </a>
@@ -232,23 +232,23 @@
 </aside>
 <!-- Main Content Area -->
 <main class="flex-1 flex flex-col h-full overflow-hidden">
-<!-- Top App Bar (Mobile Nav Alternative if needed, but per instruction desktop focused here) -->
+<!-- Top App Bar -->
 <header class="bg-surface flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 border-b-2 border-primary flex-shrink-0 md:hidden">
-<div class="text-headline-md font-headline-md font-bold text-primary">YɛnCare</div>
-<a class="text-on-surface-variant font-label-md text-label-md" href="#">Sign Out</a>
+<a href="../s02_today_desktop_staff_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary">YɛnCare</a>
+<a class="text-on-surface-variant font-label-md text-label-md" href="../s01_sign_in_desktop_staff/code.html">Sign Out</a>
 </header>
 <!-- Canvas -->
 <div class="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop bg-background">
 <div class="max-w-[1200px] mx-auto">
 <!-- Page Header -->
 <div class="mb-8">
-<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Live Queue Management</h1>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2 font-bold">Live Queue Management</h1>
 <div class="flex gap-4 items-center font-label-md text-label-md text-on-surface-variant">
-<span>General Practice</span>
+<span>General Clinic · Dr. Kwame Boateng</span>
 <span class="w-1 h-1 rounded-full bg-primary"></span>
 <span class="flex items-center gap-1">
 <span class="material-symbols-outlined text-[16px]">group</span>
-                            12 Waiting
+                            4 Waiting
                         </span>
 </div>
 </div>
@@ -259,27 +259,24 @@
 <div class="bg-surface-low border-2 border-primary rounded-lg p-6 sticky top-6">
 <div class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-4">Currently Called</div>
 <div class="bg-surface border-2 border-primary rounded p-6 text-center mb-6">
-<div class="font-queue-hero text-queue-hero text-primary mb-4">A04</div>
-<div class="font-headline-md text-headline-md text-primary">Kwame Osei</div>
-<div class="font-body-md text-body-md text-on-surface-variant mt-2">Consultation Room 2</div>
+<div class="font-queue-hero text-queue-hero text-primary mb-2 font-bold text-6xl">#4</div>
+<div class="font-headline-md text-headline-md text-primary font-bold">Ama Mensah</div>
+<div class="font-body-md text-body-md text-on-surface-variant mt-1">Consultation Room 3</div>
 </div>
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-4 rounded border-2 border-primary hover:bg-surface hover:text-primary transition-colors uppercase tracking-wide">
+<a href="../s05_live_queue_empty_desktop_staff_hi_fi/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-4 rounded border-2 border-primary hover:bg-inverse-surface transition-colors uppercase tracking-wide flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">check</span>
                                 Complete Visit
-                            </button>
-<button class="w-full mt-3 bg-surface text-primary font-label-md text-label-md py-3 px-4 rounded border border-primary hover:bg-surface-container transition-colors">
-                                No Show
-                            </button>
+</a>
+<a href="../s05_live_queue_empty_desktop_staff_hi_fi/code.html" class="w-full mt-3 bg-surface text-primary font-label-md text-label-md py-3 px-4 rounded border border-primary hover:bg-surface-container transition-colors flex items-center justify-center">
+                                Mark as No Show
+</a>
 </div>
 </div>
 <!-- RIGHT COLUMN: Waiting List Table -->
 <div class="lg:col-span-2">
 <div class="bg-surface border-2 border-primary rounded-lg overflow-hidden flex flex-col h-full">
 <div class="bg-surface-low p-4 border-b-2 border-primary flex justify-between items-center">
-<h2 class="font-headline-md text-headline-md text-primary">WAITING LIST</h2>
-<button class="flex items-center gap-2 text-primary border border-primary px-3 py-1.5 rounded hover:bg-surface-container font-label-sm text-label-sm">
-<span class="material-symbols-outlined text-[16px]">filter_list</span>
-                                    Filter
-                                </button>
+<h2 class="font-headline-md text-headline-md text-primary font-bold">WAITING LIST</h2>
 </div>
 <div class="flex-1 overflow-x-auto">
 <table class="w-full text-left border-collapse">
@@ -287,7 +284,7 @@
 <tr class="border-b-2 border-primary bg-surface-container-lowest font-label-md text-label-md text-on-surface-variant">
 <th class="py-3 px-4 w-24">Token</th>
 <th class="py-3 px-4">Patient</th>
-<th class="py-3 px-4 hidden sm:table-cell">Provider</th>
+<th class="py-3 px-4 hidden sm:table-cell">Doctor</th>
 <th class="py-3 px-4 w-24 text-right">Wait Time</th>
 <th class="py-3 px-4 w-28 text-center">Action</th>
 </tr>
@@ -295,49 +292,25 @@
 <tbody class="font-body-md text-body-md divide-y divide-outline-variant">
 <!-- Row 1 -->
 <tr class="hover:bg-surface-container transition-colors group">
-<td class="py-4 px-4 font-reference-code text-reference-code text-primary">A05</td>
-<td class="py-4 px-4 font-label-md text-label-md text-primary">Ama Mensah</td>
-<td class="py-4 px-4 hidden sm:table-cell text-on-surface-variant">Dr. Appiah</td>
-<td class="py-4 px-4 text-right text-error font-label-md text-label-md">45m</td>
+<td class="py-4 px-4 font-reference-code text-reference-code text-primary font-bold">#5</td>
+<td class="py-4 px-4 font-label-md text-label-md text-primary">Kofi Addo</td>
+<td class="py-4 px-4 hidden sm:table-cell text-on-surface-variant">Dr. Kwame Boateng</td>
+<td class="py-4 px-4 text-right text-on-surface-variant font-label-md text-label-md">15m</td>
 <td class="py-4 px-4 text-center">
-<button class="bg-primary text-on-primary px-4 py-2 rounded border-2 border-primary font-label-sm text-label-sm hover:bg-surface hover:text-primary transition-colors w-full">
-                                                    Call
-                                                </button>
+<a href="../s05_live_queue_empty_desktop_staff_hi_fi/code.html" class="inline-block bg-primary text-on-primary px-4 py-2 rounded border-2 border-primary font-label-sm text-label-sm hover:bg-inverse-surface transition-colors w-full text-center">
+                                                    Call Next
+</a>
 </td>
 </tr>
 <!-- Row 2 -->
 <tr class="hover:bg-surface-container transition-colors group">
-<td class="py-4 px-4 font-reference-code text-reference-code text-primary">A06</td>
-<td class="py-4 px-4 font-label-md text-label-md text-primary">Kofi Addo</td>
-<td class="py-4 px-4 hidden sm:table-cell text-on-surface-variant">Dr. Appiah</td>
-<td class="py-4 px-4 text-right text-on-surface-variant font-label-md text-label-md">32m</td>
-<td class="py-4 px-4 text-center">
-<button class="bg-surface text-primary px-4 py-2 rounded border border-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors w-full">
-                                                    Call
-                                                </button>
-</td>
-</tr>
-<!-- Row 3 -->
-<tr class="hover:bg-surface-container transition-colors group">
-<td class="py-4 px-4 font-reference-code text-reference-code text-primary">A07</td>
+<td class="py-4 px-4 font-reference-code text-reference-code text-primary font-bold">#6</td>
 <td class="py-4 px-4 font-label-md text-label-md text-primary">Abena Yeboah</td>
-<td class="py-4 px-4 hidden sm:table-cell text-on-surface-variant">Dr. Boakye</td>
-<td class="py-4 px-4 text-right text-on-surface-variant font-label-md text-label-md">15m</td>
+<td class="py-4 px-4 hidden sm:table-cell text-on-surface-variant">Dr. Kwame Boateng</td>
+<td class="py-4 px-4 text-right text-on-surface-variant font-label-md text-label-md">8m</td>
 <td class="py-4 px-4 text-center">
 <button class="bg-surface text-primary px-4 py-2 rounded border border-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors w-full">
-                                                    Call
-                                                </button>
-</td>
-</tr>
-<!-- Row 4 -->
-<tr class="hover:bg-surface-container transition-colors group">
-<td class="py-4 px-4 font-reference-code text-reference-code text-primary">B01</td>
-<td class="py-4 px-4 font-label-md text-label-md text-primary">Yaw Manu</td>
-<td class="py-4 px-4 hidden sm:table-cell text-on-surface-variant">Nurse Desk</td>
-<td class="py-4 px-4 text-right text-on-surface-variant font-label-md text-label-md">5m</td>
-<td class="py-4 px-4 text-center">
-<button class="bg-surface text-primary px-4 py-2 rounded border border-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors w-full">
-                                                    Call
+                                                    Wait
                                                 </button>
 </td>
 </tr>

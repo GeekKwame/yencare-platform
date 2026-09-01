@@ -113,18 +113,18 @@
 </head>
 <body class="bg-background min-h-screen flex flex-col antialiased text-on-background">
 <!-- TopAppBar -->
-<header class="bg-white dark:bg-background w-full sticky top-0 z-50 border-b border-surface-border flat no shadows">
+<header class="bg-white dark:bg-background text-primary dark:text-on-background font-label-md text-label-md w-full sticky top-0 z-50 border-b border-surface-border">
 <div class="flex justify-between items-center px-margin-desktop py-4 max-w-full mx-auto">
 <div class="flex items-center gap-8">
-<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background tracking-tight">YɛnCare</div>
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background hover:opacity-80">YɛnCare</a>
 <nav class="hidden md:flex gap-6">
-<a class="font-label-md text-label-md text-primary border-b-2 border-primary pb-1 active:opacity-80" href="#">Book appointment</a>
-<a class="font-label-md text-label-md text-secondary hover:text-primary active:opacity-80" href="#">Find appointment</a>
+<a class="font-label-md text-label-md text-primary border-b-2 border-primary pb-1" href="../p02_your_details_desktop_web_hi_fi/code.html">Book appointment</a>
+<a class="font-label-md text-label-md text-secondary hover:text-primary" href="../p09_find_appointment_mobile_web_hi_fi/code.html">Find appointment</a>
 </nav>
 </div>
 <div class="flex items-center gap-4">
-<button class="font-label-md text-label-md text-primary bg-white border border-surface-border px-4 py-2 hover:bg-surface-container-low transition-colors active:opacity-80">Sign in</button>
-<button class="font-label-md text-label-md text-on-primary bg-primary border border-primary px-4 py-2 hover:bg-tertiary-container transition-colors active:opacity-80">Check-in</button>
+<a href="../s01_sign_in_desktop_staff/code.html" class="font-label-md text-label-md text-primary bg-white border border-surface-border px-4 py-2 hover:bg-surface-container-low transition-colors">Staff Sign in</a>
+<a href="../p18_queue_status_desktop_web_hi_fi/code.html" class="font-label-md text-label-md text-on-primary bg-primary border border-primary px-4 py-2 hover:bg-tertiary-container transition-colors">Queue Status</a>
 </div>
 </div>
 </header>
@@ -134,17 +134,17 @@
 <div class="max-w-max-width-form mx-auto w-full flex flex-col gap-8">
 <!-- Page Header -->
 <div class="flex flex-col gap-2 border-b border-surface-border pb-6">
-<div class="flex items-center gap-2 text-secondary font-label-md text-label-md cursor-pointer hover:text-primary transition-colors">
+<a href="../p02_your_details_desktop_web_hi_fi/code.html" class="flex items-center gap-2 text-secondary font-label-md text-label-md cursor-pointer hover:text-primary transition-colors inline-flex w-fit">
 <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
-<span>Back to specialty</span>
-</div>
+<span>Back to patient details</span>
+</a>
 <h1 class="font-headline-lg text-headline-lg text-primary">Choose Doctor</h1>
 <p class="font-body-md text-body-md text-secondary">Select an available doctor for your General Clinic appointment.</p>
 </div>
 <!-- Doctor List -->
 <div class="flex flex-col gap-4">
 <!-- First Available Option -->
-<button class="group w-full text-left bg-white border border-surface-border p-4 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all relative overflow-hidden">
+<button onclick="window.location.href='../p04_05_date_time_desktop_web_hi_fi/code.html'" class="group w-full text-left bg-white border border-surface-border p-4 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all relative overflow-hidden cursor-pointer">
 <div class="absolute inset-y-0 left-0 w-1 bg-surface-container-highest group-hover:bg-primary transition-colors"></div>
 <div class="flex items-start gap-4 pl-2">
 <div class="w-12 h-12 bg-surface-container-low rounded-full flex items-center justify-center border border-surface-border shrink-0">
@@ -163,7 +163,7 @@
 </div>
 </button>
 <!-- Doctor Card 1 -->
-<button class="w-full text-left bg-white border border-surface-border p-4 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all relative">
+<button onclick="window.location.href='../p04_05_date_time_desktop_web_hi_fi/code.html'" class="w-full text-left bg-white border border-surface-border p-4 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all relative cursor-pointer">
 <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
 <div class="flex gap-4 items-center flex-grow">
 <img class="w-16 h-16 rounded-full object-cover border border-surface-border shrink-0 bg-surface-container-low" data-alt="A professional headshot of a middle-aged male doctor from Ghana, wearing a clean white clinical coat and stethoscope. The background is a clean, minimal, sterile white medical environment. Bright, high-key lighting creates a professional and trustworthy mood. Shot with a sharp focus and low depth of field." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMPBURGyvNHEhM3LNR_qteNhcdzGgJON9h3LziQnZeX517VNrG7cmDVp99E5gt0QezvanY9XmuSCKVAmgZbzEKspQaOyVEt7CiS5gNTZnXVkuqDhb9nR3YBqu-67wymJjmM57w8r_ARy2xdnUCNl4nox6XpP2dA-e76CU5sG8SEgIHyNW75_qnWwFqLCC3r08UvMInE8Ytlx61HYgrsskza0TG_8Q8BPpyWRmAHaj4bWbPImPA8BEE"/>
@@ -181,7 +181,7 @@
 </div>
 </button>
 <!-- Doctor Card 2 -->
-<button class="w-full text-left bg-white border border-surface-border p-4 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all relative">
+<button onclick="window.location.href='../p04_05_date_time_desktop_web_hi_fi/code.html'" class="w-full text-left bg-white border border-surface-border p-4 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all relative cursor-pointer">
 <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
 <div class="flex gap-4 items-center flex-grow">
 <img class="w-16 h-16 rounded-full object-cover border border-surface-border shrink-0 bg-surface-container-low" data-alt="A professional headshot of a young female doctor from Ghana, wearing a clean white clinical coat. She has a warm, reassuring smile. The background is a clean, minimal, sterile white medical environment. Bright, high-key lighting creates a professional and trustworthy mood. Shot with a sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0qX00PQpvlzTBklmZvvEqA01bNjWFr-FxuvXYTxL6yiPT5JR-SzWzXUK-P__F78msWWlTNwKCsB7ziFTviHOB7QlpcL2EtIkDeDv7tJQTPmvtr_uyfHQzr1tuwB5TFtjOfeiWKoYo8LD9TKoXgN6mx8xWhtoPfhp07jUuCjZOnoJMaEcWPmY86xzEU9nYckwGJtl9i6CXzXlRK8xQLvj6GCTPDLX4hMHun75Q1o6APJhKrk_4Cbkk"/>

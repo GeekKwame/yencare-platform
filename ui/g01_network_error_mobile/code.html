@@ -130,10 +130,15 @@
             No internet. Check your connection and try again.
         </p>
 <!-- Primary Action -->
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-8 border border-surface-border hover:bg-surface-container-low hover:text-primary transition-colors active:scale-95 flex items-center justify-center gap-2 rounded-DEFAULT min-h-[44px]">
+<div class="w-full flex flex-col gap-3">
+<button onclick="this.innerHTML='Reconnecting...'; setTimeout(() => window.location.href='../p01_home_mobile_web_hi_fi/code.html', 800);" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 px-8 border border-surface-border hover:bg-inverse-surface transition-colors active:scale-95 flex items-center justify-center gap-2 rounded-DEFAULT min-h-[44px]">
 <span class="material-symbols-outlined text-[20px]">refresh</span>
             Try again
-        </button>
+</button>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary font-label-md text-label-md py-2 hover:text-primary transition-colors">
+            Return to Home
+</a>
+</div>
 <!-- Secondary Context (Optional) -->
 <div class="mt-8 pt-8 border-t border-surface-border w-full">
 <p class="font-label-sm text-label-sm text-placeholder text-center">
@@ -141,33 +146,4 @@
             </p>
 </div>
 </main>
-<!-- BottomNavBar / NavigationDrawer suppressed due to transactional/error intent -->
-<script>
-        // Simple reload logic for the 'Try again' button
-        document.querySelector('button').addEventListener('click', () => {
-            const btn = document.querySelector('button');
-            const originalText = btn.innerHTML;
-            
-            // Loading state
-            btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">sync</span> Checking...`;
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            
-            // Simulate network check delay
-            setTimeout(() => {
-                // Reset (in a real app, this would redirect or refresh data if successful)
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                
-                // Show a simple toast indicating failure persists (for prototype sake)
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-4 left-4 right-4 md:left-1/2 md:transform md:-translate-x-1/2 md:w-[400px] bg-primary text-on-primary p-4 border border-surface-border font-label-md text-label-md flex items-center gap-2 z-50';
-                toast.innerHTML = `<span class="material-symbols-outlined">error</span> Still unable to connect.`;
-                document.body.appendChild(toast);
-                
-                setTimeout(() => toast.remove(), 3000);
-            }, 1500);
-        });
-    </script>
 </body></html>

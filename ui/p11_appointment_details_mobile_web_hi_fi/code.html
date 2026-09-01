@@ -109,79 +109,79 @@
     </script>
 </head>
 <body class="bg-background text-on-background min-h-screen pb-24 md:pb-0">
-<!-- Top App Bar (JSON Anchor) - Suppressed for task/detail page, but included as per basic structure if needed. Hiding for deep link task. -->
-<header class="bg-surface-container-lowest dark:bg-on-background w-full top-0 border-b-2 border-surface-border flex justify-between items-center px-margin-mobile py-4 z-50 sticky">
-<div class="flex items-center gap-4">
-<button class="text-primary dark:text-on-primary hover:bg-surface-container-highest dark:hover:bg-inverse-surface active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center">
+<header class="bg-surface dark:bg-background border-b border-surface-border sticky top-0 z-50 flex items-center justify-between px-margin-mobile h-16">
+<div class="flex items-center gap-3">
+<a href="../p09_find_appointment_mobile_web_hi_fi/code.html" class="text-primary dark:text-on-primary hover:bg-surface-container-highest dark:hover:bg-inverse-surface active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center">
 <span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
-</button>
-<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-on-primary">Details</span>
+</a>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-on-primary">Appointment Details</span>
 </div>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary font-label-sm text-label-sm">Home</a>
 </header>
 <!-- Main Content Canvas -->
-<main class="px-margin-mobile pt-6 flex flex-col gap-8 w-full max-w-max-width-form mx-auto">
+<main class="px-margin-mobile pt-6 flex flex-col gap-8 w-full max-w-max-width-form mx-auto pb-12">
 <!-- Status & Reference Block -->
 <section class="flex flex-col gap-4 items-center justify-center text-center py-6 border-b-2 border-surface-border">
 <div class="inline-flex items-center gap-2 px-3 py-1 border border-surface-border rounded-DEFAULT bg-surface-container-lowest">
 <span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span>
-<span class="font-label-md text-label-md uppercase tracking-wider text-primary">Booked</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-primary font-bold">Booked</span>
 </div>
 <div class="flex flex-col gap-1">
 <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Reference Code</span>
-<h1 class="font-reference-code text-reference-code text-primary">YN-842-A</h1>
+<h1 class="font-reference-code text-reference-code text-primary font-bold tracking-widest text-3xl">YC-4821</h1>
 </div>
 </section>
 <!-- Details Grid -->
-<section class="flex flex-col gap-6">
+<section class="flex flex-col gap-4">
 <div class="flex items-start gap-4 p-4 border border-surface-border rounded-lg bg-surface-container-lowest">
 <span class="material-symbols-outlined text-secondary mt-1" data-icon="person">person</span>
 <div class="flex flex-col">
 <span class="font-label-sm text-label-sm text-secondary uppercase">Patient</span>
 <span class="font-body-md text-body-md font-semibold text-primary">Ama Mensah</span>
+<span class="font-label-sm text-label-sm text-secondary">+233 24 123 4567</span>
 </div>
 </div>
 <div class="flex items-start gap-4 p-4 border border-surface-border rounded-lg bg-surface-container-lowest">
 <span class="material-symbols-outlined text-secondary mt-1" data-icon="stethoscope">stethoscope</span>
 <div class="flex flex-col">
 <span class="font-label-sm text-label-sm text-secondary uppercase">Doctor</span>
-<span class="font-body-md text-body-md font-semibold text-primary">Dr. Kwame Osei</span>
-<span class="font-body-md text-body-md text-secondary">General Practice</span>
+<span class="font-body-md text-body-md font-semibold text-primary">Dr. Kwame Boateng</span>
+<span class="font-body-md text-body-md text-secondary">General Clinic</span>
 </div>
 </div>
 <div class="flex items-start gap-4 p-4 border border-surface-border rounded-lg bg-surface-container-lowest">
 <span class="material-symbols-outlined text-secondary mt-1" data-icon="calendar_today">calendar_today</span>
 <div class="flex flex-col">
 <span class="font-label-sm text-label-sm text-secondary uppercase">Date &amp; Time</span>
-<span class="font-body-md text-body-md font-semibold text-primary">Oct 24, 2023</span>
-<span class="font-body-md text-body-md text-primary">09:00 AM</span>
+<span class="font-body-md text-body-md font-semibold text-primary">Tuesday, 15 September 2026</span>
+<span class="font-body-md text-body-md text-primary">10:00 AM</span>
 </div>
 </div>
 <div class="flex items-start gap-4 p-4 border border-surface-border rounded-lg bg-surface-container-lowest">
 <span class="material-symbols-outlined text-secondary mt-1" data-icon="location_on">location_on</span>
 <div class="flex flex-col">
 <span class="font-label-sm text-label-sm text-secondary uppercase">Location</span>
-<span class="font-body-md text-body-md font-semibold text-primary">Korle-Bu Teaching Hospital</span>
-<span class="font-body-md text-body-md text-secondary">Block A, Room 102</span>
+<span class="font-body-md text-body-md font-semibold text-primary">Partner Clinic</span>
+<span class="font-body-md text-body-md text-secondary">Ghana</span>
 </div>
 </div>
 </section>
 <!-- Action Buttons -->
-<section class="flex flex-col gap-4 mt-4">
-<button class="w-full bg-primary text-on-primary py-4 px-6 rounded-lg font-label-md text-label-md flex justify-center items-center gap-2 active:scale-95 transition-transform hover:bg-inverse-surface border-2 border-primary">
+<section class="flex flex-col gap-4 mt-2">
+<a href="../p18_queue_status_booked_mobile_web_hi_fi/code.html" class="w-full bg-primary text-on-primary py-4 px-6 rounded-lg font-label-md text-label-md flex justify-center items-center gap-2 active:scale-95 transition-transform hover:bg-inverse-surface border-2 border-primary">
 <span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
                 Check my queue
-            </button>
+</a>
 <div class="flex gap-4">
-<button class="flex-1 bg-surface-container-lowest text-primary py-4 px-4 rounded-lg border-2 border-surface-border font-label-md text-label-md flex justify-center items-center gap-2 active:scale-95 transition-transform hover:bg-surface-container-highest">
+<a href="../p14_reschedule_date_mobile_web_hi_fi/code.html" class="flex-1 bg-surface-container-lowest text-primary py-4 px-4 rounded-lg border-2 border-surface-border font-label-md text-label-md flex justify-center items-center gap-2 active:scale-95 transition-transform hover:bg-surface-container-highest">
 <span class="material-symbols-outlined" data-icon="event_repeat">event_repeat</span>
                     Reschedule
-                </button>
-<button class="flex-1 bg-surface-container-lowest text-error py-4 px-4 rounded-lg border-2 border-surface-border font-label-md text-label-md flex justify-center items-center gap-2 active:scale-95 transition-transform hover:bg-error-container">
+</a>
+<a href="../p12_cancel_confirm_mobile_web_hi_fi/code.html" class="flex-1 bg-surface-container-lowest text-error py-4 px-4 rounded-lg border-2 border-surface-border font-label-md text-label-md flex justify-center items-center gap-2 active:scale-95 transition-transform hover:bg-error-container">
 <span class="material-symbols-outlined" data-icon="cancel">cancel</span>
                     Cancel
-                </button>
+</a>
 </div>
 </section>
 </main>
-<!-- Bottom Nav Bar Suppressed for Transactional/Detail View per rules -->
 </body></html>

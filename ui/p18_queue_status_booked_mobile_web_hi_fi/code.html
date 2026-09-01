@@ -110,67 +110,67 @@
 </head>
 <body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col pt-[68px] pb-[72px]">
 <!-- TopAppBar -->
-<header class="bg-surface-container-lowest text-primary font-headline-lg-mobile font-bold docked full-width top-0 border-b-2 border-surface-border flat no shadows flex justify-between items-center w-full px-margin-mobile py-4 fixed z-50">
-<div class="flex items-center gap-2">
+<header class="w-full flex items-center justify-between px-margin-mobile py-4 bg-surface-container-lowest border-b-2 border-surface-border sticky top-0 z-50">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="flex items-center gap-2">
 <span class="material-symbols-outlined text-primary active:scale-95 transition-transform" data-icon="medical_services" style="font-variation-settings: 'FILL' 1;">medical_services</span>
-</div>
-<div class="text-headline-lg-mobile">YɛnCare</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary active:scale-95 transition-transform" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
-</div>
+<div class="text-headline-lg-mobile font-bold">YɛnCare</div>
+</a>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary font-label-sm text-label-sm">Home</a>
 </header>
 <!-- Main Content Canvas -->
-<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile gap-8 w-full max-w-max-width-form mx-auto">
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile gap-6 w-full max-w-max-width-form mx-auto pb-24 pt-4">
 <!-- Status Indicator -->
-<div class="flex flex-col items-center gap-4 w-full">
-<div class="w-24 h-24 rounded-full border-2 border-surface-border flex items-center justify-center bg-surface-container-low mb-2">
+<div class="flex flex-col items-center gap-3 w-full">
+<div class="w-20 h-20 rounded-full border-2 border-surface-border flex items-center justify-center bg-surface-container-low mb-1">
 <span class="material-symbols-outlined text-4xl text-primary" data-icon="hourglass_empty" style="font-variation-settings: 'FILL' 0;">hourglass_empty</span>
 </div>
-<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-center">Booked</h1>
-<!-- Appointment Reference Card (Structural Brutalism) -->
-<div class="w-full border-2 border-surface-border bg-surface-container-lowest p-6 flex flex-col items-center gap-2 mt-4 relative">
-<!-- Abstract Pattern Element to break up the brutalism subtly -->
-<div aria-hidden="true" class="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none overflow-hidden flex flex-wrap">
-<div class="w-2 h-2 bg-primary m-1"></div><div class="w-2 h-2 bg-primary m-1"></div><div class="w-2 h-2 bg-primary m-1"></div>
-<div class="w-2 h-2 bg-primary m-1"></div><div class="w-2 h-2 bg-primary m-1"></div><div class="w-2 h-2 bg-primary m-1"></div>
-</div>
-<div class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-1">Appointment Time</div>
-<div class="font-reference-code text-reference-code text-primary">09:30 AM</div>
-<div class="font-body-md text-body-md text-on-surface-variant mt-1">Today, Oct 24</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-center font-bold">Status: Booked</h1>
+<!-- Appointment Reference Card -->
+<div class="w-full border-2 border-surface-border bg-surface-container-lowest p-6 flex flex-col items-center gap-2 mt-2 relative">
+<div class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">REFERENCE CODE</div>
+<div class="font-reference-code text-reference-code text-primary font-bold text-2xl tracking-widest">YC-4821</div>
+<div class="h-px w-full bg-surface-border my-1"></div>
+<div class="font-label-md text-label-md text-secondary uppercase tracking-wider">Appointment Time</div>
+<div class="font-body-lg text-body-lg text-primary font-bold">10:00 AM</div>
+<div class="font-body-md text-body-md text-on-surface-variant">Tuesday, 15 September 2026</div>
 </div>
 <!-- Instructions Container -->
-<div class="w-full bg-surface-container p-6 border border-outline-variant mt-2">
-<p class="font-body-lg text-body-lg text-center text-on-surface">
-                    You are not in the queue yet. Please come to the clinic and check in at reception.
+<div class="w-full bg-surface-container p-4 border border-outline-variant rounded">
+<p class="font-body-md text-body-md text-center text-on-surface">
+                    You are not in the live queue yet. Please come to the clinic and check in at reception.
                 </p>
 </div>
 </div>
 <!-- Action Area -->
-<div class="w-full flex flex-col gap-4 mt-4">
-<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 border-2 border-primary active:scale-[0.98] transition-transform flex justify-center items-center gap-2">
-<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
-                Get Directions
-            </button>
-<button class="w-full bg-surface-container-lowest text-primary font-label-md text-label-md py-4 border-2 border-primary active:scale-[0.98] transition-transform">
+<div class="w-full flex flex-col gap-3 mt-2">
+<!-- Interactive transition for prototype demo -->
+<a href="../p18_queue_status_mobile_web/code.html" class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 border-2 border-primary active:scale-[0.98] transition-transform flex justify-center items-center gap-2 hover:bg-inverse-surface">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+                Simulate Reception Check-in (Waiting State)
+</a>
+<a href="../p11_appointment_details_mobile_web_hi_fi/code.html" class="w-full bg-surface-container-lowest text-primary font-label-md text-label-md py-3.5 border-2 border-surface-border active:scale-[0.98] transition-transform flex justify-center items-center">
+                View Appointment Details
+</a>
+<a href="../p12_cancel_confirm_mobile_web_hi_fi/code.html" class="w-full text-error font-label-md text-label-md py-2 active:scale-[0.98] transition-transform flex justify-center items-center">
                 Cancel Appointment
-            </button>
+</a>
 </div>
 </main>
 <!-- BottomNavBar -->
 <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center bg-surface-container-lowest px-2 py-3 border-t-2 border-surface-border z-50 md:hidden">
-<a class="flex flex-col items-center justify-center text-secondary px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-all duration-150" href="#">
+<a class="flex flex-col items-center justify-center text-secondary px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-all duration-150" href="../p01_home_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1" data-icon="home">home</span>
 <span class="font-label-sm text-label-sm">Home</span>
 </a>
-<a class="flex flex-col items-center justify-center text-secondary px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-all duration-150" href="#">
+<a class="flex flex-col items-center justify-center text-secondary px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-all duration-150" href="../p02_your_details_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1" data-icon="add_circle">add_circle</span>
 <span class="font-label-sm text-label-sm">Book</span>
 </a>
-<a class="flex flex-col items-center justify-center text-secondary px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-all duration-150" href="#">
+<a class="flex flex-col items-center justify-center text-secondary px-3 py-1 hover:bg-surface-container-high active:scale-90 transition-all duration-150" href="../p09_find_appointment_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1" data-icon="event_note">event_note</span>
-<span class="font-label-sm text-label-sm">My Visits</span>
+<span class="font-label-sm text-label-sm">Find</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-lg px-3 py-1 active:scale-90 transition-all duration-150" href="#">
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-lg px-3 py-1 active:scale-90 transition-all duration-150" href="../p18_queue_status_booked_mobile_web_hi_fi/code.html">
 <span class="material-symbols-outlined mb-1" data-icon="hourglass_empty" style="font-variation-settings: 'FILL' 1;">hourglass_empty</span>
 <span class="font-label-sm text-label-sm">Queue</span>
 </a>
