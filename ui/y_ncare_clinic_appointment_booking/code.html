@@ -247,65 +247,67 @@
         }
     </style>
 </head>
-<body class="bg-background text-on-background antialiased selection:bg-primary-container selection:text-on-primary-container">
-<!-- TopAppBar from JSON, transaction/linear intent, so navigation is suppressed but structure remains -->
-<header class="bg-white dark:bg-background text-primary dark:text-on-background font-label-md text-label-md w-full sticky top-0 z-50 border-b border-surface-border">
-<div class="flex justify-between items-center px-margin-desktop py-4 max-w-full mx-auto">
-<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-background">YɛnCare</div>
-<div class="flex items-center gap-4 hidden md:flex">
-<!-- Navigation suppressed as this is a linear flow -->
-</div>
-<div class="flex items-center gap-4">
-<button class="text-secondary hover:text-primary transition-colors font-label-md text-label-md">Sign in</button>
-<button class="bg-primary text-on-primary border border-primary px-4 py-2 font-label-md text-label-md hover:bg-surface-container-low hover:text-primary transition-colors active:opacity-80">Check-in</button>
+<body class="bg-surface text-on-background antialiased selection:bg-black selection:text-white flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-white text-primary font-label-md text-label-md w-full sticky top-0 z-50 border-b-2 border-primary">
+<div class="flex justify-between items-center px-6 md:px-margin-desktop py-4 max-w-7xl mx-auto">
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary flex items-center gap-2">
+    <span class="w-8 h-8 bg-black text-white flex items-center justify-center font-bold text-base">Y</span>
+    <span>YɛnCare</span>
+</a>
+<div class="flex items-center gap-6">
+<a href="../p09_find_appointment_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary transition-colors font-label-md text-label-md font-semibold">Find appointment</a>
+<a href="../p18_queue_status_booked_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary transition-colors font-label-md text-label-md font-semibold">Check queue</a>
+<a href="../s01_sign_in_desktop_staff/code.html" class="border-2 border-primary px-4 py-1.5 font-label-md text-label-md font-bold hover:bg-black hover:text-white transition-colors">Staff Portal</a>
 </div>
 </div>
 </header>
 <!-- Main Content Canvas -->
 <main class="flex-grow flex items-center justify-center py-12 px-margin-mobile md:px-margin-desktop">
 <!-- Centered Form Container -->
-<div class="w-full max-w-[480px] bg-surface-high border border-surface-border p-8 md:p-12 flex flex-col gap-8">
+<div class="w-full max-w-[520px] bg-white border-2 border-primary p-8 md:p-10 flex flex-col gap-6">
+<!-- Step Progress -->
+<div class="flex items-center justify-between border-b-2 border-primary pb-4">
+    <span class="text-xs font-bold uppercase tracking-wider text-secondary">Step 1 of 5</span>
+    <span class="text-xs font-bold uppercase tracking-wider text-primary">Patient Info</span>
+</div>
 <!-- Header section -->
-<div class="flex flex-col gap-2 border-b border-surface-border pb-6">
-<h1 class="font-headline-lg text-headline-lg text-on-surface m-0 p-0">Your Details</h1>
-<p class="font-body-md text-body-md text-secondary m-0 p-0">Please provide your contact information to secure your spot in the queue.</p>
+<div class="flex flex-col gap-1">
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface m-0 p-0">Your Details</h1>
+<p class="font-body-md text-body-md text-secondary m-0 p-0">Please provide your contact information to book your clinic consultation.</p>
 </div>
 <!-- Form -->
-<form class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='#';">
+<form class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='../p03_choose_doctor_desktop_web_hi_fi/code.html';">
 <!-- Full Name Field -->
 <div class="flex flex-col gap-2">
-<label class="font-label-md text-label-md text-on-surface" for="fullName">Full Name</label>
-<input class="clinical-input" id="fullName" name="fullName" placeholder="e.g. Kwame Mensah" required="" type="text"/>
+<label class="font-label-md text-label-md font-bold text-on-surface" for="fullName">Full Name</label>
+<input class="clinical-input" id="fullName" name="fullName" placeholder="e.g. Ama Mensah" value="Ama Mensah" required="" type="text"/>
 </div>
 <!-- Phone Number Field -->
 <div class="flex flex-col gap-2">
-<label class="font-label-md text-label-md text-on-surface" for="phoneNumber">Phone Number</label>
+<label class="font-label-md text-label-md font-bold text-on-surface" for="phoneNumber">Ghana Phone Number</label>
 <div class="phone-input-container">
 <span class="phone-prefix">+233</span>
-<input class="clinical-input" id="phoneNumber" name="phoneNumber" pattern="[0-9]{2} [0-9]{3} [0-9]{4}" placeholder="24 123 4567" required="" type="tel"/>
+<input class="clinical-input" id="phoneNumber" name="phoneNumber" placeholder="24 123 4567" value="24 123 4567" required="" type="tel"/>
 </div>
 <p class="font-label-sm text-label-sm text-secondary mt-1 flex items-center gap-1">
-<span class="material-symbols-outlined" style="font-size: 14px;">info</span>
-                        Used to send a confirmation text.
+<span class="material-symbols-outlined" style="font-size: 16px;">info</span>
+                        We'll send your appointment confirmation via SMS.
                     </p>
 </div>
 <!-- Actions -->
-<div class="mt-4 pt-6 border-t border-surface-border flex justify-end">
-<button class="bg-primary text-on-primary border border-primary px-8 py-3 font-label-md text-label-md w-full md:w-auto hover:bg-surface-container-low hover:text-primary transition-colors active:opacity-80" type="submit">Continue</button>
+<div class="mt-4 pt-6 border-t-2 border-primary flex items-center justify-between">
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="px-6 py-3 border-2 border-primary font-label-md text-label-md font-bold text-primary hover:bg-neutral-100 transition-colors">Back</a>
+<button class="bg-primary text-on-primary border-2 border-primary px-8 py-3 font-label-md text-label-md font-bold hover:bg-neutral-800 transition-colors active:scale-95" type="submit">Continue to Doctor &rarr;</button>
 </div>
 </form>
 </div>
 </main>
-<!-- Footer from JSON -->
-<footer class="bg-surface-container-lowest dark:bg-background text-secondary dark:text-on-surface-variant font-label-sm text-label-sm w-full mt-auto border-t border-surface-border">
-<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop py-8 gap-4">
-<div class="text-label-md font-label-md font-bold text-primary">YɛnCare</div>
-<div class="flex items-center gap-6">
-<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Privacy Policy</a>
-<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Terms of Service</a>
-<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Patient Rights</a>
-</div>
-<div>© 2024 YɛnCare Clinic. All rights reserved.</div>
+<!-- Clean Footer -->
+<footer class="bg-white text-secondary font-label-sm text-label-sm w-full mt-auto border-t-2 border-primary">
+<div class="flex flex-col md:flex-row justify-between items-center px-6 md:px-margin-desktop py-6 gap-4 max-w-7xl mx-auto">
+<div class="text-label-md font-label-md font-bold text-primary">YɛnCare Health</div>
+<div class="text-xs text-secondary">Partner Clinic · Ghana Health Service</div>
 </div>
 </footer>
 <script>
