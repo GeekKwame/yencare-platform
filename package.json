@@ -1,0 +1,22 @@
+{
+  "name": "yencare-platform",
+  "version": "1.0.0",
+  "description": "YɛnCare — Outpatient Clinic Appointment Booking and Live Virtual Queue Platform for Ghana",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix figma-code run dev",
+    "build": "npm --prefix figma-code run build",
+    "preview": "npm --prefix figma-code run preview",
+    "format": "npm --prefix figma-code run format"
+  },
+  "keywords": [
+    "yencare",
+    "healthcare",
+    "ghana",
+    "clinic-queue",
+    "appointment-booking",
+    "clinical-brutalism"
+  ],
+  "author": "YɛnCare Platform Team",
+  "license": "UNLICENSED"
+}
