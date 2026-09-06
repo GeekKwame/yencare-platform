@@ -16,6 +16,9 @@ export type {
   WalkInDraft,
   StaffUser,
   StaffRole,
+  ClinicActivityOverride,
+  RoomConsultationState,
+  ClinicSiteActivity,
 } from './clinic';
 
 export {

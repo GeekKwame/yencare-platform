@@ -104,21 +104,44 @@ export const P07BookingConfirmed: React.FC = () => {
           </button>
         </div>
 
+        {/* Pre-Check-In Explanation Card */}
+        <div className="bg-[#FEF7ED] border border-[#FCD34D] p-3.5 mb-5 text-left text-xs rounded-none">
+          <div className="flex items-start gap-2 text-[#92400E]">
+            <span className="material-symbols-outlined text-base mt-0.5 shrink-0">info</span>
+            <div>
+              <span className="font-bold block text-[#78350F]">Queue position assigned at reception</span>
+              <p className="text-[#92400E] text-[11px] mt-0.5 leading-relaxed">
+                You do not have a queue number yet. Present your reference code <strong>{refCode}</strong> at the clinic desk upon arrival to check in and enter the live queue.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="space-y-2.5">
           <Button
             variant="primary"
             size="lg"
             fullWidth
-            icon="visibility"
-            onClick={() => setPatientScreen('P11_DETAILS')}
+            icon="analytics"
+            onClick={() => setPatientScreen('P10_CLINIC_ACTIVITY')}
           >
-            View appointment
+            View live clinic activity
           </Button>
 
           <Button
             variant="secondary"
             size="md"
+            fullWidth
+            icon="visibility"
+            onClick={() => setPatientScreen('P11_DETAILS')}
+          >
+            View appointment details
+          </Button>
+
+          <Button
+            variant="tertiary"
+            size="sm"
             fullWidth
             onClick={() => setPatientScreen('P01_HOME')}
           >

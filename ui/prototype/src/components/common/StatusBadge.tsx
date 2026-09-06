@@ -7,9 +7,10 @@ interface StatusBadgeProps {
   status: ExtendedStatus;
   token?: string;
   size?: 'sm' | 'md';
+  customLabel?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, token, size = 'md' }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, token, size = 'md', customLabel }) => {
   const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-[11px] gap-1.5' : 'px-2.5 py-1 text-xs gap-1.5';
 
   const config: Record<
@@ -17,7 +18,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, token, size = 
     { label: string; icon: string; bg: string; text: string; border: string; dotColor?: string }
   > = {
     BOOKED: {
-      label: 'Booked',
+      label: customLabel || 'Booked · Not Checked In',
       icon: 'calendar_today',
       bg: 'bg-[#F0F2F1]',
       text: 'text-[#3D4541]',

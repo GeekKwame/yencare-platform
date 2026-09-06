@@ -111,6 +111,7 @@ export type PatientScreen =
   | 'P07_CONFIRMED'
   | 'P08_SLOT_TAKEN'
   | 'P09_FIND'
+  | 'P10_CLINIC_ACTIVITY'
   | 'P11_DETAILS'
   | 'P12_CANCEL_CONFIRM'
   | 'P13_CANCELLED'
@@ -120,6 +121,30 @@ export type PatientScreen =
   | 'P17_RESCHEDULE_CONFIRMED'
   | 'P18_QUEUE'
   | 'P19_AFTER_HOURS';
+
+// ─── Clinic Activity Pre-Check-In Types ─────────────────────────
+export type ClinicActivityOverride = 'normal' | 'empty' | 'high-demand' | 'unavailable' | 'closed';
+
+export interface RoomConsultationState {
+  room: string;
+  doctorName: string;
+  status: 'in-consultation' | 'available';
+  currentToken?: string;
+  specialty?: string;
+}
+
+export interface ClinicSiteActivity {
+  site: ClinicSite;
+  isOpen: boolean;
+  nowServingToken?: string;
+  nowServingRoom?: string;
+  waitingCount: number;
+  waitingTokens: string[];
+  activeRooms: RoomConsultationState[];
+  estimatedWaitMinutes: number;
+  demandLevel: 'normal' | 'high' | 'low';
+  lastUpdated: string;
+}
 
 export type StaffScreen =
   | 'S01_SIGN_IN'

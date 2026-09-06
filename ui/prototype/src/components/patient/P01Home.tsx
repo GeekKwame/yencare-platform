@@ -59,6 +59,30 @@ export const P01Home: React.FC = () => {
           </Button>
         </div>
 
+        {/* Live Clinic Activity Card (Pre-Check-In Visibility) */}
+        <div className="bg-[#E7F5F1]/50 border border-[#99D5C8] p-4 sm:p-5 text-left mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#087F6C]">
+                <span className="material-symbols-outlined text-[16px] text-[#087F6C]">
+                  pulse_alert
+                </span>
+                <span>Live Clinic Queue Activity</span>
+              </div>
+              <p className="text-xs text-[#3D4541] font-normal mt-1">
+                See who's currently being served, waiting count, and estimated wait times before heading to the clinic.
+              </p>
+            </div>
+            <button
+              onClick={() => setPatientScreen('P10_CLINIC_ACTIVITY')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#087F6C] hover:bg-[#066354] text-white text-xs font-semibold tracking-wide transition-colors shrink-0 cursor-pointer shadow-2xs"
+            >
+              <span>View activity</span>
+              <span className="material-symbols-outlined text-[16px]">analytics</span>
+            </button>
+          </div>
+        </div>
+
         {/* Dedicated Queue Option Card */}
         <div className="bg-[#F0F2F1] border border-[#D8DCD9] p-4 sm:p-5 text-left mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -67,10 +91,10 @@ export const P01Home: React.FC = () => {
                 <span className="material-symbols-outlined text-[16px] text-[#087F6C]">
                   schedule
                 </span>
-                <span>Already checked in?</span>
+                <span>Already checked in at reception?</span>
               </div>
               <p className="text-xs text-[#66706B] font-normal mt-1">
-                Check your current queue position and estimated wait time.
+                Check your assigned queue token number and live queue position.
               </p>
             </div>
             <button

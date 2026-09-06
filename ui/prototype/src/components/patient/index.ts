@@ -9,6 +9,7 @@ export { P06ReviewBooking, P06ReviewBooking as ReviewBookingScreen } from './P06
 export { P07BookingConfirmed, P07BookingConfirmed as BookingConfirmedScreen } from './P07BookingConfirmed';
 export { P08SlotTaken, P08SlotTaken as SlotTakenScreen } from './P08SlotTaken';
 export { P09FindAppointment, P09FindAppointment as FindAppointmentScreen } from './P09FindAppointment';
+export { P10ClinicActivity, P10ClinicActivity as ClinicActivityScreen } from './P10ClinicActivity';
 export { P11AppointmentDetail, P11AppointmentDetail as AppointmentDetailScreen } from './P11AppointmentDetail';
 export { P12CancelConfirm, P12CancelConfirm as CancelConfirmScreen } from './P12CancelConfirm';
 export { P13AppointmentCancelled, P13AppointmentCancelled as AppointmentCancelledScreen } from './P13AppointmentCancelled';

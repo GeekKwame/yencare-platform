@@ -15,7 +15,7 @@ const QUEUE_STEPS = [
 const STATUS_ORDER = ['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED', 'COMPLETED'];
 
 export const P18QueueStatus: React.FC = () => {
-  const { currentPatientAppointment, appointments, setPatientScreen } = useClinic();
+  const { currentPatientAppointment, appointments, setPatientScreen, selfCheckIn } = useClinic();
   const app = currentPatientAppointment;
 
   if (!app) {
@@ -161,8 +161,43 @@ export const P18QueueStatus: React.FC = () => {
             </div>
           </div>
         ) : (
+          /* BOOKED · NOT CHECKED IN STATE */
           <div className="text-center mb-5">
-            <ReferenceBlock code={app.id} subtext="Show this code when you arrive at reception." />
+            <div className="bg-[#F0F2F1] border border-[#D8DCD9] p-6 text-center mb-4">
+              <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold px-2.5 py-1 mb-3">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                BOOKED · NOT CHECKED IN
+              </div>
+              <h2 className="text-lg font-bold text-[#111111] mb-1">
+                Queue Position Pending Check-In
+              </h2>
+              <p className="text-xs text-[#66706B] max-w-sm mx-auto leading-relaxed mb-4">
+                Personal queue numbers are assigned when you physically arrive at the clinic reception. You do not have a queue number yet.
+              </p>
+
+              <ReferenceBlock code={app.id} subtext="Present this reference code to the receptionist upon arrival." />
+
+              <div className="mt-4 pt-4 border-t border-[#D8DCD9] flex flex-col sm:flex-row gap-2.5">
+                <Button
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  icon="analytics"
+                  onClick={() => setPatientScreen('P10_CLINIC_ACTIVITY')}
+                >
+                  View live clinic activity
+                </Button>
+                <Button
+                  variant="accent"
+                  size="md"
+                  fullWidth
+                  icon="how_to_reg"
+                  onClick={() => selfCheckIn(app.id)}
+                >
+                  Simulate Check-In
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 

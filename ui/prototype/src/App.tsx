@@ -15,6 +15,7 @@ import {
   P07BookingConfirmed,
   P08SlotTaken,
   P09FindAppointment,
+  P10ClinicActivity,
   P11AppointmentDetail,
   P12CancelConfirm,
   P13AppointmentCancelled,
@@ -87,6 +88,7 @@ export const App: React.FC = () => {
               {patientScreen === 'P07_CONFIRMED' && <P07BookingConfirmed />}
               {patientScreen === 'P08_SLOT_TAKEN' && <P08SlotTaken />}
               {patientScreen === 'P09_FIND' && <P09FindAppointment />}
+              {patientScreen === 'P10_CLINIC_ACTIVITY' && <P10ClinicActivity />}
               {patientScreen === 'P11_DETAILS' && <P11AppointmentDetail />}
               {patientScreen === 'P12_CANCEL_CONFIRM' && <P12CancelConfirm />}
               {patientScreen === 'P13_CANCELLED' && <P13AppointmentCancelled />}

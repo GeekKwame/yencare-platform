@@ -7,7 +7,7 @@ import { SmsModal } from '../common/SmsModal';
 import { CLINIC_SITE_LABELS, VISIT_TYPE_LABELS } from '../../types/clinic';
 
 export const P11AppointmentDetail: React.FC = () => {
-  const { currentPatientAppointment, cancelAppointment, setPatientScreen } = useClinic();
+  const { currentPatientAppointment, cancelAppointment, setPatientScreen, selfCheckIn } = useClinic();
   const app = currentPatientAppointment;
   const [smsOpen, setSmsOpen] = useState(false);
 
@@ -134,6 +134,43 @@ export const P11AppointmentDetail: React.FC = () => {
 
         {/* Actions */}
         <div className="space-y-2.5">
+          {app.status === 'BOOKED' && (
+            <>
+              {/* Pre-check-in queue information box */}
+              <div className="bg-[#FEF7ED] border border-[#FCD34D] p-3.5 text-left text-xs mb-3 space-y-2">
+                <div className="flex items-start gap-2 text-[#92400E]">
+                  <span className="material-symbols-outlined text-base mt-0.5 shrink-0">info</span>
+                  <div>
+                    <strong className="font-semibold block text-[#78350F]">Not checked in at clinic yet</strong>
+                    <p className="text-[#92400E] text-[11px] mt-0.5 leading-relaxed">
+                      You will receive an individual queue token when you arrive at reception. Monitor overall clinic pace and wait times before leaving home.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-[#FCD34D]/60 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-[#78350F]">Already at reception?</span>
+                  <button
+                    onClick={() => selfCheckIn(app.id)}
+                    className="bg-[#087F6C] hover:bg-[#066354] text-white font-bold text-[11px] px-3 py-1.5 rounded transition-colors shadow-2xs"
+                  >
+                    Simulate Check-In
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                icon="analytics"
+                onClick={() => setPatientScreen('P10_CLINIC_ACTIVITY')}
+              >
+                View live clinic activity
+              </Button>
+            </>
+          )}
+
           {(app.status === 'WAITING' || app.status === 'CALLED') && (
             <Button
               variant="accent"

@@ -26,6 +26,8 @@ export const ProtoToolbar: React.FC = () => {
     staffUser,
     setStaffRole,
     canonicalAppointment,
+    clinicActivityOverride,
+    setClinicActivityOverride,
   } = useClinic();
 
   const akosua = (appointments && appointments.find((a) => a?.id === (canonicalAppointment?.id || 'YC-4821'))) || canonicalAppointment || appointments?.[0];
@@ -273,6 +275,28 @@ export const ProtoToolbar: React.FC = () => {
                 </button>
               ))}
             </div>
+
+            {/* Queue Activity Simulator Override */}
+            <div className="flex items-center gap-1 border border-[#333333] px-1.5 py-0.5 bg-black">
+              <span className="text-[#8A948F]">Queue Load:</span>
+              {(['normal', 'high-demand', 'empty', 'unavailable'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setClinicActivityOverride(mode)}
+                  className={`px-1.5 py-0.5 text-[9px] uppercase font-bold transition-colors cursor-pointer ${
+                    clinicActivityOverride === mode
+                      ? mode === 'high-demand'
+                        ? 'bg-[#C53030] text-white'
+                        : mode === 'unavailable'
+                        ? 'bg-[#D69E2E] text-black'
+                        : 'bg-[#087F6C] text-white'
+                      : 'text-[#8A948F] hover:text-white'
+                  }`}
+                >
+                  {mode === 'high-demand' ? 'High Surge' : mode === 'empty' ? 'Empty' : mode === 'unavailable' ? 'Offline API' : 'Normal'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Screen Grid */}
@@ -345,6 +369,12 @@ export const ProtoToolbar: React.FC = () => {
                   className={`text-left p-1.5 border transition-colors cursor-pointer ${patientScreen === 'P09_FIND' && activeShell === 'PATIENT' ? 'bg-[#087F6C] text-white font-bold border-[#087F6C]' : 'border-[#333333] hover:border-[#666666] text-[#CCCCCC]'}`}
                 >
                   P09 Find Appointment (Index/Ref/Phone)
+                </button>
+                <button
+                  onClick={() => { setActiveShell('PATIENT'); setPatientScreen('P10_CLINIC_ACTIVITY'); setIsOpen(false); }}
+                  className={`text-left p-1.5 border transition-colors cursor-pointer ${patientScreen === 'P10_CLINIC_ACTIVITY' && activeShell === 'PATIENT' ? 'bg-[#087F6C] text-white font-bold border-[#087F6C]' : 'border-[#333333] hover:border-[#666666] text-[#CCCCCC]'}`}
+                >
+                  P10 Clinic Activity (Pre-Check-In)
                 </button>
                 <button
                   onClick={() => { setActiveShell('PATIENT'); setPatientScreen('P11_DETAILS'); setIsOpen(false); }}

@@ -14,6 +14,9 @@ import {
   ConnectivityState,
   ClinicSite,
   VisitType,
+  ClinicActivityOverride,
+  RoomConsultationState,
+  ClinicSiteActivity,
 } from '../types/clinic';
 
 // ─── Clinicians ──────────────────────────────────────────────────
@@ -41,7 +44,9 @@ export const ALL_DOCTORS: Doctor[] = [DR_KWAME_BOATENG, DR_AMA_SERWAA];
 export const CANONICAL_DOCTOR = DR_KWAME_BOATENG;
 
 // ─── Initial Appointments ────────────────────────────────────────
+// ─── Initial Appointments ────────────────────────────────────────
 export const INITIAL_APPOINTMENTS: Appointment[] = [
+  // Primary Demo Patient: Akosua Boateng (BOOKED, Not Checked In)
   {
     id: 'YC-4821',
     patientName: 'Akosua Boateng',
@@ -54,73 +59,212 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     clinicSite: 'students-clinic',
     visitType: 'general-opd',
     bookingType: 'BOOKED',
-    queueToken: '#4',
     estimatedWaitMinutes: 30,
     notes: 'General consultation',
   },
+  // Currently Being Served in Room 1 (#2)
   {
-    id: 'YC-1092',
+    id: 'YC-2001',
+    patientName: 'Kweku Mensah',
+    phone: '024 444 1122',
+    studentIndex: '20619022',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:00 AM',
+    status: 'CALLED',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#2',
+    room: 'Room 1',
+    assignedRoom: 'Room 1',
+    estimatedWaitMinutes: 0,
+    notes: 'In consultation Room 1',
+  },
+  // Active Consultation in Room 2 (#1)
+  {
+    id: 'YC-2002',
+    patientName: 'Ama Agyei',
+    phone: '020 777 8899',
+    studentIndex: '20617711',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '8:45 AM',
+    status: 'CALLED',
+    clinicSite: 'students-clinic',
+    visitType: 'follow-up',
+    bookingType: 'BOOKED',
+    queueToken: '#1',
+    room: 'Room 2',
+    assignedRoom: 'Room 2',
+    estimatedWaitMinutes: 0,
+    notes: 'In consultation Room 2',
+  },
+  // 6 Waiting in Corridor for Students' Clinic (#3 through #8)
+  {
+    id: 'YC-3003',
     patientName: 'Kofi Addo',
     phone: '024 555 1234',
     studentIndex: '20618901',
     doctor: DR_KWAME_BOATENG,
     date: 'Tuesday 15 September 2026',
-    time: '9:00 AM',
+    time: '9:15 AM',
     status: 'WAITING',
     clinicSite: 'students-clinic',
     visitType: 'follow-up',
     bookingType: 'BOOKED',
-    queueToken: '#1',
+    queueToken: '#3',
     estimatedWaitMinutes: 10,
     room: 'Room 1',
-    notes: 'Follow-up on laboratory results',
   },
   {
-    id: 'YC-3381',
-    patientName: 'Akua Serwaa',
+    id: 'YC-3004',
+    patientName: 'Yaw Osei',
     phone: '020 987 6543',
     studentIndex: '20617654',
     doctor: DR_AMA_SERWAA,
     date: 'Tuesday 15 September 2026',
-    time: '9:15 AM',
+    time: '9:20 AM',
     status: 'WAITING',
     clinicSite: 'students-clinic',
     visitType: 'dressing',
     bookingType: 'BOOKED',
-    queueToken: '#2',
-    estimatedWaitMinutes: 20,
+    queueToken: '#4',
+    estimatedWaitMinutes: 15,
     room: 'Room 2',
-    notes: 'Blood pressure monitoring',
   },
   {
-    id: 'YC-7712',
-    patientName: 'Kwame Nkrumah',
+    id: 'YC-3005',
+    patientName: 'Abena Frimpong',
     phone: '027 444 8899',
     studentIndex: '20614455',
     doctor: DR_KWAME_BOATENG,
     date: 'Tuesday 15 September 2026',
-    time: '10:00 AM',
-    status: 'BOOKED',
+    time: '9:25 AM',
+    status: 'WAITING',
     clinicSite: 'students-clinic',
     visitType: 'general-opd',
     bookingType: 'BOOKED',
     queueToken: '#5',
-    notes: 'Prescription refill review',
+    estimatedWaitMinutes: 20,
+    room: 'Room 1',
   },
   {
-    id: 'YC-9021',
+    id: 'YC-3006',
+    patientName: 'Kojo Asante',
+    phone: '050 222 3344',
+    studentIndex: '20619933',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '9:30 AM',
+    status: 'WAITING',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#6',
+    estimatedWaitMinutes: 25,
+    room: 'Room 2',
+  },
+  {
+    id: 'YC-3007',
+    patientName: 'Esi Mansa',
+    phone: '024 666 7788',
+    studentIndex: '20613377',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:35 AM',
+    status: 'WAITING',
+    clinicSite: 'students-clinic',
+    visitType: 'other',
+    bookingType: 'BOOKED',
+    queueToken: '#7',
+    estimatedWaitMinutes: 30,
+    room: 'Room 1',
+  },
+  {
+    id: 'YC-3008',
+    patientName: 'Kwabena Darko',
+    phone: '026 888 9900',
+    studentIndex: '20618800',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '9:40 AM',
+    status: 'WAITING',
+    clinicSite: 'students-clinic',
+    visitType: 'follow-up',
+    bookingType: 'BOOKED',
+    queueToken: '#8',
+    estimatedWaitMinutes: 35,
+    room: 'Room 2',
+  },
+  // Social Science Block GF7 Separate Location Queue
+  {
+    id: 'YC-9101',
     patientName: 'Efua Sutherland',
     phone: '050 333 2211',
     studentIndex: '20613322',
-    doctor: DR_AMA_SERWAA,
+    doctor: DR_KWAME_BOATENG,
     date: 'Tuesday 15 September 2026',
-    time: '10:30 AM',
-    status: 'BOOKED',
+    time: '9:15 AM',
+    status: 'CALLED',
     clinicSite: 'social-science-gf7',
     visitType: 'other',
     bookingType: 'BOOKED',
-    notes: 'Initial clinical assessment',
+    queueToken: '#1',
+    assignedRoom: 'Room 1',
+    room: 'Room 1',
+    estimatedWaitMinutes: 0,
+    notes: 'Social Science consult',
   },
+  {
+    id: 'YC-9102',
+    patientName: 'Nana Yeboah',
+    phone: '024 123 9988',
+    studentIndex: '20619911',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:30 AM',
+    status: 'WAITING',
+    clinicSite: 'social-science-gf7',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#2',
+    estimatedWaitMinutes: 10,
+    room: 'Room 1',
+  },
+  {
+    id: 'YC-9103',
+    patientName: 'Adwoa Sarfo',
+    phone: '020 444 3322',
+    studentIndex: '20614422',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:45 AM',
+    status: 'WAITING',
+    clinicSite: 'social-science-gf7',
+    visitType: 'dressing',
+    bookingType: 'BOOKED',
+    queueToken: '#3',
+    estimatedWaitMinutes: 15,
+    room: 'Room 1',
+  },
+  {
+    id: 'YC-9104',
+    patientName: 'Kweku Baah',
+    phone: '027 111 6655',
+    studentIndex: '20611155',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '10:00 AM',
+    status: 'WAITING',
+    clinicSite: 'social-science-gf7',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#4',
+    estimatedWaitMinutes: 20,
+    room: 'Room 1',
+  },
+  // Additional Roster Data
   {
     id: 'YC-5104',
     patientName: 'Kojo Antwi',
@@ -133,25 +277,9 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     clinicSite: 'students-clinic',
     visitType: 'general-opd',
     bookingType: 'BOOKED',
-    queueToken: '#3',
+    queueToken: '#0',
     room: 'Room 1',
     assignedRoom: 'Room 1',
-  },
-  {
-    id: 'YC-6299',
-    patientName: 'Yaa Asantewaa',
-    phone: '020 111 4433',
-    studentIndex: '20615544',
-    doctor: DR_AMA_SERWAA,
-    date: 'Tuesday 15 September 2026',
-    time: '8:00 AM',
-    status: 'COMPLETED',
-    clinicSite: 'students-clinic',
-    visitType: 'follow-up',
-    bookingType: 'BOOKED',
-    queueToken: '#2',
-    room: 'Room 2',
-    assignedRoom: 'Room 2',
   },
   {
     id: 'YC-8834',
@@ -260,6 +388,12 @@ interface ClinicContextType {
   // Notification Toast
   toastMessage: string | null;
   showToast: (msg: string) => void;
+
+  // Pre-Check-In Clinic Queue Visibility (Clinic Activity)
+  clinicActivityOverride: ClinicActivityOverride;
+  setClinicActivityOverride: (override: ClinicActivityOverride) => void;
+  getClinicActivity: (site: ClinicSite) => ClinicSiteActivity;
+  selfCheckIn: (id: string) => void;
 
   // Reset
   resetDemoData: () => void;
@@ -595,6 +729,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsSessionExpired(false);
     setSimulateSlotTaken(false);
     setIsAfterHours(false);
+    setClinicActivityOverride('normal');
     setDraftBooking({ ...DEFAULT_DRAFT });
     setRescheduleDraft({
       newDate: 'Wednesday 16 September 2026',
@@ -604,6 +739,122 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const canonicalAppointment = appointments.find((a) => a.id === 'YC-4821') || appointments[0];
+
+  const [clinicActivityOverride, setClinicActivityOverride] = useState<ClinicActivityOverride>('normal');
+
+  const selfCheckIn = (id: string) => {
+    checkInPatient(id);
+    setActivePatientAppointmentId(id);
+    setPatientScreen('P18_QUEUE');
+    showToast('Reception check-in completed! You are now in the live queue.');
+  };
+
+  const getClinicActivity = (site: ClinicSite): ClinicSiteActivity => {
+    if (clinicActivityOverride === 'closed' || isAfterHours) {
+      return {
+        site,
+        isOpen: false,
+        waitingCount: 0,
+        waitingTokens: [],
+        activeRooms: [
+          { room: 'Room 1', doctorName: 'Dr. Kwame Boateng', status: 'available', specialty: 'General OPD' },
+          { room: 'Room 2', doctorName: 'Dr. Ama Serwaa', status: 'available', specialty: 'Reviews & OPD' },
+        ],
+        estimatedWaitMinutes: 0,
+        demandLevel: 'low',
+        lastUpdated: 'Just now',
+      };
+    }
+
+    if (clinicActivityOverride === 'unavailable') {
+      return {
+        site,
+        isOpen: true,
+        waitingCount: 0,
+        waitingTokens: [],
+        activeRooms: [],
+        estimatedWaitMinutes: 0,
+        demandLevel: 'normal',
+        lastUpdated: 'Unavailable',
+      };
+    }
+
+    if (clinicActivityOverride === 'empty') {
+      return {
+        site,
+        isOpen: true,
+        nowServingToken: undefined,
+        nowServingRoom: undefined,
+        waitingCount: 0,
+        waitingTokens: [],
+        activeRooms: [
+          { room: 'Room 1', doctorName: 'Dr. Kwame Boateng', status: 'available', specialty: 'General OPD' },
+          { room: 'Room 2', doctorName: 'Dr. Ama Serwaa', status: 'available', specialty: 'Reviews & OPD' },
+        ],
+        estimatedWaitMinutes: 0,
+        demandLevel: 'low',
+        lastUpdated: 'Just now',
+      };
+    }
+
+    const siteApps = appointments.filter((a) => a.clinicSite === site);
+    const called = siteApps.filter((a) => a.status === 'CALLED');
+    const waiting = siteApps.filter((a) => a.status === 'WAITING');
+
+    const room1Called = called.find((c) => c.assignedRoom === 'Room 1' || c.doctor.room === 'Room 1');
+    const room2Called = called.find((c) => c.assignedRoom === 'Room 2' || c.doctor.room === 'Room 2');
+    const nowServing = room1Called || called[0];
+
+    const waitingTokens = waiting.map((w) => w.queueToken || '#--');
+    const waitingCount = waiting.length;
+
+    const activeRooms: RoomConsultationState[] = site === 'students-clinic' ? [
+      {
+        room: 'Room 1',
+        doctorName: 'Dr. Kwame Boateng',
+        status: room1Called ? 'in-consultation' : 'available',
+        currentToken: room1Called?.queueToken,
+        specialty: 'General OPD',
+      },
+      {
+        room: 'Room 2',
+        doctorName: 'Dr. Ama Serwaa',
+        status: room2Called ? 'in-consultation' : 'available',
+        currentToken: room2Called?.queueToken,
+        specialty: 'Reviews & Consult',
+      },
+    ] : [
+      {
+        room: 'Room 1',
+        doctorName: 'Dr. Kwame Boateng',
+        status: room1Called ? 'in-consultation' : 'available',
+        currentToken: room1Called?.queueToken,
+        specialty: 'Outreach Consult',
+      },
+    ];
+
+    let estimatedWaitMinutes = Math.max(15, waitingCount * 5 + 10);
+    if (waitingCount >= 6) estimatedWaitMinutes = 35; // 30–40 min range
+    let demandLevel: 'normal' | 'high' | 'low' = waitingCount >= 6 ? 'high' : waitingCount <= 2 ? 'low' : 'normal';
+
+    if (clinicActivityOverride === 'high-demand') {
+      demandLevel = 'high';
+      estimatedWaitMinutes = 45;
+    }
+
+    return {
+      site,
+      isOpen: true,
+      nowServingToken: nowServing?.queueToken || (site === 'students-clinic' ? '#2' : '#1'),
+      nowServingRoom: nowServing?.assignedRoom || nowServing?.doctor.room || 'Room 1',
+      waitingCount,
+      waitingTokens: waitingTokens.length > 0 ? waitingTokens : (site === 'students-clinic' ? ['#3', '#4', '#5', '#6', '#7', '#8'] : ['#2', '#3', '#4']),
+      activeRooms,
+      estimatedWaitMinutes,
+      demandLevel,
+      lastUpdated: '2 min ago',
+    };
+  };
 
   return (
     <ClinicContext.Provider
@@ -651,6 +902,10 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsAfterHours,
         toastMessage,
         showToast,
+        clinicActivityOverride,
+        setClinicActivityOverride,
+        getClinicActivity,
+        selfCheckIn,
         resetDemoData,
       }}
     >
