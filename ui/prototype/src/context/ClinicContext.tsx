@@ -1,0 +1,686 @@
+import React, { createContext, useContext, useState } from 'react';
+import {
+  Appointment,
+  Doctor,
+  StaffUser,
+  PatientScreen,
+  StaffScreen,
+  ActiveShell,
+  StaffRole,
+  DraftBooking,
+  RescheduleDraft,
+  WalkInDraft,
+  SmsMessage,
+  ConnectivityState,
+  ClinicSite,
+  VisitType,
+} from '../types/clinic';
+
+// ─── Clinicians ──────────────────────────────────────────────────
+export const DR_KWAME_BOATENG: Doctor = {
+  id: 'dr-kwame-boateng',
+  name: 'Dr. Kwame Boateng',
+  title: 'Senior Medical Officer',
+  specialty: 'General Clinic',
+  room: 'Room 1',
+  available: true,
+};
+
+export const DR_AMA_SERWAA: Doctor = {
+  id: 'dr-ama-serwaa',
+  name: 'Dr. Ama Serwaa',
+  title: 'Medical Officer',
+  specialty: 'General Clinic',
+  room: 'Room 2',
+  available: true,
+};
+
+export const ALL_DOCTORS: Doctor[] = [DR_KWAME_BOATENG, DR_AMA_SERWAA];
+
+// Backwards-compat alias
+export const CANONICAL_DOCTOR = DR_KWAME_BOATENG;
+
+// ─── Initial Appointments ────────────────────────────────────────
+export const INITIAL_APPOINTMENTS: Appointment[] = [
+  {
+    id: 'YC-4821',
+    patientName: 'Akosua Boateng',
+    phone: '024 XXX XXXX',
+    studentIndex: '20612345',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:30 AM',
+    status: 'BOOKED',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#4',
+    estimatedWaitMinutes: 30,
+    notes: 'General consultation',
+  },
+  {
+    id: 'YC-1092',
+    patientName: 'Kofi Addo',
+    phone: '024 555 1234',
+    studentIndex: '20618901',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:00 AM',
+    status: 'WAITING',
+    clinicSite: 'students-clinic',
+    visitType: 'follow-up',
+    bookingType: 'BOOKED',
+    queueToken: '#1',
+    estimatedWaitMinutes: 10,
+    room: 'Room 1',
+    notes: 'Follow-up on laboratory results',
+  },
+  {
+    id: 'YC-3381',
+    patientName: 'Akua Serwaa',
+    phone: '020 987 6543',
+    studentIndex: '20617654',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '9:15 AM',
+    status: 'WAITING',
+    clinicSite: 'students-clinic',
+    visitType: 'dressing',
+    bookingType: 'BOOKED',
+    queueToken: '#2',
+    estimatedWaitMinutes: 20,
+    room: 'Room 2',
+    notes: 'Blood pressure monitoring',
+  },
+  {
+    id: 'YC-7712',
+    patientName: 'Kwame Nkrumah',
+    phone: '027 444 8899',
+    studentIndex: '20614455',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '10:00 AM',
+    status: 'BOOKED',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#5',
+    notes: 'Prescription refill review',
+  },
+  {
+    id: 'YC-9021',
+    patientName: 'Efua Sutherland',
+    phone: '050 333 2211',
+    studentIndex: '20613322',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '10:30 AM',
+    status: 'BOOKED',
+    clinicSite: 'social-science-gf7',
+    visitType: 'other',
+    bookingType: 'BOOKED',
+    notes: 'Initial clinical assessment',
+  },
+  {
+    id: 'YC-5104',
+    patientName: 'Kojo Antwi',
+    phone: '024 777 6655',
+    studentIndex: '20619988',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '8:30 AM',
+    status: 'COMPLETED',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    queueToken: '#3',
+    room: 'Room 1',
+    assignedRoom: 'Room 1',
+  },
+  {
+    id: 'YC-6299',
+    patientName: 'Yaa Asantewaa',
+    phone: '020 111 4433',
+    studentIndex: '20615544',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '8:00 AM',
+    status: 'COMPLETED',
+    clinicSite: 'students-clinic',
+    visitType: 'follow-up',
+    bookingType: 'BOOKED',
+    queueToken: '#2',
+    room: 'Room 2',
+    assignedRoom: 'Room 2',
+  },
+  {
+    id: 'YC-8834',
+    patientName: 'Nana Akufo',
+    phone: '024 999 0011',
+    studentIndex: '20612200',
+    doctor: DR_KWAME_BOATENG,
+    date: 'Tuesday 15 September 2026',
+    time: '9:15 AM',
+    status: 'CANCELLED',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+  },
+];
+
+// ─── Initial SMS Log ─────────────────────────────────────────────
+const INITIAL_SMS: SmsMessage[] = [
+  {
+    id: 'sms-001',
+    appointmentId: 'YC-4821',
+    type: 'confirmation',
+    phone: '024 XXX XXXX',
+    body: `KNUST Students' Clinic\n\nAppointment Confirmed\nTue 15 Sep, 9:30 AM\nRef: YC-4821\nArrive by 9:15 AM\n\nDr. Kwame Boateng · Room 1\nGeneral OPD`,
+    timestamp: '2026-09-14 14:22',
+  },
+  {
+    id: 'sms-002',
+    appointmentId: 'YC-4821',
+    type: 'reminder',
+    phone: '024 XXX XXXX',
+    body: `YɛnCare Reminder\n\nYour appointment is tomorrow.\nTue 15 Sep, 9:30 AM\nRef: YC-4821\n\nArrive by 9:15 AM at KNUST Students' Clinic.`,
+    timestamp: '2026-09-14 18:00',
+  },
+];
+
+// ─── Default Draft Booking ───────────────────────────────────────
+const DEFAULT_DRAFT: DraftBooking = {
+  patientName: 'Akosua Boateng',
+  phone: '024 XXX XXXX',
+  studentIndex: '20612345',
+  nhisNumber: '',
+  clinicSite: 'students-clinic',
+  visitType: 'general-opd',
+  doctor: DR_KWAME_BOATENG,
+  date: 'Tuesday 15 September 2026',
+  time: '9:30 AM',
+};
+
+// ─── Context Type ────────────────────────────────────────────────
+interface ClinicContextType {
+  activeShell: ActiveShell;
+  setActiveShell: (shell: ActiveShell) => void;
+  patientScreen: PatientScreen;
+  setPatientScreen: (screen: PatientScreen) => void;
+  staffScreen: StaffScreen;
+  setStaffScreen: (screen: StaffScreen) => void;
+  selectedStaffAppointmentId: string | null;
+  setSelectedStaffAppointmentId: (id: string | null) => void;
+
+  // Data
+  appointments: Appointment[];
+  activePatientAppointmentId: string;
+  setActivePatientAppointmentId: (id: string) => void;
+  currentPatientAppointment: Appointment | undefined;
+  canonicalAppointment: Appointment;
+  staffUser: StaffUser;
+  setStaffRole: (role: StaffRole) => void;
+  allDoctors: Doctor[];
+
+  // Draft Booking
+  draftBooking: DraftBooking;
+  updateDraftBooking: (partial: Partial<DraftBooking>) => void;
+  confirmBooking: () => string;
+
+  // Rescheduling
+  rescheduleDraft: RescheduleDraft;
+  updateRescheduleDraft: (partial: Partial<RescheduleDraft>) => void;
+  confirmReschedule: () => void;
+
+  // Clinic Operations
+  checkInPatient: (id: string) => void;
+  callPatient: (id: string, room?: string) => void;
+  completeVisit: (id: string) => void;
+  cancelAppointment: (id: string) => void;
+  markNoShow: (id: string) => void;
+  addWalkIn: (draft: WalkInDraft) => string;
+  changeAppointmentTime: (id: string, newTime: string, newDate: string, reason: string) => void;
+
+  // SMS
+  smsLog: SmsMessage[];
+  getSmsForAppointment: (appointmentId: string) => SmsMessage[];
+
+  // Edge / Error States
+  connectivityState: ConnectivityState;
+  setConnectivityState: (state: ConnectivityState) => void;
+  isOffline: boolean;
+  setIsOffline: (offline: boolean) => void;
+  isSessionExpired: boolean;
+  setIsSessionExpired: (expired: boolean) => void;
+  simulateSlotTaken: boolean;
+  setSimulateSlotTaken: (slotTaken: boolean) => void;
+  isAfterHours: boolean;
+  setIsAfterHours: (afterHours: boolean) => void;
+
+  // Notification Toast
+  toastMessage: string | null;
+  showToast: (msg: string) => void;
+
+  // Reset
+  resetDemoData: () => void;
+}
+
+const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
+
+// ─── Walk-in token counter ───────────────────────────────────────
+let walkInCounter = 24;
+
+export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [activeShell, setActiveShell] = useState<ActiveShell>('PATIENT');
+  const [patientScreen, setPatientScreen] = useState<PatientScreen>('P01_HOME');
+  const [staffScreen, setStaffScreen] = useState<StaffScreen>('S02_TODAY');
+  const [selectedStaffAppointmentId, setSelectedStaffAppointmentId] = useState<string | null>('YC-4821');
+  const [activePatientAppointmentId, setActivePatientAppointmentId] = useState<string>('YC-4821');
+
+  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [smsLog, setSmsLog] = useState<SmsMessage[]>(INITIAL_SMS);
+
+  const [staffUser, setStaffUser] = useState<StaffUser>({
+    id: 'staff-01',
+    name: 'Abena Osei',
+    role: 'Receptionist',
+    clinic: "KNUST Students' Clinic",
+  });
+
+  const [draftBooking, setDraftBooking] = useState<DraftBooking>({ ...DEFAULT_DRAFT });
+
+  const [rescheduleDraft, setRescheduleDraft] = useState<RescheduleDraft>({
+    newDate: 'Wednesday 16 September 2026',
+    newTime: '11:00 AM',
+  });
+
+  const [connectivityState, setConnectivityState] = useState<ConnectivityState>('online');
+  const [isOffline, setIsOfflineRaw] = useState<boolean>(false);
+  const [isSessionExpired, setIsSessionExpired] = useState<boolean>(false);
+  const [simulateSlotTaken, setSimulateSlotTaken] = useState<boolean>(false);
+  const [isAfterHours, setIsAfterHours] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync isOffline with connectivityState
+  const setIsOffline = (offline: boolean) => {
+    setIsOfflineRaw(offline);
+    setConnectivityState(offline ? 'offline' : 'online');
+  };
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((curr) => (curr === msg ? null : curr));
+    }, 4000);
+  };
+
+  const addSms = (msg: Omit<SmsMessage, 'id' | 'timestamp'>) => {
+    const newSms: SmsMessage = {
+      ...msg,
+      id: `sms-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    };
+    setSmsLog((prev) => [...prev, newSms]);
+  };
+
+  const currentPatientAppointment = appointments.find(
+    (a) => a.id === activePatientAppointmentId
+  );
+
+  const getSmsForAppointment = (appointmentId: string) =>
+    smsLog.filter((s) => s.appointmentId === appointmentId);
+
+  const updateDraftBooking = (partial: Partial<DraftBooking>) => {
+    setDraftBooking((prev) => ({ ...prev, ...partial }));
+  };
+
+  const updateRescheduleDraft = (partial: Partial<RescheduleDraft>) => {
+    setRescheduleDraft((prev) => ({ ...prev, ...partial }));
+  };
+
+  // ─── Confirm Booking ────────────────────────────────────────
+  const confirmBooking = (): string => {
+    const newRef = 'YC-4821';
+    const newAppointment: Appointment = {
+      id: newRef,
+      patientName: draftBooking.patientName || 'Akosua Boateng',
+      phone: draftBooking.phone || '024 XXX XXXX',
+      studentIndex: draftBooking.studentIndex || '20612345',
+      nhisNumber: draftBooking.nhisNumber || undefined,
+      doctor: draftBooking.doctor || DR_KWAME_BOATENG,
+      date: draftBooking.date || 'Tuesday 15 September 2026',
+      time: draftBooking.time || '9:30 AM',
+      status: 'BOOKED',
+      clinicSite: draftBooking.clinicSite || 'students-clinic',
+      visitType: draftBooking.visitType || 'general-opd',
+      bookingType: 'BOOKED',
+      queueToken: '#4',
+      estimatedWaitMinutes: 30,
+      notes: 'New appointment created via Patient Web Portal',
+    };
+
+    setAppointments((prev) => {
+      const filtered = prev.filter((a) => a.id !== newRef);
+      return [newAppointment, ...filtered];
+    });
+
+    // SMS confirmation
+    addSms({
+      appointmentId: newRef,
+      type: 'confirmation',
+      phone: newAppointment.phone,
+      body: `KNUST Students' Clinic\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\nGeneral OPD`,
+    });
+
+    setActivePatientAppointmentId(newRef);
+    setPatientScreen('P07_CONFIRMED');
+    showToast(`Appointment confirmed: ${newRef}`);
+    return newRef;
+  };
+
+  // ─── Confirm Reschedule ─────────────────────────────────────
+  const confirmReschedule = () => {
+    const oldApp = appointments.find((a) => a.id === activePatientAppointmentId);
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === activePatientAppointmentId) {
+          return {
+            ...app,
+            date: rescheduleDraft.newDate,
+            time: rescheduleDraft.newTime,
+          };
+        }
+        return app;
+      })
+    );
+
+    if (oldApp) {
+      addSms({
+        appointmentId: activePatientAppointmentId,
+        type: 'time-changed',
+        phone: oldApp.phone,
+        body: `YɛnCare Update\n\nYour appointment has been rescheduled.\n\nNew: ${rescheduleDraft.newDate.split(' ').slice(0, 3).join(' ')}, ${rescheduleDraft.newTime}\nRef: ${activePatientAppointmentId}\n\nKNUST Students' Clinic`,
+      });
+    }
+
+    setPatientScreen('P17_RESCHEDULE_CONFIRMED');
+    showToast(`Appointment ${activePatientAppointmentId} rescheduled to ${rescheduleDraft.newDate}, ${rescheduleDraft.newTime}`);
+  };
+
+  // ─── Check In Patient ───────────────────────────────────────
+  const checkInPatient = (id: string) => {
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === id) {
+          return {
+            ...app,
+            status: 'WAITING',
+            queueToken: app.queueToken || `#${prev.filter((a) => a.status === 'WAITING' || a.status === 'CALLED').length + 1}`,
+            estimatedWaitMinutes: prev.filter((a) => a.status === 'WAITING').length * 15 + 10,
+          };
+        }
+        return app;
+      })
+    );
+    const target = appointments.find((a) => a.id === id);
+    showToast(`${target?.patientName || id} is checked in and waiting in queue.`);
+  };
+
+  // ─── Call Patient ───────────────────────────────────────────
+  const callPatient = (id: string, room?: string) => {
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === id) {
+          const assignedRoom = room || app.doctor.room || 'Room 1';
+          return {
+            ...app,
+            status: 'CALLED',
+            assignedRoom,
+            room: assignedRoom,
+          };
+        }
+        return app;
+      })
+    );
+    const target = appointments.find((a) => a.id === id);
+    const assignedRoom = room || target?.doctor.room || 'Room 1';
+    showToast(`Calling ${target?.patientName || id} to ${assignedRoom}`);
+
+    if (target) {
+      addSms({
+        appointmentId: id,
+        type: 'called',
+        phone: target.phone,
+        body: `YɛnCare\n\nIt is your turn.\nPlease proceed to ${assignedRoom}.\n\nRef: ${id}\n${target.doctor.name} is ready for you.`,
+      });
+    }
+  };
+
+  // ─── Complete Visit ─────────────────────────────────────────
+  const completeVisit = (id: string) => {
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === id) {
+          return { ...app, status: 'COMPLETED' };
+        }
+        return app;
+      })
+    );
+    const target = appointments.find((a) => a.id === id);
+    showToast(`Visit completed for ${target?.patientName || id}`);
+  };
+
+  // ─── Cancel Appointment ─────────────────────────────────────
+  const cancelAppointment = (id: string) => {
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === id) {
+          return { ...app, status: 'CANCELLED' };
+        }
+        return app;
+      })
+    );
+
+    const target = appointments.find((a) => a.id === id);
+    if (target) {
+      addSms({
+        appointmentId: id,
+        type: 'cancelled',
+        phone: target.phone,
+        body: `YɛnCare\n\nYour appointment ${id} has been cancelled.\n\nIf you need medical attention, please book a new appointment.\n\nKNUST Students' Clinic`,
+      });
+    }
+
+    showToast(`Appointment ${id} has been cancelled.`);
+  };
+
+  // ─── Mark No-Show ───────────────────────────────────────────
+  const markNoShow = (id: string) => {
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === id) {
+          return { ...app, status: 'NO_SHOW' };
+        }
+        return app;
+      })
+    );
+    const target = appointments.find((a) => a.id === id);
+    showToast(`${target?.patientName || id} marked as no-show.`);
+  };
+
+  // ─── Add Walk-In ────────────────────────────────────────────
+  const addWalkIn = (draft: WalkInDraft): string => {
+    walkInCounter++;
+    const token = `W-${String(walkInCounter).padStart(3, '0')}`;
+    const newAppointment: Appointment = {
+      id: token,
+      patientName: draft.patientName,
+      phone: draft.phone,
+      studentIndex: draft.studentIndex,
+      doctor: DR_KWAME_BOATENG, // Default to first available
+      date: 'Tuesday 15 September 2026',
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+      status: 'WAITING',
+      clinicSite: 'students-clinic',
+      visitType: draft.visitType,
+      bookingType: 'WALK_IN',
+      queueToken: token,
+      estimatedWaitMinutes: appointments.filter((a) => a.status === 'WAITING').length * 15 + 15,
+    };
+
+    setAppointments((prev) => [...prev, newAppointment]);
+
+    addSms({
+      appointmentId: token,
+      type: 'walk-in-confirmation',
+      phone: draft.phone,
+      body: `KNUST Students' Clinic\n\nWalk-In Registered\nToken: ${token}\n\nYou have been added to the queue.\nEstimated wait: ~${newAppointment.estimatedWaitMinutes} min`,
+    });
+
+    showToast(`Walk-in ${draft.patientName} added to queue as ${token}`);
+    return token;
+  };
+
+  // ─── Staff Change Appointment Time ──────────────────────────
+  const changeAppointmentTime = (id: string, newTime: string, newDate: string, reason: string) => {
+    setAppointments((prev) =>
+      prev.map((app) => {
+        if (app.id === id) {
+          return {
+            ...app,
+            staffChangedTime: app.time,
+            time: newTime,
+            date: newDate,
+            staffChangeReason: reason,
+          };
+        }
+        return app;
+      })
+    );
+
+    const target = appointments.find((a) => a.id === id);
+    if (target) {
+      addSms({
+        appointmentId: id,
+        type: 'time-changed',
+        phone: target.phone,
+        body: `YɛnCare Update\n\nYour appointment has been updated by the clinic.\n\nNew Time: ${newDate.split(' ').slice(0, 3).join(' ')}, ${newTime}\nRef: ${id}\nReason: ${reason}\n\nKNUST Students' Clinic`,
+      });
+    }
+
+    showToast(`Appointment ${id} time changed to ${newTime}. SMS sent.`);
+  };
+
+  // ─── Staff Role ─────────────────────────────────────────────
+  const setStaffRole = (role: StaffRole) => {
+    setStaffUser((prev) => ({
+      ...prev,
+      role,
+      name: role === 'Doctor' ? 'Dr. Kwame Boateng' : role === 'Admin' ? 'Kojo Mensah' : 'Abena Osei',
+    }));
+    showToast(`Role changed to ${role}`);
+  };
+
+  // ─── Reset Demo ─────────────────────────────────────────────
+  const resetDemoData = () => {
+    walkInCounter = 24;
+    setAppointments(INITIAL_APPOINTMENTS);
+    setSmsLog(INITIAL_SMS);
+    setActivePatientAppointmentId('YC-4821');
+    setPatientScreen('P01_HOME');
+    setStaffScreen('S02_TODAY');
+    setSelectedStaffAppointmentId('YC-4821');
+    setIsOfflineRaw(false);
+    setConnectivityState('online');
+    setIsSessionExpired(false);
+    setSimulateSlotTaken(false);
+    setIsAfterHours(false);
+    setDraftBooking({ ...DEFAULT_DRAFT });
+    setRescheduleDraft({
+      newDate: 'Wednesday 16 September 2026',
+      newTime: '11:00 AM',
+    });
+    showToast('Reset to canonical YC-4821 demo state');
+  };
+
+  const canonicalAppointment = appointments.find((a) => a.id === 'YC-4821') || appointments[0];
+
+  return (
+    <ClinicContext.Provider
+      value={{
+        activeShell,
+        setActiveShell,
+        patientScreen,
+        setPatientScreen,
+        staffScreen,
+        setStaffScreen,
+        selectedStaffAppointmentId,
+        setSelectedStaffAppointmentId,
+        appointments,
+        activePatientAppointmentId,
+        setActivePatientAppointmentId,
+        currentPatientAppointment,
+        canonicalAppointment,
+        staffUser,
+        setStaffRole,
+        allDoctors: ALL_DOCTORS,
+        draftBooking,
+        updateDraftBooking,
+        confirmBooking,
+        rescheduleDraft,
+        updateRescheduleDraft,
+        confirmReschedule,
+        checkInPatient,
+        callPatient,
+        completeVisit,
+        cancelAppointment,
+        markNoShow,
+        addWalkIn,
+        changeAppointmentTime,
+        smsLog,
+        getSmsForAppointment,
+        connectivityState,
+        setConnectivityState,
+        isOffline,
+        setIsOffline,
+        isSessionExpired,
+        setIsSessionExpired,
+        simulateSlotTaken,
+        setSimulateSlotTaken,
+        isAfterHours,
+        setIsAfterHours,
+        toastMessage,
+        showToast,
+        resetDemoData,
+      }}
+    >
+      {children}
+    </ClinicContext.Provider>
+  );
+};
+
+export const useClinic = () => {
+  const context = useContext(ClinicContext);
+  if (!context) {
+    throw new Error('useClinic must be used within a ClinicProvider');
+  }
+  return context;
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────
+function getArriveBy(time: string): string {
+  // Parse "9:30 AM" → subtract 15 min → "9:15 AM"
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return time;
+  let h = parseInt(match[1]);
+  let m = parseInt(match[2]);
+  const period = match[3].toUpperCase();
+
+  m -= 15;
+  if (m < 0) {
+    m += 60;
+    h -= 1;
+  }
+  if (h <= 0) h = 12;
+  return `${h}:${String(m).padStart(2, '0')} ${period}`;
+}

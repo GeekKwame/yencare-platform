@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #111111;
+  --color-clinic-bg: #F7F8F7;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F0F2F1;
+  --color-clinic-border: #D8DCD9;
+  --color-border-input: #C8CDCA;
+  --color-border-divider: #E5E7E6;
+  --color-text-muted: #66706B;
+  --color-accent: #087F6C;
+  --color-accent-soft: #E7F5F1;
+  --color-accent-hover: #066A5A;
+  --color-warning: #B7791F;
+  --color-warning-soft: #FEF7ED;
+  --color-error: #C53030;
+  --color-error-soft: #FDF2F2;
+  --color-success: #087F6C;
+  --color-success-soft: #E7F5F1;
+  --color-noshow: #8B5A2B;
+  --color-noshow-soft: #FFF5EB;
+  --color-walkin: #5B21B6;
+  --color-walkin-soft: #F3EEFF;
+}
+
+@layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F7F8F7;
+    color: #111111;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Default accessible focus visible state */
+  :focus-visible {
+    outline: 2px solid #087F6C;
+    outline-offset: 2px;
+  }
+}
+
+/* Clinical Editorial Brutalism & Hierarchy Utilities */
+.card-clinical {
+  background-color: #FFFFFF;
+  border: 1px solid #D8DCD9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.card-clinical-secondary {
+  background-color: #F0F2F1;
+  border: 1px solid #D8DCD9;
+}
+
+.card-clinical-accent {
+  background-color: #E7F5F1;
+  border: 1px solid #99D5C8;
+}
+
+.card-featured {
+  background-color: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card-noshow {
+  background-color: #FFF5EB;
+  border: 1px solid #D4A574;
+}
+
+.brutal-border {
+  border: 2px solid #111111;
+}
+
+.brutal-border-thin {
+  border: 1px solid #D8DCD9;
+}
+
+.brutal-divider {
+  border-bottom: 1px solid #E5E7E6;
+}
+
+.font-reference {
+  font-family: 'Hanken Grotesk', ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.font-queue-hero {
+  font-size: 64px;
+  line-height: 72px;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+/* Material symbols vertical alignment */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Connectivity indicator styles */
+.connectivity-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.connectivity-online {
+  display: none;
+}
+
+.connectivity-poor {
+  background-color: #FEF7ED;
+  border-bottom: 1px solid #FCD34D;
+  color: #B7791F;
+}
+
+.connectivity-offline {
+  background-color: #FDF2F2;
+  border-bottom: 1px solid #F8B4B4;
+  color: #C53030;
+}
+
+.connectivity-restored {
+  background-color: #E7F5F1;
+  border-bottom: 1px solid #99D5C8;
+  color: #087F6C;
+  animation: fadeOut 3s ease 2s forwards;
+}
+
+/* Gentle pulse animation for called states */
+.pulse-gentle {
+  animation: pulseGentle 2s ease-in-out infinite;
+}
+
+@keyframes pulseGentle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; max-height: 0; padding: 0; overflow: hidden; }
+}
+
+/* Walk-in badge */
+.badge-walkin {
+  background-color: #F3EEFF;
+  color: #5B21B6;
+  border: 1px solid #C4B5FD;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+}
+
+/* Booked badge */
+.badge-booked {
+  background-color: #F0F2F1;
+  color: #3D4541;
+  border: 1px solid #D8DCD9;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+}
