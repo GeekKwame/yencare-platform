@@ -37,6 +37,7 @@ import {
   S07SessionExpired,
   S08ChangeAppointment,
   S09NoShowConfirm,
+  S10DisplayBoard,
 } from './components/staff';
 
 // Edge Components
@@ -130,6 +131,8 @@ export const App: React.FC = () => {
         <S01SignIn />
       ) : staffScreen === 'S07_SESSION_EXPIRED' ? (
         <S07SessionExpired />
+      ) : staffScreen === 'S10_DISPLAY_BOARD' ? (
+        <S10DisplayBoard />
       ) : (
         <StaffLayout>
           {staffScreen === 'S02_TODAY' && <S02Today />}

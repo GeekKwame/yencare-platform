@@ -29,8 +29,22 @@ export const S03Appointments: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const statusRank: Record<string, number> = {
+    CHECKED_IN: 0,
+    BOOKED: 1,
+    WAITING: 2,
+    CALLED: 3,
+    COMPLETED: 4,
+    NO_SHOW: 5,
+    CANCELLED: 6,
+  };
+  const sortedAppointments = [...filteredAppointments].sort(
+    (a, b) => (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9)
+  );
+
   const filterTabs = [
     { label: 'All', value: 'ALL', count: appointments.length },
+    { label: 'Arrived', value: 'CHECKED_IN', count: appointments.filter((a) => a.status === 'CHECKED_IN').length },
     { label: 'Booked', value: 'BOOKED', count: appointments.filter((a) => a.status === 'BOOKED').length },
     { label: 'Waiting', value: 'WAITING', count: appointments.filter((a) => a.status === 'WAITING').length },
     { label: 'Walk-Ins', value: 'WALK_IN', count: appointments.filter((a) => a.bookingType === 'WALK_IN').length },
@@ -147,17 +161,19 @@ export const S03Appointments: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7E6] font-normal text-[#111111]">
-              {filteredAppointments.length === 0 ? (
+              {sortedAppointments.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-[#66706B] font-normal">
                     No appointments match your search or filter criteria.
                   </td>
                 </tr>
               ) : (
-                filteredAppointments.map((app) => (
+                sortedAppointments.map((app) => (
                   <tr
                     key={app.id}
-                    className="hover:bg-[#F7F8F7] transition-colors"
+                    className={`hover:bg-[#F7F8F7] transition-colors ${
+                      app.status === 'CHECKED_IN' ? 'bg-[#E7F5F1]/50' : ''
+                    }`}
                   >
                     {/* Ref */}
                     <td className="p-3.5">
@@ -218,15 +234,15 @@ export const S03Appointments: React.FC = () => {
                     {/* Inline Actions */}
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {app.status === 'BOOKED' && (
+                        {(app.status === 'BOOKED' || app.status === 'CHECKED_IN') && (
                           <>
                             <button
                               onClick={() => checkInPatient(app.id)}
                               className="px-2.5 py-1 bg-[#087F6C] text-white hover:bg-[#066A5A] font-semibold uppercase text-[11px] border border-[#087F6C] transition-colors cursor-pointer shadow-xs inline-flex items-center gap-1"
-                              title="Check in patient"
+                              title="Check in to live queue"
                             >
                               <span className="material-symbols-outlined text-[13px]">check</span>
-                              <span>Check In</span>
+                              <span>{app.status === 'CHECKED_IN' ? 'Queue' : 'Check In'}</span>
                             </button>
                             <button
                               onClick={() => handleOpenNoShow(app.id)}

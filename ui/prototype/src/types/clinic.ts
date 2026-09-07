@@ -29,6 +29,8 @@ export type SmsType =
   | 'cancelled'
   | 'called'
   | 'next'
+  | 'arrived'
+  | 'check-in'
   | 'walk-in-confirmation';
 
 export interface SmsMessage {
@@ -94,9 +96,10 @@ export interface RescheduleDraft {
 // ─── Walk-In Draft ───────────────────────────────────────────────
 export interface WalkInDraft {
   patientName: string;
-  studentIndex: string;
+  studentIndex?: string;
   phone: string;
   visitType: VisitType;
+  notes?: string;
 }
 
 // ─── Screen Navigation ──────────────────────────────────────────
@@ -156,7 +159,8 @@ export type StaffScreen =
   | 'S06_WALK_IN'
   | 'S07_SESSION_EXPIRED'
   | 'S08_CHANGE_APPOINTMENT'
-  | 'S09_NO_SHOW_CONFIRM';
+  | 'S09_NO_SHOW_CONFIRM'
+  | 'S10_DISPLAY_BOARD';
 
 export type ActiveShell = 'PATIENT' | 'STAFF';
 

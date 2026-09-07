@@ -13,6 +13,7 @@ export const ProtoToolbar: React.FC = () => {
     setStaffScreen,
     appointments,
     checkInPatient,
+    arrivePatient,
     callPatient,
     completeVisit,
     markNoShow,
@@ -28,6 +29,7 @@ export const ProtoToolbar: React.FC = () => {
     canonicalAppointment,
     clinicActivityOverride,
     setClinicActivityOverride,
+    setSelectedStaffAppointmentId,
   } = useClinic();
 
   const akosua = (appointments && appointments.find((a) => a?.id === (canonicalAppointment?.id || 'YC-4821'))) || canonicalAppointment || appointments?.[0];
@@ -52,11 +54,26 @@ export const ProtoToolbar: React.FC = () => {
           {/* Quick status progressor shortcut */}
           {akosua?.status === 'BOOKED' && (
             <button
-              onClick={() => checkInPatient(akosua.id)}
+              onClick={() => arrivePatient(akosua.id)}
               className="px-2 py-0.5 bg-[#FEF7ED] text-[#B7791F] text-[10px] font-bold border border-[#FCD34D] hover:bg-[#FDE8CE] transition-colors cursor-pointer"
-              title="Simulate reception check in"
+              title="Student arrives at clinic"
             >
-              Check In Akosua (#4)
+              Arrive
+            </button>
+          )}
+
+          {akosua?.status === 'CHECKED_IN' && (
+            <button
+              onClick={() => {
+                checkInPatient(akosua.id);
+                setSelectedStaffAppointmentId(akosua.id);
+                setActiveShell('STAFF');
+                setStaffScreen('S05_LIVE_QUEUE');
+              }}
+              className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
+              title="Reception checks Akosua into the live queue"
+            >
+              Staff Check In
             </button>
           )}
 
@@ -159,10 +176,23 @@ export const ProtoToolbar: React.FC = () => {
               </span>
               {akosua?.status === 'BOOKED' && (
                 <button
-                  onClick={() => checkInPatient(akosua.id)}
+                  onClick={() => arrivePatient(akosua.id)}
                   className="px-2 py-0.5 bg-[#FEF7ED] text-[#B7791F] text-[10px] font-bold border border-[#FCD34D] hover:bg-[#FDE8CE] transition-colors cursor-pointer"
                 >
-                  Check In →
+                  Arrive →
+                </button>
+              )}
+              {akosua?.status === 'CHECKED_IN' && (
+                <button
+                  onClick={() => {
+                    checkInPatient(akosua.id);
+                    setSelectedStaffAppointmentId(akosua.id);
+                    setActiveShell('STAFF');
+                    setStaffScreen('S05_LIVE_QUEUE');
+                  }}
+                  className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
+                >
+                  Staff Check In →
                 </button>
               )}
               {akosua?.status === 'WAITING' && (
@@ -462,6 +492,12 @@ export const ProtoToolbar: React.FC = () => {
                   className={`text-left p-1.5 border transition-colors cursor-pointer ${staffScreen === 'S09_NO_SHOW_CONFIRM' && activeShell === 'STAFF' ? 'bg-[#087F6C] text-white font-bold border-[#087F6C]' : 'border-[#333333] hover:border-[#666666] text-[#CCCCCC]'}`}
                 >
                   S09 No-Show
+                </button>
+                <button
+                  onClick={() => { setActiveShell('STAFF'); setStaffScreen('S10_DISPLAY_BOARD'); setIsOpen(false); }}
+                  className={`text-left p-1.5 border transition-colors cursor-pointer ${staffScreen === 'S10_DISPLAY_BOARD' && activeShell === 'STAFF' ? 'bg-[#087F6C] text-white font-bold border-[#087F6C]' : 'border-[#333333] hover:border-[#666666] text-[#CCCCCC]'}`}
+                >
+                  S10 Corridor TV
                 </button>
               </div>
 

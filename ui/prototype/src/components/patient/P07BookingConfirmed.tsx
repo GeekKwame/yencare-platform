@@ -111,7 +111,7 @@ export const P07BookingConfirmed: React.FC = () => {
             <div>
               <span className="font-bold block text-[#78350F]">Queue position assigned at reception</span>
               <p className="text-[#92400E] text-[11px] mt-0.5 leading-relaxed">
-                You do not have a queue number yet. Present your reference code <strong>{refCode}</strong> at the clinic desk upon arrival to check in and enter the live queue.
+                You do not have a queue number yet. When you arrive, tell YɛnCare and present <strong>{refCode}</strong> at the desk. Reception check-in assigns your live queue token.
               </p>
             </div>
           </div>

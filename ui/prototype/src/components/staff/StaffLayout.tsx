@@ -7,13 +7,15 @@ interface StaffLayoutProps {
 }
 
 export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
-  const { staffScreen, setStaffScreen, staffUser, setStaffRole, setActiveShell } = useClinic();
+  const { staffScreen, setStaffScreen, staffUser, setStaffRole, setActiveShell, appointments } = useClinic();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  const arrivedCount = appointments.filter((a) => a.status === 'CHECKED_IN').length;
   const navItems: { label: string; screen: StaffScreen; icon: string }[] = [
     { label: "Today's Operations", screen: 'S02_TODAY', icon: 'dashboard' },
     { label: 'Appointments Roster', screen: 'S03_APPOINTMENTS', icon: 'calendar_month' },
     { label: 'Live Queue', screen: 'S05_LIVE_QUEUE', icon: 'reorder' },
+    { label: 'Corridor TV', screen: 'S10_DISPLAY_BOARD', icon: 'tv' },
   ];
 
   return (
@@ -62,7 +64,12 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.screen === 'S03_APPOINTMENTS' && arrivedCount > 0 && (
+                <span className="ml-auto px-1.5 py-0.5 bg-[#087F6C] text-white text-[9px] font-bold">
+                  {arrivedCount}
+                </span>
+              )}
             </button>
           ))}
           <div className="pt-2 border-t border-[#E5E7E6] flex justify-between">
@@ -156,7 +163,12 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.screen === 'S03_APPOINTMENTS' && arrivedCount > 0 && (
+                    <span className="ml-auto px-1.5 py-0.5 bg-[#087F6C] text-white text-[9px] font-bold">
+                      {arrivedCount}
+                    </span>
+                  )}
                 </button>
               );
             })}

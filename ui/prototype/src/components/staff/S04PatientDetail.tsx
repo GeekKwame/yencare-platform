@@ -20,6 +20,8 @@ export const S04PatientDetail: React.FC = () => {
 
   const app = appointments.find((a) => a.id === selectedStaffAppointmentId) || appointments[0];
   const isBooked = app.status === 'BOOKED';
+  const isArrived = app.status === 'CHECKED_IN';
+  const canStaffCheckIn = isBooked || isArrived;
   const isWaiting = app.status === 'WAITING';
   const isCalled = app.status === 'CALLED';
 
@@ -64,7 +66,14 @@ export const S04PatientDetail: React.FC = () => {
           size="lg"
         />
 
-        {/* Staff changed notice */}
+        {isArrived && (
+          <div className="p-3 bg-[#E7F5F1] border border-[#99D5C8] text-xs">
+            <div className="font-bold text-[#087F6C] mb-0.5">Student has arrived and is waiting at the desk</div>
+            <p className="text-[#066A5A]">
+              Verify the reference code against their SMS, then check them into the live queue.
+            </p>
+          </div>
+        )}
         {app.staffChangedTime && (
           <div className="p-3 bg-[#EBF8FF] border border-[#BEE3F8] text-xs">
             <div className="font-bold text-[#2B6CB0] mb-0.5">Appointment rescheduled by clinic staff</div>
@@ -89,7 +98,7 @@ export const S04PatientDetail: React.FC = () => {
           <div className="p-3.5 bg-[#F7F8F7] flex justify-between items-center">
             <span className="text-[#66706B] font-medium">Clinic Site</span>
             <span className="font-semibold text-[#111111]">
-              {app.clinicSite ? CLINIC_SITE_LABELS[app.clinicSite] : "KNUST Students' Clinic"}
+              {app.clinicSite ? CLINIC_SITE_LABELS[app.clinicSite].name : "KNUST Students' Clinic"}
             </span>
           </div>
           <div className="p-3.5 bg-white flex justify-between items-center">
@@ -133,7 +142,7 @@ export const S04PatientDetail: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="pt-2 space-y-3">
-          {isBooked && (
+          {canStaffCheckIn && (
             <>
               <Button
                 variant="accent"
@@ -144,7 +153,7 @@ export const S04PatientDetail: React.FC = () => {
                   checkInPatient(app.id);
                 }}
               >
-                Check In Student ({app.patientName})
+                {isArrived ? `Check In to Live Queue (${app.patientName})` : `Check In Student (${app.patientName})`}
               </Button>
 
               <div className="grid grid-cols-2 gap-2.5">
@@ -157,7 +166,7 @@ export const S04PatientDetail: React.FC = () => {
                   Change Time
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="destructive"
                   size="md"
                   onClick={() => setStaffScreen('S09_NO_SHOW_CONFIRM')}
                   icon="person_cancel"

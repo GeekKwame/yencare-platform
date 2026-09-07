@@ -9,3 +9,4 @@ export { S06AddWalkIn, S06AddWalkIn as AddWalkInScreen } from './S06AddWalkIn';
 export { S07SessionExpired, S07SessionExpired as SessionExpiredScreen } from './S07SessionExpired';
 export { S08ChangeAppointment, S08ChangeAppointment as ChangeAppointmentScreen } from './S08ChangeAppointment';
 export { S09NoShowConfirm, S09NoShowConfirm as NoShowConfirmScreen } from './S09NoShowConfirm';
+export { S10DisplayBoard } from './S10DisplayBoard';

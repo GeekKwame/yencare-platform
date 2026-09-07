@@ -7,7 +7,7 @@ import { SmsModal } from '../common/SmsModal';
 import { CLINIC_SITE_LABELS, VISIT_TYPE_LABELS } from '../../types/clinic';
 
 export const P11AppointmentDetail: React.FC = () => {
-  const { currentPatientAppointment, cancelAppointment, setPatientScreen, selfCheckIn } = useClinic();
+  const { currentPatientAppointment, setPatientScreen, arrivePatient, setActiveShell, setStaffScreen, setSelectedStaffAppointmentId } = useClinic();
   const app = currentPatientAppointment;
   const [smsOpen, setSmsOpen] = useState(false);
 
@@ -26,7 +26,7 @@ export const P11AppointmentDetail: React.FC = () => {
 
   const siteName = CLINIC_SITE_LABELS[app.clinicSite]?.name || "Students' Clinic";
   const visitLabel = VISIT_TYPE_LABELS[app.visitType] || 'General OPD';
-  const isActive = ['BOOKED', 'WAITING', 'CALLED'].includes(app.status);
+  const isActive = ['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED'].includes(app.status);
   const hasStaffChange = !!app.staffChangedTime;
 
   return (
@@ -136,25 +136,24 @@ export const P11AppointmentDetail: React.FC = () => {
         <div className="space-y-2.5">
           {app.status === 'BOOKED' && (
             <>
-              {/* Pre-check-in queue information box */}
               <div className="bg-[#FEF7ED] border border-[#FCD34D] p-3.5 text-left text-xs mb-3 space-y-2">
                 <div className="flex items-start gap-2 text-[#92400E]">
                   <span className="material-symbols-outlined text-base mt-0.5 shrink-0">info</span>
                   <div>
-                    <strong className="font-semibold block text-[#78350F]">Not checked in at clinic yet</strong>
+                    <strong className="font-semibold block text-[#78350F]">Not arrived at clinic yet</strong>
                     <p className="text-[#92400E] text-[11px] mt-0.5 leading-relaxed">
-                      You will receive an individual queue token when you arrive at reception. Monitor overall clinic pace and wait times before leaving home.
+                      When you get to the clinic, tap I've arrived. Reception will verify your ID and add you to the live queue.
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-[#FCD34D]/60 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-[#78350F]">Already at reception?</span>
+                <div className="pt-2 border-t border-[#FCD34D]/60 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-[#78350F]">Already at the clinic?</span>
                   <button
-                    onClick={() => selfCheckIn(app.id)}
-                    className="bg-[#087F6C] hover:bg-[#066354] text-white font-bold text-[11px] px-3 py-1.5 rounded transition-colors shadow-2xs"
+                    onClick={() => arrivePatient(app.id)}
+                    className="bg-[#087F6C] hover:bg-[#066354] text-white font-bold text-[11px] px-3 py-1.5 transition-colors shadow-2xs cursor-pointer"
                   >
-                    Simulate Check-In
+                    I've arrived
                   </button>
                 </div>
               </div>
@@ -167,6 +166,44 @@ export const P11AppointmentDetail: React.FC = () => {
                 onClick={() => setPatientScreen('P10_CLINIC_ACTIVITY')}
               >
                 View live clinic activity
+              </Button>
+            </>
+          )}
+
+          {app.status === 'CHECKED_IN' && (
+            <>
+              <div className="bg-[#E7F5F1] border border-[#99D5C8] p-3.5 text-left text-xs mb-1 space-y-2">
+                <div className="flex items-start gap-2 text-[#066A5A]">
+                  <span className="material-symbols-outlined text-base mt-0.5 shrink-0">how_to_reg</span>
+                  <div>
+                    <strong className="font-semibold block text-[#087F6C]">You've arrived — waiting for reception</strong>
+                    <p className="text-[11px] mt-0.5 leading-relaxed">
+                      Present {app.id} at the desk. Staff will check you into the live queue and assign your token.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="accent"
+                size="lg"
+                fullWidth
+                icon="schedule"
+                onClick={() => setPatientScreen('P18_QUEUE')}
+              >
+                View arrival status
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                icon="badge"
+                onClick={() => {
+                  setSelectedStaffAppointmentId(app.id);
+                  setActiveShell('STAFF');
+                  setStaffScreen('S04_APPOINTMENT_DETAIL');
+                }}
+              >
+                Demo: open reception desk
               </Button>
             </>
           )}

@@ -13,11 +13,12 @@ import {
   SmsMessage,
   ConnectivityState,
   ClinicSite,
-  VisitType,
   ClinicActivityOverride,
   RoomConsultationState,
   ClinicSiteActivity,
 } from '../types/clinic';
+import { getArriveBy, nextQueueToken, sortByQueueToken, waitingOnSite } from '../lib/clinicQueue';
+import { announcePatientCall } from '../lib/clinicSpeech';
 
 // ─── Clinicians ──────────────────────────────────────────────────
 export const DR_KWAME_BOATENG: Doctor = {
@@ -61,6 +62,21 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     bookingType: 'BOOKED',
     estimatedWaitMinutes: 30,
     notes: 'General consultation',
+  },
+  // Demo no-show candidate (staff roster / toolbar)
+  {
+    id: 'YC-4822',
+    patientName: 'Yaw Boateng',
+    phone: '024 555 0000',
+    studentIndex: '20615500',
+    doctor: DR_AMA_SERWAA,
+    date: 'Tuesday 15 September 2026',
+    time: '10:00 AM',
+    status: 'BOOKED',
+    clinicSite: 'students-clinic',
+    visitType: 'general-opd',
+    bookingType: 'BOOKED',
+    notes: 'Demo no-show candidate',
   },
   // Currently Being Served in Room 1 (#2)
   {
@@ -361,13 +377,14 @@ interface ClinicContextType {
   confirmReschedule: () => void;
 
   // Clinic Operations
+  arrivePatient: (id: string) => void;
   checkInPatient: (id: string) => void;
   callPatient: (id: string, room?: string) => void;
   completeVisit: (id: string) => void;
   cancelAppointment: (id: string) => void;
   markNoShow: (id: string) => void;
   addWalkIn: (draft: WalkInDraft) => string;
-  changeAppointmentTime: (id: string, newTime: string, newDate: string, reason: string) => void;
+  changeAppointmentTime: (id: string, newTime: string, reason: string, newDate?: string) => void;
 
   // SMS
   smsLog: SmsMessage[];
@@ -541,34 +558,108 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     showToast(`Appointment ${activePatientAppointmentId} rescheduled to ${rescheduleDraft.newDate}, ${rescheduleDraft.newTime}`);
   };
 
-  // ─── Check In Patient ───────────────────────────────────────
+  // ─── Patient arrives at clinic (not yet in live queue) ──────
+  const arrivePatient = (id: string) => {
+    const target = appointments.find((a) => a.id === id);
+    if (!target) {
+      showToast('Appointment not found.');
+      return;
+    }
+    if (target.status === 'CHECKED_IN') {
+      setActivePatientAppointmentId(id);
+      setPatientScreen('P18_QUEUE');
+      showToast('You have already arrived. Reception will add you to the live queue.');
+      return;
+    }
+    if (target.status !== 'BOOKED') {
+      setActivePatientAppointmentId(id);
+      setPatientScreen('P18_QUEUE');
+      showToast(`${target.patientName} is already ${target.status.toLowerCase().replace('_', ' ')}.`);
+      return;
+    }
+
+    setAppointments((prev) =>
+      prev.map((app) => (app.id === id ? { ...app, status: 'CHECKED_IN' } : app))
+    );
+    setActivePatientAppointmentId(id);
+    setSelectedStaffAppointmentId(id);
+    setPatientScreen('P18_QUEUE');
+
+    addSms({
+      appointmentId: id,
+      type: 'arrived',
+      phone: target.phone,
+      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
+    });
+
+    showToast(`${target.patientName} has arrived. Reception can now check them into the live queue.`);
+  };
+
+  // Alias used by older patient screens
+  const selfCheckIn = arrivePatient;
+
+  // ─── Staff check-in: BOOKED or CHECKED_IN → live queue ──────
   const checkInPatient = (id: string) => {
+    const target = appointments.find((a) => a.id === id);
+    if (!target) {
+      showToast('Appointment not found.');
+      return;
+    }
+    if (target.status !== 'BOOKED' && target.status !== 'CHECKED_IN') {
+      showToast(`${target.patientName} is already in the queue or not eligible for check-in.`);
+      return;
+    }
+
+    const token = nextQueueToken(appointments, target.clinicSite);
+    const waitingCount = appointments.filter(
+      (a) => a.status === 'WAITING' && a.clinicSite === target.clinicSite
+    ).length;
+    const estimatedWaitMinutes = waitingCount * 8 + 15;
+
     setAppointments((prev) =>
       prev.map((app) => {
-        if (app.id === id) {
-          return {
-            ...app,
-            status: 'WAITING',
-            queueToken: app.queueToken || `#${prev.filter((a) => a.status === 'WAITING' || a.status === 'CALLED').length + 1}`,
-            estimatedWaitMinutes: prev.filter((a) => a.status === 'WAITING').length * 15 + 10,
-          };
-        }
-        return app;
+        if (app.id !== id) return app;
+        return {
+          ...app,
+          status: 'WAITING' as const,
+          queueToken: token,
+          estimatedWaitMinutes,
+          room: app.doctor.room,
+        };
       })
     );
-    const target = appointments.find((a) => a.id === id);
-    showToast(`${target?.patientName || id} is checked in and waiting in queue.`);
+
+    addSms({
+      appointmentId: id,
+      type: 'check-in',
+      phone: target.phone,
+      body: `YɛnCare\n\nYou are in the live queue.\nToken: ${token}\nEst. wait: ~${estimatedWaitMinutes} min\n\nWait nearby — we will text you when it is your turn.\nRef: ${id}`,
+    });
+
+    showToast(`${target.patientName} checked in to the live queue as ${token}.`);
   };
 
   // ─── Call Patient ───────────────────────────────────────────
   const callPatient = (id: string, room?: string) => {
+    const target = appointments.find((a) => a.id === id);
+    if (!target) {
+      showToast('Appointment not found.');
+      return;
+    }
+    if (target.status !== 'WAITING') {
+      showToast('Only waiting students can be called into a room.');
+      return;
+    }
+
+    const assignedRoom = room || target.doctor.room || 'Room 1';
+    const site = target.clinicSite;
+
     setAppointments((prev) =>
       prev.map((app) => {
         if (app.id === id) {
-          const assignedRoom = room || app.doctor.room || 'Room 1';
           return {
             ...app,
-            status: 'CALLED',
+            status: 'CALLED' as const,
             assignedRoom,
             room: assignedRoom,
           };
@@ -576,16 +667,27 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return app;
       })
     );
-    const target = appointments.find((a) => a.id === id);
-    const assignedRoom = room || target?.doctor.room || 'Room 1';
-    showToast(`Calling ${target?.patientName || id} to ${assignedRoom}`);
 
-    if (target) {
+    showToast(`Calling ${target.patientName} to ${assignedRoom}`);
+    announcePatientCall(target.patientName, assignedRoom, target.queueToken);
+
+    addSms({
+      appointmentId: id,
+      type: 'called',
+      phone: target.phone,
+      body: `YɛnCare\n\nIt is your turn.\nPlease proceed to ${assignedRoom}.\n\nRef: ${id}\n${target.doctor.name} is ready for you.`,
+    });
+
+    const nextUp = waitingOnSite(
+      appointments.filter((a) => a.id !== id),
+      site
+    )[0];
+    if (nextUp) {
       addSms({
-        appointmentId: id,
-        type: 'called',
-        phone: target.phone,
-        body: `YɛnCare\n\nIt is your turn.\nPlease proceed to ${assignedRoom}.\n\nRef: ${id}\n${target.doctor.name} is ready for you.`,
+        appointmentId: nextUp.id,
+        type: 'next',
+        phone: nextUp.phone,
+        body: `YɛnCare\n\nYou're next in the queue.\nPlease return to the clinic.\n\nToken: ${nextUp.queueToken || '—'}\nRef: ${nextUp.id}`,
       });
     }
   };
@@ -659,7 +761,8 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       visitType: draft.visitType,
       bookingType: 'WALK_IN',
       queueToken: token,
-      estimatedWaitMinutes: appointments.filter((a) => a.status === 'WAITING').length * 15 + 15,
+      estimatedWaitMinutes: appointments.filter((a) => a.status === 'WAITING' && a.clinicSite === 'students-clinic').length * 8 + 15,
+      notes: draft.notes,
     };
 
     setAppointments((prev) => [...prev, newAppointment]);
@@ -676,7 +779,10 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // ─── Staff Change Appointment Time ──────────────────────────
-  const changeAppointmentTime = (id: string, newTime: string, newDate: string, reason: string) => {
+  const changeAppointmentTime = (id: string, newTime: string, reason: string, newDate?: string) => {
+    const target = appointments.find((a) => a.id === id);
+    const nextDate = newDate || target?.date || 'Tuesday 15 September 2026';
+
     setAppointments((prev) =>
       prev.map((app) => {
         if (app.id === id) {
@@ -684,7 +790,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...app,
             staffChangedTime: app.time,
             time: newTime,
-            date: newDate,
+            date: nextDate,
             staffChangeReason: reason,
           };
         }
@@ -692,13 +798,12 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
     );
 
-    const target = appointments.find((a) => a.id === id);
     if (target) {
       addSms({
         appointmentId: id,
         type: 'time-changed',
         phone: target.phone,
-        body: `YɛnCare Update\n\nYour appointment has been updated by the clinic.\n\nNew Time: ${newDate.split(' ').slice(0, 3).join(' ')}, ${newTime}\nRef: ${id}\nReason: ${reason}\n\nKNUST Students' Clinic`,
+        body: `YɛnCare Update\n\nYour appointment has been updated by the clinic.\n\nNew Time: ${nextDate.split(' ').slice(0, 3).join(' ')}, ${newTime}\nRef: ${id}\nReason: ${reason}\n\nKNUST Students' Clinic`,
       });
     }
 
@@ -741,13 +846,6 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const canonicalAppointment = appointments.find((a) => a.id === 'YC-4821') || appointments[0];
 
   const [clinicActivityOverride, setClinicActivityOverride] = useState<ClinicActivityOverride>('normal');
-
-  const selfCheckIn = (id: string) => {
-    checkInPatient(id);
-    setActivePatientAppointmentId(id);
-    setPatientScreen('P18_QUEUE');
-    showToast('Reception check-in completed! You are now in the live queue.');
-  };
 
   const getClinicActivity = (site: ClinicSite): ClinicSiteActivity => {
     if (clinicActivityOverride === 'closed' || isAfterHours) {
@@ -805,7 +903,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const room2Called = called.find((c) => c.assignedRoom === 'Room 2' || c.doctor.room === 'Room 2');
     const nowServing = room1Called || called[0];
 
-    const waitingTokens = waiting.map((w) => w.queueToken || '#--');
+    const waitingTokens = sortByQueueToken(waiting).map((w) => w.queueToken || '#--');
     const waitingCount = waiting.length;
 
     const activeRooms: RoomConsultationState[] = site === 'students-clinic' ? [
@@ -881,6 +979,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         rescheduleDraft,
         updateRescheduleDraft,
         confirmReschedule,
+        arrivePatient,
         checkInPatient,
         callPatient,
         completeVisit,
@@ -922,20 +1021,3 @@ export const useClinic = () => {
   return context;
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────
-function getArriveBy(time: string): string {
-  // Parse "9:30 AM" → subtract 15 min → "9:15 AM"
-  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return time;
-  let h = parseInt(match[1]);
-  let m = parseInt(match[2]);
-  const period = match[3].toUpperCase();
-
-  m -= 15;
-  if (m < 0) {
-    m += 60;
-    h -= 1;
-  }
-  if (h <= 0) h = 12;
-  return `${h}:${String(m).padStart(2, '0')} ${period}`;
-}

@@ -2,24 +2,24 @@ import React from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 import { S05EmptyQueue } from './S05EmptyQueue';
+import { sortByQueueToken } from '../../lib/clinicQueue';
 
 export const S05LiveQueue: React.FC = () => {
   const {
     appointments,
     callPatient,
     completeVisit,
+    checkInPatient,
     setStaffScreen,
     setSelectedStaffAppointmentId,
   } = useClinic();
 
-  // Find currently called patients (can be multiple rooms)
   const currentlyCalledList = appointments.filter((a) => a.status === 'CALLED');
-
-  // Find all waiting patients (in queue order)
-  const waitingPatients = appointments.filter((a) => a.status === 'WAITING');
+  const waitingPatients = sortByQueueToken(appointments.filter((a) => a.status === 'WAITING'));
+  const arrivedPatients = appointments.filter((a) => a.status === 'CHECKED_IN');
 
   // If no one is called and no one is waiting, render canonical S05 Empty Queue state
-  if (currentlyCalledList.length === 0 && waitingPatients.length === 0) {
+  if (currentlyCalledList.length === 0 && waitingPatients.length === 0 && arrivedPatients.length === 0) {
     return <S05EmptyQueue />;
   }
 
@@ -51,6 +51,19 @@ export const S05LiveQueue: React.FC = () => {
           <span className="px-3 py-1.5 bg-[#FEF7ED] border border-[#FCD34D] text-[#B7791F] text-xs font-semibold">
             {waitingPatients.length} Waiting
           </span>
+          {arrivedPatients.length > 0 && (
+            <span className="px-3 py-1.5 bg-[#E7F5F1] border border-[#99D5C8] text-[#087F6C] text-xs font-semibold">
+              {arrivedPatients.length} At desk
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setStaffScreen('S10_DISPLAY_BOARD')}
+            icon="tv"
+          >
+            Corridor TV
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -159,6 +172,38 @@ export const S05LiveQueue: React.FC = () => {
                   &rarr; Room 2
                 </Button>
               </div>
+            </div>
+          )}
+
+          {arrivedPatients.length > 0 && (
+            <div className="bg-[#E7F5F1] border border-[#99D5C8] p-4 shadow-xs space-y-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#087F6C]">
+                Arrived — not yet queued
+              </div>
+              {arrivedPatients.map((app) => (
+                <div key={app.id} className="bg-white border border-[#99D5C8] p-3 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStaffAppointmentId(app.id);
+                      setStaffScreen('S04_APPOINTMENT_DETAIL');
+                    }}
+                    className="text-left cursor-pointer"
+                  >
+                    <div className="font-semibold text-xs text-[#111111]">{app.patientName}</div>
+                    <div className="text-[10px] text-[#66706B]">{app.id} · {app.time}</div>
+                  </button>
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    fullWidth
+                    icon="how_to_reg"
+                    onClick={() => checkInPatient(app.id)}
+                  >
+                    Check In to Queue
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </div>

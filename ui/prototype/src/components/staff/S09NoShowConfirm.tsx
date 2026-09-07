@@ -98,7 +98,7 @@ export const S09NoShowConfirm: React.FC = () => {
               Cancel
             </button>
             <Button
-              variant="danger"
+                  variant="destructive"
               size="lg"
               onClick={handleConfirm}
               icon="person_cancel"

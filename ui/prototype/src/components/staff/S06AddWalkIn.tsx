@@ -23,6 +23,7 @@ export const S06AddWalkIn: React.FC = () => {
       studentIndex: studentIndex.trim() || undefined,
       phone,
       visitType,
+      notes: notes.trim() || undefined,
     });
 
     setCreatedToken(token);

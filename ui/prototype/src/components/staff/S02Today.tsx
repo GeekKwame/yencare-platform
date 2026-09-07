@@ -1,19 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 import { StatusBadge } from '../common/StatusBadge';
+import { useAccraClock } from '../../lib/accraTime';
 
 export const S02Today: React.FC = () => {
-  const { appointments, setStaffScreen, setSelectedStaffAppointmentId } = useClinic();
+  const { appointments, setStaffScreen, setSelectedStaffAppointmentId, checkInPatient, showToast } = useClinic();
+  const { time, isOpen } = useAccraClock();
+  const [deskQuery, setDeskQuery] = useState('');
 
   const totalBooked = appointments.length;
+  const arrivedCount = appointments.filter((a) => a.status === 'CHECKED_IN').length;
   const waitingCount = appointments.filter((a) => a.status === 'WAITING').length;
   const inConsultation = appointments.filter((a) => a.status === 'CALLED').length;
   const completedCount = appointments.filter((a) => a.status === 'COMPLETED').length;
   const noShowCount = appointments.filter((a) => a.status === 'NO_SHOW').length;
   const walkInCount = appointments.filter((a) => a.bookingType === 'WALK_IN').length;
+  const arrivedPatients = appointments.filter((a) => a.status === 'CHECKED_IN');
+  const room1 = appointments.find((a) => a.status === 'CALLED' && (a.assignedRoom === 'Room 1' || a.doctor.room === 'Room 1'));
+  const room2 = appointments.find((a) => a.status === 'CALLED' && (a.assignedRoom === 'Room 2' || a.doctor.room === 'Room 2'));
 
-  const todayList = appointments.slice(0, 6);
+  const statusRank: Record<string, number> = {
+    CHECKED_IN: 0,
+    BOOKED: 1,
+    WAITING: 2,
+    CALLED: 3,
+    COMPLETED: 4,
+    NO_SHOW: 5,
+    CANCELLED: 6,
+  };
+  const todayList = [...appointments]
+    .sort((a, b) => (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9))
+    .slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -27,7 +45,7 @@ export const S02Today: React.FC = () => {
             Today's Clinical Operations
           </h1>
           <p className="text-xs font-normal text-[#66706B] mt-0.5">
-            Tuesday 15 September 2026 · KNUST Students' Clinic Outpatient Station
+            Tuesday 15 September 2026 · {time} Accra · {isOpen ? 'Clinic open' : 'Clinic closed'}
           </p>
         </div>
 
@@ -56,12 +74,61 @@ export const S02Today: React.FC = () => {
           >
             Live Queue &rarr;
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setStaffScreen('S10_DISPLAY_BOARD')}
+            icon="tv"
+          >
+            Corridor TV
+          </Button>
         </div>
       </div>
 
-      {/* Metrics Row (6 clinical brutalism counters) */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        {/* Total Bookings */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = deskQuery.trim().replace(/\s+/g, '').toUpperCase();
+          if (!q) return;
+          const found = appointments.find((a) => {
+            const phone = a.phone.replace(/\s+/g, '').toUpperCase();
+            return (
+              a.id.toUpperCase() === q ||
+              a.id.toUpperCase().includes(q) ||
+              (a.studentIndex && a.studentIndex.toUpperCase() === q) ||
+              phone === q ||
+              phone.endsWith(q) ||
+              a.patientName.toUpperCase().includes(deskQuery.trim().toUpperCase())
+            );
+          });
+          if (!found) {
+            showToast('No student found. Try YC-4821, index 20612345, or a name.');
+            return;
+          }
+          setSelectedStaffAppointmentId(found.id);
+          setStaffScreen('S04_APPOINTMENT_DETAIL');
+        }}
+        className="bg-white border border-[#D8DCD9] p-3.5 flex flex-col sm:flex-row gap-2.5 shadow-xs"
+      >
+        <div className="relative flex-1">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8A948F] text-[18px]">
+            badge
+          </span>
+          <input
+            type="text"
+            value={deskQuery}
+            onChange={(e) => setDeskQuery(e.target.value)}
+            placeholder="Desk lookup: YC reference, student index, phone, or name…"
+            className="w-full pl-9 pr-3 py-2 text-xs font-normal text-[#111111] border border-[#C8CDCA] focus:border-[#087F6C] focus:ring-1 focus:ring-[#087F6C] focus:outline-none"
+          />
+        </div>
+        <Button type="submit" variant="accent" size="sm" icon="search">
+          Find & open record
+        </Button>
+      </form>
+
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         <div className="bg-white border border-[#D8DCD9] p-4 shadow-xs">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B] mb-1">
             Total Patients
@@ -74,7 +141,18 @@ export const S02Today: React.FC = () => {
           </div>
         </div>
 
-        {/* Waiting */}
+        <div className="bg-white border border-[#087F6C] p-4 shadow-xs bg-[#E7F5F1]/30">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#087F6C] mb-1">
+            Arrived
+          </div>
+          <div className="text-3xl font-bold font-mono text-[#087F6C]">
+            {arrivedCount}
+          </div>
+          <div className="text-[10px] text-[#66706B] mt-1 font-normal">
+            Awaiting desk
+          </div>
+        </div>
+
         <div className="bg-white border border-[#D8DCD9] p-4 shadow-xs">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#B7791F] mb-1">
             In Queue
@@ -83,11 +161,10 @@ export const S02Today: React.FC = () => {
             {waitingCount}
           </div>
           <div className="text-[10px] text-[#66706B] mt-1 font-normal">
-            Checked in
+            Live waiting
           </div>
         </div>
 
-        {/* In Consult */}
         <div className="bg-white border border-[#D8DCD9] p-4 shadow-xs">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#087F6C] mb-1">
             In Consult
@@ -100,7 +177,6 @@ export const S02Today: React.FC = () => {
           </div>
         </div>
 
-        {/* Completed */}
         <div className="bg-white border border-[#D8DCD9] p-4 shadow-xs">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B] mb-1">
             Completed
@@ -113,7 +189,6 @@ export const S02Today: React.FC = () => {
           </div>
         </div>
 
-        {/* Walk-ins */}
         <div className="bg-white border border-[#2B6CB0] p-4 shadow-xs bg-[#EBF8FF]/20">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#2B6CB0] mb-1">
             Walk-Ins
@@ -126,7 +201,6 @@ export const S02Today: React.FC = () => {
           </div>
         </div>
 
-        {/* No-Shows */}
         <div className="bg-white border border-[#9B2C2C] p-4 shadow-xs bg-[#FFF5F5]/30">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9B2C2C] mb-1">
             No-Shows
@@ -139,6 +213,47 @@ export const S02Today: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {arrivedCount > 0 && (
+        <div className="bg-[#E7F5F1] border border-[#99D5C8] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#087F6C]">
+                Waiting at reception ({arrivedCount})
+              </h2>
+              <p className="text-[11px] text-[#66706B] mt-0.5">
+                Students have arrived. Verify ID and check them into the live queue.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {arrivedPatients.map((app) => (
+              <div key={app.id} className="bg-white border border-[#99D5C8] p-3 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedStaffAppointmentId(app.id);
+                    setStaffScreen('S04_APPOINTMENT_DETAIL');
+                  }}
+                  className="text-left cursor-pointer"
+                >
+                  <div className="font-semibold text-sm text-[#111111]">{app.patientName}</div>
+                  <div className="text-[11px] text-[#66706B]">
+                    {app.id} · {app.time} · Index {app.studentIndex || '—'}
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => checkInPatient(app.id)}
+                  className="px-3 py-1.5 bg-[#087F6C] text-white hover:bg-[#066A5A] font-semibold uppercase text-[11px] border border-[#087F6C] cursor-pointer shrink-0"
+                >
+                  Check In to Queue
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Clinical Station Info & Quick Roster */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -218,7 +333,9 @@ export const S02Today: React.FC = () => {
                 <span className="text-[10px] text-[#66706B]">General OPD</span>
               </div>
               <h3 className="font-bold text-xs text-[#111111]">Dr. Kwame Boateng</h3>
-              <p className="text-[11px] text-[#66706B] mt-0.5">Students' Clinic · Ground Floor</p>
+              <p className="text-[11px] text-[#66706B] mt-0.5">
+                {room1 ? `Serving ${room1.queueToken} · ${room1.patientName}` : 'Ready for next patient'}
+              </p>
             </div>
 
             {/* Room 2 */}
@@ -230,7 +347,9 @@ export const S02Today: React.FC = () => {
                 <span className="text-[10px] text-[#66706B]">Reviews & OPD</span>
               </div>
               <h3 className="font-bold text-xs text-[#111111]">Dr. Ama Serwaa</h3>
-              <p className="text-[11px] text-[#66706B] mt-0.5">Students' Clinic · Ground Floor</p>
+              <p className="text-[11px] text-[#66706B] mt-0.5">
+                {room2 ? `Serving ${room2.queueToken} · ${room2.patientName}` : 'Ready for next patient'}
+              </p>
             </div>
 
             <Button

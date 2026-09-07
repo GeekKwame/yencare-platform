@@ -4,24 +4,26 @@ import { ClinicSite, CLINIC_SITE_LABELS } from '../../types/clinic';
 
 export const P10ClinicActivity: React.FC = () => {
   const { 
+    currentPatientAppointment,
     canonicalAppointment, 
     setPatientScreen, 
     getClinicActivity, 
-    selfCheckIn,
+    arrivePatient,
     clinicActivityOverride,
     setClinicActivityOverride,
   } = useClinic();
 
-  // Site selector state, default to user's booked clinic or students-clinic
-  const initialSite: ClinicSite = canonicalAppointment?.clinicSite || 'students-clinic';
+  const appointment = currentPatientAppointment || canonicalAppointment;
+  const initialSite: ClinicSite = appointment?.clinicSite || 'students-clinic';
   const [selectedSite, setSelectedSite] = useState<ClinicSite>(initialSite);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [justCheckedIn, setJustCheckedIn] = useState(false);
+  const [justArrived, setJustArrived] = useState(false);
 
   const activity = getClinicActivity(selectedSite);
-  const isUserBookedHere = canonicalAppointment && canonicalAppointment.clinicSite === selectedSite;
-  const isBookedUnchecked = canonicalAppointment && canonicalAppointment.status === 'BOOKED';
-  const isCheckedIn = canonicalAppointment && (canonicalAppointment.status === 'WAITING' || canonicalAppointment.status === 'CALLED' || canonicalAppointment.status === 'IN_CONSULTATION');
+  const isUserBookedHere = appointment && appointment.clinicSite === selectedSite;
+  const isBookedUnchecked = appointment && appointment.status === 'BOOKED';
+  const isArrivedAwaitingDesk = appointment && appointment.status === 'CHECKED_IN';
+  const isInLiveQueue = appointment && (appointment.status === 'WAITING' || appointment.status === 'CALLED');
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -30,12 +32,12 @@ export const P10ClinicActivity: React.FC = () => {
     }, 600);
   };
 
-  const handleSimulateCheckIn = () => {
-    if (!canonicalAppointment) return;
-    setJustCheckedIn(true);
+  const handleArrive = () => {
+    if (!appointment) return;
+    setJustArrived(true);
     setTimeout(() => {
-      selfCheckIn(canonicalAppointment.id);
-    }, 800);
+      arrivePatient(appointment.id);
+    }, 600);
   };
 
   // Wait time formatting
@@ -53,7 +55,7 @@ export const P10ClinicActivity: React.FC = () => {
         <div className="flex items-center justify-between border-b border-[#E5E7E6] pb-3.5">
           <button
             onClick={() => {
-              if (canonicalAppointment) {
+              if (appointment) {
                 setPatientScreen('P11_DETAILS');
               } else {
                 setPatientScreen('P01_HOME');
@@ -63,7 +65,7 @@ export const P10ClinicActivity: React.FC = () => {
             aria-label="Back"
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            <span>{canonicalAppointment ? 'My Appointment' : 'Home'}</span>
+            <span>{appointment ? 'My Appointment' : 'Home'}</span>
           </button>
           
           <div className="text-center">
@@ -164,7 +166,7 @@ export const P10ClinicActivity: React.FC = () => {
         )}
 
         {/* CRITICAL RULE: Distinct "Your Booking" Card */}
-        {isUserBookedHere && canonicalAppointment && (
+        {isUserBookedHere && appointment && (
           <div className="bg-white border-2 border-[#087F6C] p-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-[#087F6C] text-white text-[10px] font-bold uppercase px-3 py-1 tracking-wider">
               Your Booking
@@ -175,69 +177,95 @@ export const P10ClinicActivity: React.FC = () => {
                 Reference Code
               </span>
               <span className="text-2xl font-mono font-bold text-[#111111]">
-                {canonicalAppointment.id}
+                {appointment.id}
               </span>
             </div>
 
-            {/* Current Status Badge */}
             <div className="mb-3">
               {isBookedUnchecked ? (
                 <div className="inline-flex items-center gap-1.5 bg-[#FEF7ED] border border-[#FCD34D] text-[#B7791F] text-xs font-bold px-2.5 py-1">
                   <span className="w-2 h-2 rounded-full bg-[#B7791F]"></span>
-                  BOOKED · NOT CHECKED IN
+                  BOOKED · NOT ARRIVED
                 </div>
-              ) : isCheckedIn ? (
+              ) : isArrivedAwaitingDesk ? (
                 <div className="inline-flex items-center gap-1.5 bg-[#E7F5F1] border border-[#99D5C8] text-[#087F6C] text-xs font-bold px-2.5 py-1">
                   <span className="w-2 h-2 rounded-full bg-[#087F6C]"></span>
-                  CHECKED IN · #{canonicalAppointment.queueToken || '4'}
+                  ARRIVED · AWAITING RECEPTION
+                </div>
+              ) : isInLiveQueue ? (
+                <div className="inline-flex items-center gap-1.5 bg-[#E7F5F1] border border-[#99D5C8] text-[#087F6C] text-xs font-bold px-2.5 py-1">
+                  <span className="w-2 h-2 rounded-full bg-[#087F6C]"></span>
+                  IN QUEUE · {appointment.queueToken || '—'}
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-1.5 bg-[#F0F2F1] text-[#3D4541] text-xs font-bold px-2.5 py-1 border border-[#D8DCD9]">
-                  {canonicalAppointment.status}
+                  {appointment.status}
                 </div>
               )}
             </div>
 
-            {/* Queue Logic Rule Callout */}
             {isBookedUnchecked && (
               <div className="bg-[#F7F8F7] border border-[#E5E7E6] p-3 mb-3 text-xs text-[#3D4541] space-y-1">
                 <p className="font-semibold text-[#111111] flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-[#087F6C]">schedule</span>
-                  <span>Scheduled for {canonicalAppointment.time} today</span>
+                  <span>Scheduled for {appointment.time} today</span>
                 </p>
                 <p className="text-[11px] text-[#66706B] leading-relaxed">
-                  Your queue position number is generated only after reception checks you in at the desk. Monitor clinic flow below while preparing to depart.
+                  Tell YɛnCare when you arrive. Reception then verifies your ID and assigns your live queue token.
                 </p>
               </div>
             )}
 
-            {justCheckedIn ? (
+            {isArrivedAwaitingDesk && (
+              <div className="bg-[#E7F5F1] border border-[#99D5C8] p-3 mb-3 text-xs text-[#066A5A] space-y-1">
+                <p className="font-semibold text-[#087F6C] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                  <span>Reception has been notified</span>
+                </p>
+                <p className="text-[11px] leading-relaxed">
+                  Present {appointment.id} at the desk. Staff will check you into the live queue and your token will appear here.
+                </p>
+              </div>
+            )}
+
+            {justArrived ? (
               <div className="bg-[#E7F5F1] border border-[#99D5C8] p-3 text-xs text-[#087F6C] font-semibold flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                <span>Checked in at reception desk! Directing to live queue...</span>
+                <span>Arrival recorded. Directing to queue status...</span>
               </div>
             ) : isBookedUnchecked ? (
               <div className="pt-2.5 border-t border-[#E5E7E6] flex items-center justify-between gap-3">
                 <div>
                   <span className="text-xs font-semibold text-[#111111] block">At the clinic now?</span>
-                  <span className="text-[11px] text-[#66706B]">Present YC reference code at reception</span>
+                  <span className="text-[11px] text-[#66706B]">Let reception know you have arrived</span>
                 </div>
                 <button
-                  onClick={handleSimulateCheckIn}
+                  onClick={handleArrive}
                   className="bg-[#087F6C] hover:bg-[#066354] text-white font-bold text-xs px-3.5 py-2 transition-colors flex items-center gap-1 shadow-2xs shrink-0 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-                  <span>Check In at Reception</span>
+                  <span className="material-symbols-outlined text-[16px]">location_on</span>
+                  <span>I've arrived</span>
                 </button>
               </div>
-            ) : (
+            ) : isInLiveQueue ? (
               <div className="pt-2.5 border-t border-[#E5E7E6] flex items-center justify-between">
-                <span className="text-xs font-medium text-[#087F6C]">You are checked in and in the live queue</span>
+                <span className="text-xs font-medium text-[#087F6C]">You are in the live queue</span>
                 <button
                   onClick={() => setPatientScreen('P18_QUEUE')}
                   className="text-xs font-bold text-[#087F6C] hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
                   <span>View My Queue Status</span>
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </button>
+              </div>
+            ) : (
+              <div className="pt-2.5 border-t border-[#E5E7E6] flex items-center justify-between">
+                <span className="text-xs font-medium text-[#087F6C]">Waiting for reception check-in</span>
+                <button
+                  onClick={() => setPatientScreen('P18_QUEUE')}
+                  className="text-xs font-bold text-[#087F6C] hover:underline flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span>View status</span>
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               </div>
@@ -408,8 +436,8 @@ export const P10ClinicActivity: React.FC = () => {
           </h2>
           <div className="text-xs text-[#3D4541] space-y-2 leading-relaxed">
             <p className="font-semibold text-[#111111]">
-              {canonicalAppointment 
-                ? `Your appointment is at ${canonicalAppointment.time}. Arrive by ${canonicalAppointment.time === '9:30 AM' ? '9:15 AM' : '15 minutes early'}.`
+              {appointment 
+                ? `Your appointment is at ${appointment.time}. Arrive by ${appointment.time === '9:30 AM' ? '9:15 AM' : '15 minutes early'}.`
                 : 'Plan to arrive 15 minutes before your scheduled appointment time.'}
             </p>
             <ul className="list-disc pl-4 space-y-1 text-[#66706B] text-[11px]">

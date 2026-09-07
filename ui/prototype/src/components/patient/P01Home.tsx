@@ -1,20 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
+import { StatusBadge } from '../common/StatusBadge';
+import { CLINIC_SITE_LABELS } from '../../types/clinic';
+import { useAccraClock } from '../../lib/accraTime';
 
 export const P01Home: React.FC = () => {
-  const { setPatientScreen, isAfterHours } = useClinic();
+  const { setPatientScreen, isAfterHours, currentPatientAppointment, getClinicActivity } = useClinic();
+  const { time, isOpen } = useAccraClock();
+  const activity = getClinicActivity('students-clinic');
+
+  useEffect(() => {
+    if (isAfterHours) {
+      setPatientScreen('P19_AFTER_HOURS');
+    }
+  }, [isAfterHours, setPatientScreen]);
 
   if (isAfterHours) {
-    setPatientScreen('P19_AFTER_HOURS');
     return null;
   }
 
+  const app = currentPatientAppointment;
+  const isLive = app && ['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED'].includes(app.status);
+  const siteName = app ? CLINIC_SITE_LABELS[app.clinicSite]?.name : "Students' Clinic";
+
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center py-10 md:py-16 px-4">
-      {/* 600px Balanced Healthcare Card */}
       <div className="w-full max-w-[600px] bg-white border border-[#D8DCD9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-6 sm:p-10 text-center">
-        {/* Subtle Clinical Badge & Icon Header */}
         <div className="mb-6 flex flex-col items-center">
           <div className="w-13 h-13 bg-[#E7F5F1] border border-[#99D5C8] text-[#087F6C] flex items-center justify-center mb-3">
             <span className="material-symbols-outlined text-3xl">
@@ -24,19 +36,98 @@ export const P01Home: React.FC = () => {
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-semibold text-[#087F6C] bg-[#E7F5F1] uppercase tracking-wider">
             <span>KNUST Students' Clinic</span>
           </span>
+          <span className="mt-2 text-[11px] font-medium text-[#66706B] flex items-center gap-2">
+            <span className="font-mono tabular-nums">{time} Accra</span>
+            <span className={isOpen ? 'text-[#087F6C] font-semibold' : 'text-[#C53030] font-semibold'}>
+              {isOpen ? 'Open now · 08:00–20:00' : 'Closed · opens 08:00'}
+            </span>
+          </span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111111] mb-2">
-          Welcome to YɛnCare
+          Akwaaba. Welcome to YɛnCare
         </h1>
         <p className="text-sm sm:text-base text-[#66706B] font-normal mb-2 max-w-md mx-auto leading-relaxed">
           Book a clinic visit, find an existing appointment, or check your queue.
         </p>
-        <p className="text-xs text-[#8A948F] font-medium mb-8">
-          KNUST University Health Services
-        </p>
+        <div className="grid grid-cols-3 gap-2 mb-8 text-left">
+          <div className="border border-[#D8DCD9] p-3 bg-[#F7F8F7]">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B]">Now serving</div>
+            <div className="font-mono font-bold text-lg text-[#111111] mt-0.5">{activity.nowServingToken || '—'}</div>
+          </div>
+          <div className="border border-[#D8DCD9] p-3 bg-[#F7F8F7]">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B]">Waiting</div>
+            <div className="font-mono font-bold text-lg text-[#111111] mt-0.5">{activity.waitingCount}</div>
+          </div>
+          <div className="border border-[#D8DCD9] p-3 bg-[#F7F8F7]">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B]">Est. wait</div>
+            <div className="font-bold text-lg text-[#111111] mt-0.5">
+              {activity.estimatedWaitMinutes === 0 ? '—' : `~${activity.estimatedWaitMinutes}m`}
+            </div>
+          </div>
+        </div>
 
-        {/* Primary Action Buttons */}
+        {isLive && app && (
+          <div className="bg-[#F7F8F7] border border-[#D8DCD9] p-4 text-left mb-6">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B] mb-1">
+                  Your appointment today
+                </div>
+                <div className="font-bold text-sm text-[#111111]">{app.patientName}</div>
+                <div className="text-xs text-[#66706B] mt-0.5">
+                  {siteName} · {app.time} · {app.id}
+                </div>
+              </div>
+              <StatusBadge status={app.status} token={app.queueToken} size="sm" />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {app.status === 'BOOKED' && (
+                <Button
+                  variant="accent"
+                  size="sm"
+                  fullWidth
+                  icon="location_on"
+                  onClick={() => setPatientScreen('P11_DETAILS')}
+                >
+                  Manage / I've arrived
+                </Button>
+              )}
+              {app.status === 'CHECKED_IN' && (
+                <Button
+                  variant="accent"
+                  size="sm"
+                  fullWidth
+                  icon="how_to_reg"
+                  onClick={() => setPatientScreen('P18_QUEUE')}
+                >
+                  Waiting for reception
+                </Button>
+              )}
+              {(app.status === 'WAITING' || app.status === 'CALLED') && (
+                <Button
+                  variant="accent"
+                  size="sm"
+                  fullWidth
+                  icon="schedule"
+                  onClick={() => setPatientScreen('P18_QUEUE')}
+                >
+                  Open live queue
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                icon="visibility"
+                onClick={() => setPatientScreen('P11_DETAILS')}
+              >
+                View details
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3 mb-8">
           <Button
             variant="primary"
@@ -59,7 +150,6 @@ export const P01Home: React.FC = () => {
           </Button>
         </div>
 
-        {/* Live Clinic Activity Card (Pre-Check-In Visibility) */}
         <div className="bg-[#E7F5F1]/50 border border-[#99D5C8] p-4 sm:p-5 text-left mb-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -83,7 +173,6 @@ export const P01Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Dedicated Queue Option Card */}
         <div className="bg-[#F0F2F1] border border-[#D8DCD9] p-4 sm:p-5 text-left mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -91,10 +180,10 @@ export const P01Home: React.FC = () => {
                 <span className="material-symbols-outlined text-[16px] text-[#087F6C]">
                   schedule
                 </span>
-                <span>Already checked in at reception?</span>
+                <span>Already in the live queue?</span>
               </div>
               <p className="text-xs text-[#66706B] font-normal mt-1">
-                Check your assigned queue token number and live queue position.
+                Check your assigned queue token and live position after reception check-in.
               </p>
             </div>
             <button
@@ -107,7 +196,6 @@ export const P01Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Carrier SMS Notice */}
         <div className="border-t border-[#E5E7E6] pt-5 text-left flex items-start gap-2.5">
           <span className="material-symbols-outlined text-[#66706B] text-[18px] shrink-0 mt-0.5">
             sms

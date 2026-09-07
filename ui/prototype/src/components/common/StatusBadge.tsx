@@ -26,7 +26,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, token, size = 
       dotColor: 'bg-[#66706B]',
     },
     CHECKED_IN: {
-      label: 'Checked In',
+      label: customLabel || 'Arrived · Awaiting desk',
       icon: 'how_to_reg',
       bg: 'bg-[#E7F5F1]',
       text: 'text-[#087F6C]',

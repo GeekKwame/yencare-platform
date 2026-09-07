@@ -21,6 +21,8 @@ export const SmsModal: React.FC<SmsModalProps> = ({ appointmentId, isOpen, onClo
     cancelled: 'Cancelled',
     called: 'Called',
     next: 'You Are Next',
+    arrived: 'Arrived at Clinic',
+    'check-in': 'Checked In to Queue',
     'walk-in-confirmation': 'Walk-In Confirmed',
   };
 
@@ -31,6 +33,8 @@ export const SmsModal: React.FC<SmsModalProps> = ({ appointmentId, isOpen, onClo
     cancelled: 'cancel',
     called: 'notifications_active',
     next: 'priority_high',
+    arrived: 'location_on',
+    'check-in': 'how_to_reg',
     'walk-in-confirmation': 'directions_walk',
   };
 

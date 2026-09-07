@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { speakableReference, speakText } from '../../lib/clinicSpeech';
 
 interface ReferenceBlockProps {
   code: string;
@@ -6,12 +7,13 @@ interface ReferenceBlockProps {
   size?: 'lg' | 'xl';
 }
 
-export const ReferenceBlock: React.FC<ReferenceBlockProps> = ({ 
-  code, 
+export const ReferenceBlock: React.FC<ReferenceBlockProps> = ({
+  code,
   subtext = 'Show this reference code when you arrive at the reception desk',
-  size = 'xl' 
+  size = 'xl',
 }) => {
   const [copied, setCopied] = useState(false);
+  const spoken = speakableReference(code);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code).catch(() => {});
@@ -43,9 +45,20 @@ export const ReferenceBlock: React.FC<ReferenceBlockProps> = ({
             {copied ? 'check' : 'content_copy'}
           </span>
         </button>
+        <button
+          onClick={() => speakText(`${spoken}.`)}
+          className="p-2 bg-white border border-[#D8DCD9] hover:border-[#111111] hover:bg-[#F7F8F7] transition-all text-[#111111] active:scale-95 cursor-pointer"
+          title="Speak reference code"
+          aria-label="Speak reference code"
+        >
+          <span className="material-symbols-outlined text-[18px]">volume_up</span>
+        </button>
       </div>
+      <p className="text-[11px] font-medium text-[#087F6C] mt-2 tracking-wide">
+        Say: {spoken}
+      </p>
       {subtext && (
-        <p className="text-xs text-[#66706B] font-normal mt-2.5 max-w-sm mx-auto">
+        <p className="text-xs text-[#66706B] font-normal mt-1.5 max-w-sm mx-auto">
           {subtext}
         </p>
       )}
