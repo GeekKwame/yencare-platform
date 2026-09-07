@@ -177,3 +177,34 @@ The design system implements **Clinical Brutalism & High-Contrast Minimalism**:
   - Error: `#C53030` (`#FDF2F2` soft)
 - **Elevation**: Subtle, crisp shadow `0 2px 8px rgba(0,0,0,0.05)` applied to cards to prevent flatness without resorting to generic SaaS floating cards.
 - **Typography**: Hanken Grotesk with deliberate weight hierarchy (regular 400 for body, medium 500 for secondary, semibold 600 for card headers/buttons, bold 700 for titles and queue numbers).
+
+---
+
+## 7. Backend SMS (`sendSms`)
+
+The interactive prototype stores SMS rows in `ClinicContext` for the **Simulated SMS** viewer. That is UI-only.
+
+Production Gate 2 confirmation texts use the Node wrapper in `backend/src/sms/sendSms.js`. Booking, persistence, and SMS send are three steps: write the appointment, return the speakable reference to the web client, then send SMS asynchronously from the server. **Booking success does not depend on SMS delivery.**
+
+```
+Patient books (web)
+        │
+        ▼
+Express booking route
+        │
+        ├── PostgreSQL insert (source of truth)
+        ├── HTTP 201 + reference (YC-4821)
+        └── sendSms(to, message)
+                ├── SMS_PROVIDER=mock            → terminal log (offline)
+                └── SMS_PROVIDER=africastalking  → AT sandbox → simulator inbox
+```
+
+| Rule | Detail |
+|---|---|
+| Single API | Import `sendSms(to, message)` only. Do not call Africa's Talking or Hubtel from route files. |
+| Phone format | Ghana numbers are normalised to E.164 (`024 123 4567` → `+233241234567`). |
+| Failures | Invalid phone throws. Provider errors return `{ ok: false }`. |
+| Sandbox proof | Messages appear at [simulator.africastalking.com:1517](https://simulator.africastalking.com:1517/), not on a handset. |
+| Secrets | `AT_API_KEY` lives in `backend/.env` (gitignored). Username is always `sandbox`. |
+
+Full developer contract: [`backend/README.md`](../../backend/README.md).
