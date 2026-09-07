@@ -9,7 +9,11 @@
     "preview": "npm --prefix ui/prototype run preview",
     "format": "npm --prefix ui/prototype run format",
     "sms:test": "npm --prefix backend run sms:test",
-    "test:sms": "npm --prefix backend test"
+    "test:sms": "npm --prefix backend test",
+    "test:backend": "npm --prefix backend test",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:migrate:dry": "npm --prefix backend run db:migrate:dry",
+    "db:seed": "npm --prefix backend run db:seed"
   },
   "keywords": [
     "yencare",
@@ -20,5 +24,8 @@
     "clinical-brutalism"
   ],
   "author": "YɛnCare Platform Team",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "mongodb": "^7.6.0"
+  }
 }

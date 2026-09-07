@@ -216,18 +216,33 @@ Arrive by 9:15 AM
 
 ---
 
+## Database (MongoDB)
+
+Schemas, indexes, `YC-XXXX` codes, and seed data live under `src/models` and `src/db`. Full write-up: [`docs/DATABASE_ARCHITECTURE.md`](./docs/DATABASE_ARCHITECTURE.md).
+
+```bash
+npm run db:migrate:dry
+npm run db:migrate
+npm run db:seed
+```
+
+Able and Emmanuella should import models from `src/models/index.js` (or `yencare-backend/models`) and allocate codes with `generateReferenceCode` / `Appointment` pre-validate. Do not invent a second reference-code format.
+
 ## Layout
 
 ```
 backend/
 ├── README.md
+├── docs/DATABASE_ARCHITECTURE.md
 ├── .env.example
 ├── package.json
-├── scripts/send-test-sms.js      # npm run sms:test
-├── src/index.js                  # re-exports sendSms, normalizeGhanaPhone
-├── src/sms/sendSms.js            # import this
-├── src/sms/normalizePhone.js
-├── src/sms/providers/mock.js
-├── src/sms/providers/africastalking.js
+├── scripts/send-test-sms.js
+├── scripts/migrate.js
+├── scripts/seed.js
+├── src/index.js
+├── src/db/
+├── src/models/
+├── src/sms/
+├── src/utils/referenceCode.js
 └── test/
 ```
