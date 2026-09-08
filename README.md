@@ -185,3 +185,4 @@ Sandbox messages **do not** reach a physical Ghana phone. The prototype **Simula
 - Full UX Architecture Specifications: [`ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md`](./ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md)
 - Visual Wireframe Guide: [`ui/wireframe/README.md`](./ui/wireframe/README.md)
 - SMS wrapper (`sendSms`): [`backend/README.md`](./backend/README.md)
+- MongoDB schemas & `YC-XXXX` codes: [`backend/docs/DATABASE_ARCHITECTURE.md`](./backend/docs/DATABASE_ARCHITECTURE.md)

@@ -114,6 +114,7 @@ Set `SMS_PROVIDER=mock`, then `npm test` and `npm run sms:test`.
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/yencare` | Local MongoDB for Gate 2 |
 | `SMS_PROVIDER` | `mock` | `mock`, `mnotify`, or `africastalking` |
 | `MNOTIFY_API_KEY` | empty | mNotify API v2 key |
 | `MNOTIFY_SENDER_ID` | `YenCare` | Max 11 chars; must be registered |
@@ -145,17 +146,37 @@ Share keys with Able and Emmanuella privately. Do not put them in git.
 
 ---
 
+## Database (MongoDB)
+
+Schemas, indexes, `YC-XXXX` codes, and seed data live under `src/models` and `src/db`. Full write-up: [`docs/DATABASE_ARCHITECTURE.md`](./docs/DATABASE_ARCHITECTURE.md).
+
+```bash
+npm run db:migrate:dry
+npm run db:migrate
+npm run db:seed
+```
+
+Able and Emmanuella should import models from `src/models/index.js` (or `yencare-backend/models`) and allocate codes with `generateReferenceCode` / `Appointment` pre-validate. Do not invent a second reference-code format.
+
 ## Layout
 
 ```
 backend/
 ├── README.md
+├── docs/DATABASE_ARCHITECTURE.md
 ├── .env.example
 ├── scripts/send-test-sms.js
-├── src/sms/sendSms.js
-├── src/sms/normalizePhone.js
-└── src/sms/providers/
-    ├── mock.js
-    ├── mnotify.js
-    └── africastalking.js
+├── scripts/migrate.js
+├── scripts/seed.js
+├── src/index.js
+├── src/db/
+├── src/models/
+├── src/utils/referenceCode.js
+└── src/sms/
+    ├── sendSms.js
+    ├── normalizePhone.js
+    └── providers/
+        ├── mock.js
+        ├── mnotify.js
+        └── africastalking.js
 ```

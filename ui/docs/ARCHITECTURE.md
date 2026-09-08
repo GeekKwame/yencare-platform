@@ -192,13 +192,15 @@ Patient books (web)
         ▼
 Express booking route
         │
-        ├── PostgreSQL insert (source of truth)
+        ├── MongoDB insert (Patient + Appointment + TimeSlot)
         ├── HTTP 201 + reference (YC-4821)
         └── sendSms(to, message)
                 ├── SMS_PROVIDER=mock            → terminal log (offline)
                 ├── SMS_PROVIDER=mnotify         → mNotify Quick SMS → real Ghana handset
                 └── SMS_PROVIDER=africastalking  → AT sandbox → simulator inbox
 ```
+
+Models, indexes, and `YC-XXXX` allocation: [`backend/docs/DATABASE_ARCHITECTURE.md`](../../backend/docs/DATABASE_ARCHITECTURE.md).
 
 | Rule | Detail |
 |---|---|

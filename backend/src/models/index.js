@@ -1,0 +1,5 @@
+export { Patient } from './Patient.js';
+export { Room } from './Room.js';
+export { Clinician } from './Clinician.js';
+export { TimeSlot } from './TimeSlot.js';
+export { Appointment } from './Appointment.js';
