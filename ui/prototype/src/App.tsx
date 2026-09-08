@@ -109,10 +109,10 @@ export const App: React.FC = () => {
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-normal text-[#66706B]">
             <div className="flex items-center gap-2 font-semibold text-[#111111]">
               <span className="w-2 h-2 rounded-full bg-[#087F6C]"></span>
-              <span>YɛnCare · KNUST University Health Services · Students' Clinic</span>
+              <span>YɛnCare · KNUST Students' Clinic</span>
             </div>
             <div>
-              Kumasi campus outpatient clinic scheduling & live virtual queue access.
+              Kumasi campus outpatient scheduling and live virtual queue.
             </div>
           </div>
         </footer>

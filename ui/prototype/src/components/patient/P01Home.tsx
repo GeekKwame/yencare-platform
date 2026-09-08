@@ -48,7 +48,7 @@ export const P01Home: React.FC = () => {
           Akwaaba. Welcome to YɛnCare
         </h1>
         <p className="text-sm sm:text-base text-[#66706B] font-normal mb-2 max-w-md mx-auto leading-relaxed">
-          Book a clinic visit, find an existing appointment, or check your queue.
+          Book a visit at KNUST Students' Clinic, find an existing appointment, or check your queue.
         </p>
         <div className="grid grid-cols-3 gap-2 mb-8 text-left">
           <div className="border border-[#D8DCD9] p-3 bg-[#F7F8F7]">

@@ -15,9 +15,9 @@ export const PatientHeader: React.FC = () => {
         <div className="w-7 h-7 bg-[#111111] text-white flex items-center justify-center font-bold text-xs">
           Y
         </div>
-        <div className="leading-tight">
-          <span className="font-bold text-sm tracking-tight text-[#111111]">YɛnCare</span>
-          <span className="text-[10px] font-semibold text-[#66706B] uppercase ml-1.5 tracking-wide">
+        <div className="leading-tight text-left">
+          <span className="block font-bold text-sm tracking-tight text-[#111111]">YɛnCare</span>
+          <span className="block text-[10px] font-semibold text-[#66706B] uppercase tracking-wide">
             KNUST Students' Clinic
           </span>
         </div>

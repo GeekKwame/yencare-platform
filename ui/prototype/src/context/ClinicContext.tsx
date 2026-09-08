@@ -319,7 +319,7 @@ const INITIAL_SMS: SmsMessage[] = [
     appointmentId: 'YC-4821',
     type: 'confirmation',
     phone: '024 XXX XXXX',
-    body: `KNUST Students' Clinic\n\nAppointment Confirmed\nTue 15 Sep, 9:30 AM\nRef: YC-4821\nArrive by 9:15 AM\n\nDr. Kwame Boateng · Room 1\nGeneral OPD`,
+    body: `YɛnCare\n\nAppointment Confirmed\nTue 15 Sep, 9:30 AM\nRef: YC-4821\nArrive by 9:15 AM\n\nDr. Kwame Boateng · Room 1\nGeneral OPD\nKNUST Students' Clinic`,
     timestamp: '2026-09-14 14:22',
   },
   {
@@ -525,7 +525,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: newRef,
       type: 'confirmation',
       phone: newAppointment.phone,
-      body: `KNUST ${newAppointment.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\n${visitLabel}`,
+      body: `YɛnCare\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\n${visitLabel}\nKNUST ${newAppointment.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}`,
     });
 
     setActivePatientAppointmentId(newRef);
@@ -597,7 +597,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: id,
       type: 'arrived',
       phone: target.phone,
-      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
+      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'social-science-gf7' ? 'KNUST Social Science Block GF7' : "KNUST Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
     });
 
     showToast(`${target.patientName} has arrived. Reception can now check them into the live queue.`);
@@ -779,7 +779,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: token,
       type: 'walk-in-confirmation',
       phone: draft.phone,
-      body: `KNUST Students' Clinic\n\nWalk-In Registered\nToken: ${token}\n\nYou have been added to the queue.\nEstimated wait: ~${newAppointment.estimatedWaitMinutes} min`,
+      body: `YɛnCare\n\nWalk-In Registered\nToken: ${token}\n\nYou have been added to the queue at KNUST Students' Clinic.\nEstimated wait: ~${newAppointment.estimatedWaitMinutes} min`,
     });
 
     showToast(`Walk-in ${draft.patientName} added to queue as ${token}`);

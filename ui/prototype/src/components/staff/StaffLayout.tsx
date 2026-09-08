@@ -27,8 +27,10 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
             Y
           </div>
           <div>
-            <span className="font-bold text-sm tracking-tight text-[#111111]">YɛnCare</span>
-            <span className="text-[10px] font-semibold text-[#66706B] uppercase ml-1.5">Ops Portal</span>
+            <span className="block font-bold text-sm tracking-tight text-[#111111]">YɛnCare</span>
+            <span className="block text-[10px] font-semibold text-[#66706B] uppercase tracking-wide">
+              KNUST Students' Clinic
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -102,7 +104,7 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
             </div>
             <div>
               <div className="font-bold text-sm tracking-tight text-[#111111] flex items-center gap-1.5 leading-tight">
-                <span>YɛnCare Ops</span>
+                <span>YɛnCare</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#087F6C]"></span>
               </div>
               <span className="text-[10px] font-semibold text-[#66706B] uppercase tracking-wider block">

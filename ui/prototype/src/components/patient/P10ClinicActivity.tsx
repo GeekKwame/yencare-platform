@@ -452,7 +452,7 @@ export const P10ClinicActivity: React.FC = () => {
         <div className="flex items-center justify-between text-[11px] text-[#8A948F] pt-2 border-t border-[#E5E7E6]">
           <span className="flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px] text-[#087F6C]">sync</span>
-            <span>KNUST Health Services Virtual Queue Sync</span>
+            <span>YɛnCare · KNUST Students' Clinic queue</span>
           </span>
           <button 
             onClick={() => setClinicActivityOverride(clinicActivityOverride === 'normal' ? 'unavailable' : 'normal')}

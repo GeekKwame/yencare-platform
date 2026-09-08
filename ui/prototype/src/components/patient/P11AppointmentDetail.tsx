@@ -106,7 +106,7 @@ export const P11AppointmentDetail: React.FC = () => {
           </div>
           <div className="p-3.5 bg-[#F7F8F7] flex justify-between items-center">
             <span className="text-[#66706B] font-medium">Clinic Site</span>
-            <span className="font-semibold text-[#111111]">{siteName}</span>
+            <span className="font-semibold text-[#111111]">KNUST {siteName}</span>
           </div>
           <div className="p-3.5 bg-white flex justify-between items-center">
             <span className="text-[#66706B] font-medium">Visit Type</span>

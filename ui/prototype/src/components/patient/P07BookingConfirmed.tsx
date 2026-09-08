@@ -86,7 +86,7 @@ export const P07BookingConfirmed: React.FC = () => {
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Clinic:</span>
             <span className="font-medium text-[#111111]">
-              {siteName} · {app.doctor.room}
+              KNUST {siteName} · {app.doctor.room}
             </span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-[#E5E7E6]">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 import { ReferenceBlock } from '../common/ReferenceBlock';
+import { CLINIC_SITE_LABELS } from '../../types/clinic';
 
 const RESCHEDULE_DATES = [
   { day: 'Wed', date: '16 Sep 2026', full: 'Wednesday 16 September 2026' },
@@ -317,7 +318,7 @@ export const P14P17RescheduleFlow: React.FC = () => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Clinic:</span>
-            <span className="font-medium text-[#111111]">KNUST Students' Clinic</span>
+            <span className="font-medium text-[#111111]">KNUST {CLINIC_SITE_LABELS[app.clinicSite]?.name || "Students' Clinic"}</span>
           </div>
         </div>
 
