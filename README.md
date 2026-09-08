@@ -26,6 +26,10 @@ yencare-platform/
 ├── .gitignore                # Recursive ignore for dependencies & build artifacts
 ├── README.md                 # Project executive overview & developer guide
 │
+├── backend/                  # Node SMS wrapper (sendSms) + future Express API
+│   ├── README.md             # Mock vs Africa's Talking sandbox; how to import sendSms
+│   └── src/sms/sendSms.js    # Reusable sendSms(to, message) for Able & Emmanuella
+│
 └── ui/                       # Consolidated UI & Frontend Hub
     ├── README.md             # UI directory overview & guide
     │
@@ -94,6 +98,8 @@ Open **[http://localhost:5173/](http://localhost:5173/)** in your browser.
 | `npm run build` | Compile TypeScript and build production bundle |
 | `npm run preview` | Preview production build locally |
 | `npm run format` | Run code formatter |
+| `npm run sms:test` | Send a mock (or sandbox) SMS via `backend` |
+| `npm run test:sms` | Run SMS wrapper unit tests |
 
 ---
 
@@ -134,16 +140,41 @@ YɛnCare is organized into two primary user shells:
 ## Prototype Testing & Scenario Simulator (`ProtoToolbar`)
 
 A non-intrusive floating controller at the bottom-right allows complete scenario testing:
-- **Akosua Boateng Progressor**: Quick step through `BOOKED` &rarr; `CHECKED_IN` &rarr; `WAITING` &rarr; `CALLED (Room 2)` &rarr; `COMPLETED`.
+- **Session progressor**: After you **book** or **find** a student, step that session through `BOOKED` → `CHECKED_IN` → `WAITING` → `CALLED (Room 2)` → `COMPLETED`. The prototype does not start signed in as a named patient.
 - **Scenario Triggers**:
   - `+ Simulate Walk-in (W-024)`: Injects an unscheduled walk-in student into the live queue.
-  - `Mark YC-4822 No-Show`: Tests slot release for missed appointments.
-  - `Staff Change Akosua to 10:30`: Triggers a staff reschedule and student alert.
+  - `Mark YC-4822 No-Show`: Tests slot release for a seeded roster appointment.
+  - `Staff Change current to 10:30`: Reschedules the focused student session and shows the student alert.
   - `Toggle After-Hours (P19)`: Toggles clinic closed mode.
   - `Network State Selector`: Test `online`, `poor`, `offline`, and `restored` states.
 - **All Screens Grid**: One-click jump to all 17 patient screens and 10 staff screens.
 
 ---
+
+## SMS (backend)
+
+Gate 2 confirmation texts go through one function: `sendSms(to, message)` in [`backend/src/sms/sendSms.js`](./backend/src/sms/sendSms.js). Able and Emmanuella should import that wrapper and not call mNotify or Africa's Talking from booking routes.
+
+```js
+import { sendSms } from './sms/sendSms.js';
+
+const result = await sendSms(patient.phone, confirmationText);
+if (!result.ok) {
+  // Log and continue — the booking is still valid
+}
+```
+
+| Mode | Cost | Where the message appears |
+|---|---|---|
+| `SMS_PROVIDER=mock` | Free | Terminal (`[SMS mock] to=+233…`) |
+| `SMS_PROVIDER=mnotify` + API key | Signup bonus / paid credits | Real Ghana phone |
+| `SMS_PROVIDER=africastalking` + sandbox key | Free | [Africa's Talking simulator](https://simulator.africastalking.com:1517/) inbox |
+
+Sandbox messages **do not** reach a physical Ghana phone. The prototype **Simulated SMS** viewer (`SmsModal`) is a separate UI fake log and is not this module.
+
+- Copy [`backend/.env.example`](./backend/.env.example) → `backend/.env` (gitignored). Never commit `MNOTIFY_API_KEY` or `AT_API_KEY`.
+- Invalid numbers throw. Provider failures return `{ ok: false }` so booking can still succeed.
+- Full contract, mNotify steps, and troubleshooting: [`backend/README.md`](./backend/README.md).
 
 ## Documentation Links
 
@@ -153,3 +184,4 @@ A non-intrusive floating controller at the bottom-right allows complete scenario
 - Product Design Lock Decisions: [`ui/docs/STITCH_DESIGN_LOCK.md`](./ui/docs/STITCH_DESIGN_LOCK.md)
 - Full UX Architecture Specifications: [`ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md`](./ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md)
 - Visual Wireframe Guide: [`ui/wireframe/README.md`](./ui/wireframe/README.md)
+- SMS wrapper (`sendSms`): [`backend/README.md`](./backend/README.md)

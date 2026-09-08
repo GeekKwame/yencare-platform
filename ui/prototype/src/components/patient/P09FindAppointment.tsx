@@ -40,8 +40,13 @@ export const P09FindAppointment: React.FC = () => {
     }
   };
 
-  const handleFillDemo = () => {
-    setSearchValue('YC-4821');
+  const handleFillSample = () => {
+    const sample =
+      appointments.find((a) => a.status === 'BOOKED' && a.bookingType === 'BOOKED') ||
+      appointments.find((a) => a.bookingType === 'BOOKED') ||
+      appointments[0];
+    if (!sample) return;
+    setSearchValue(sample.id);
     setSearchType('reference');
     setError(null);
   };
@@ -60,10 +65,10 @@ export const P09FindAppointment: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={handleFillDemo}
+            onClick={handleFillSample}
             className="text-[11px] font-semibold text-[#087F6C] hover:underline cursor-pointer"
           >
-            Autofill Demo (YC-4821)
+            Use a roster sample
           </button>
         </div>
 
@@ -112,7 +117,7 @@ export const P09FindAppointment: React.FC = () => {
                   if (error) setError(null);
                 }}
                 placeholder="e.g. YC-4821"
-                maxLength={8}
+                maxLength={12}
                 className="w-full px-3.5 py-2.5 text-sm font-reference text-[#111111] border border-[#C8CDCA] uppercase tracking-wider focus:border-[#087F6C] focus:ring-1 focus:ring-[#087F6C] focus:outline-none transition-all"
               />
               <p className="text-[11px] font-normal text-[#66706B]">

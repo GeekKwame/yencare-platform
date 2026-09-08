@@ -102,7 +102,7 @@ export const S02Today: React.FC = () => {
             );
           });
           if (!found) {
-            showToast('No student found. Try YC-4821, index 20612345, or a name.');
+            showToast('No student found. Search by YC reference, student index, phone, or name from today’s roster.');
             return;
           }
           setSelectedStaffAppointmentId(found.id);

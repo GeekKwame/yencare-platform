@@ -1,11 +1,27 @@
 import React from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
+import { CLINIC_SITE_LABELS } from '../../types/clinic';
 
 export const P12CancelConfirm: React.FC = () => {
   const { currentPatientAppointment, cancelAppointment, setPatientScreen } = useClinic();
   const app = currentPatientAppointment;
-  const refCode = app?.id || 'YC-4821';
+
+  if (!app) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center py-8 px-4">
+        <div className="text-center">
+          <p className="text-sm text-[#66706B]">No appointment in this session to cancel.</p>
+          <Button variant="secondary" size="md" onClick={() => setPatientScreen('P01_HOME')} className="mt-4">
+            Return Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const siteName = CLINIC_SITE_LABELS[app.clinicSite]?.name || "Students' Clinic";
+  const refCode = app.id;
 
   const handleCancel = () => {
     cancelAppointment(refCode);
@@ -41,7 +57,7 @@ export const P12CancelConfirm: React.FC = () => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Clinic:</span>
-            <span className="font-medium text-[#111111]">KNUST Students' Clinic</span>
+            <span className="font-medium text-[#111111]">KNUST {siteName}</span>
           </div>
         </div>
 

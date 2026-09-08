@@ -5,7 +5,7 @@ import { StatusBadge } from '../common/StatusBadge';
 
 export const P13AppointmentCancelled: React.FC = () => {
   const { currentPatientAppointment, setPatientScreen } = useClinic();
-  const refCode = currentPatientAppointment?.id || 'YC-4821';
+  const refCode = currentPatientAppointment?.id || 'this appointment';
 
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center py-8 md:py-14 px-4">

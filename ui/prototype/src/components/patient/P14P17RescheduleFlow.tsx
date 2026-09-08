@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 import { ReferenceBlock } from '../common/ReferenceBlock';
+import { CLINIC_SITE_LABELS } from '../../types/clinic';
 
 const RESCHEDULE_DATES = [
   { day: 'Wed', date: '16 Sep 2026', full: 'Wednesday 16 September 2026' },
@@ -29,16 +30,29 @@ export const P14P17RescheduleFlow: React.FC = () => {
   } = useClinic();
 
   const app = currentPatientAppointment;
-  const refCode = app?.id || 'YC-4821';
 
-  // Sub-step inside rescheduling flow: 1 (Date), 2 (Time), 3 (Review), 4 (Confirmed)
-  const currentStep = 
+  const currentStep =
     patientScreen === 'P14_RESCHEDULE_DATE' ? 1 :
     patientScreen === 'P15_RESCHEDULE_TIME' ? 2 :
     patientScreen === 'P16_RESCHEDULE_REVIEW' ? 3 : 4;
 
   const [selectedDate, setSelectedDate] = useState(rescheduleDraft.newDate || 'Wednesday 16 September 2026');
   const [selectedTime, setSelectedTime] = useState(rescheduleDraft.newTime || '11:00 AM');
+
+  if (!app) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center py-8 px-4">
+        <div className="text-center">
+          <p className="text-sm text-[#66706B]">Find or book an appointment before rescheduling.</p>
+          <Button variant="secondary" size="md" onClick={() => setPatientScreen('P09_FIND')} className="mt-4">
+            Find Appointment
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const refCode = app.id;
 
   // STEP 1: P14 Reschedule Date
   if (currentStep === 1) {
@@ -66,13 +80,13 @@ export const P14P17RescheduleFlow: React.FC = () => {
               Choose New Date
             </h1>
             <p className="text-sm text-[#66706B] font-normal leading-relaxed">
-              Select a new day for your consultation with {app?.doctor.name || 'Dr. Kwame Boateng'}.
+              Select a new day for your consultation with {app.doctor.name}.
             </p>
           </div>
 
           <div className="p-3 bg-[#F7F8F7] border border-[#D8DCD9] text-xs mb-6 flex justify-between items-center">
             <span className="text-[#66706B]">Current Booking:</span>
-            <span className="font-semibold text-[#111111]">{app?.date}, {app?.time}</span>
+            <span className="font-semibold text-[#111111]">{app.date}, {app.time}</span>
           </div>
 
           <div className="space-y-2 mb-6">
@@ -220,7 +234,7 @@ export const P14P17RescheduleFlow: React.FC = () => {
             <div className="p-3.5 bg-[#F7F8F7] flex items-center justify-between">
               <span className="text-[#66706B] font-normal">Previous Time</span>
               <span className="font-medium text-[#8A948F] line-through">
-                {app?.date}, {app?.time}
+                {app.date}, {app.time}
               </span>
             </div>
             <div className="p-3.5 bg-[#E7F5F1]/30 flex items-center justify-between">
@@ -231,7 +245,7 @@ export const P14P17RescheduleFlow: React.FC = () => {
             </div>
             <div className="p-3.5 bg-white flex items-center justify-between">
               <span className="text-[#66706B] font-normal">Doctor</span>
-              <span className="font-semibold text-[#111111]">{app?.doctor.name || 'Dr. Kwame Boateng'}</span>
+              <span className="font-semibold text-[#111111]">{app.doctor.name}</span>
             </div>
             <div className="p-3.5 bg-[#F7F8F7] flex items-center justify-between">
               <span className="text-[#66706B] font-normal">Reference</span>
@@ -296,15 +310,15 @@ export const P14P17RescheduleFlow: React.FC = () => {
         <div className="border border-[#D8DCD9] p-4 bg-[#F7F8F7] text-left text-xs mb-5 space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">New Date & Time:</span>
-            <span className="font-bold text-[#087F6C]">{app?.date}, {app?.time}</span>
+            <span className="font-bold text-[#087F6C]">{app.date}, {app.time}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Doctor:</span>
-            <span className="font-semibold text-[#111111]">{app?.doctor.name || 'Dr. Kwame Boateng'}</span>
+            <span className="font-semibold text-[#111111]">{app.doctor.name}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Clinic:</span>
-            <span className="font-medium text-[#111111]">KNUST Students' Clinic</span>
+            <span className="font-medium text-[#111111]">KNUST {CLINIC_SITE_LABELS[app.clinicSite]?.name || "Students' Clinic"}</span>
           </div>
         </div>
 
@@ -314,7 +328,7 @@ export const P14P17RescheduleFlow: React.FC = () => {
             sms
           </span>
           <p>
-            An updated confirmation text has been sent to <strong className="text-[#111111]">{app?.phone || '024 123 4567'}</strong>.
+            An updated confirmation text has been sent to <strong className="text-[#111111]">{app.phone}</strong>.
           </p>
         </div>
 

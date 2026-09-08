@@ -7,7 +7,9 @@
     "dev": "npm --prefix ui/prototype run dev",
     "build": "npm --prefix ui/prototype run build",
     "preview": "npm --prefix ui/prototype run preview",
-    "format": "npm --prefix ui/prototype run format"
+    "format": "npm --prefix ui/prototype run format",
+    "sms:test": "npm --prefix backend run sms:test",
+    "test:sms": "npm --prefix backend test"
   },
   "keywords": [
     "yencare",

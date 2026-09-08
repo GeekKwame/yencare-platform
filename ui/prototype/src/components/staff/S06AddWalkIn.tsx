@@ -104,7 +104,7 @@ export const S06AddWalkIn: React.FC = () => {
               Register Walk-In Student
             </h1>
             <p className="text-xs text-[#66706B] mt-1">
-              For unscheduled students presenting physically at the KNUST Students' Clinic reception.
+              For unscheduled students presenting physically at KNUST Students' Clinic reception.
             </p>
           </div>
 

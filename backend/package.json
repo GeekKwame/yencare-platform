@@ -1,0 +1,29 @@
+{
+  "name": "yencare-backend",
+  "version": "1.0.0",
+  "description": "YɛnCare backend — SMS wrapper and (later) Express API",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./sms": "./src/sms/sendSms.js"
+  },
+  "scripts": {
+    "sms:test": "node scripts/send-test-sms.js",
+    "test": "node --test ./test/normalizePhone.test.js ./test/sendSms.test.js ./test/mnotify.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "yencare",
+    "sms",
+    "africastalking"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "africastalking": "^0.8.3",
+    "dotenv": "^17.2.2"
+  }
+}

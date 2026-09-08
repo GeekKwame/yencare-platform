@@ -11,12 +11,26 @@ export const S09NoShowConfirm: React.FC = () => {
   } = useClinic();
 
   const [confirmed, setConfirmed] = useState(false);
-  const app = appointments.find((a) => a.id === selectedStaffAppointmentId) || appointments[0];
+  const app = appointments.find((a) => a.id === selectedStaffAppointmentId);
 
   const handleConfirm = () => {
+    if (!app) return;
     markNoShow(app.id);
     setConfirmed(true);
   };
+
+  if (!app) {
+    return (
+      <div className="max-w-xl space-y-4 pt-6">
+        <p className="text-sm text-[#66706B]">
+          Select a student from the roster first, then mark a no-show.
+        </p>
+        <Button variant="secondary" size="md" onClick={() => setStaffScreen('S03_APPOINTMENTS')}>
+          Open roster
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto space-y-6 pt-6">

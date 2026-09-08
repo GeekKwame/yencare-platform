@@ -112,7 +112,7 @@ export const P18QueueStatus: React.FC = () => {
 
         <div className="text-center mb-1">
           <div className="text-[11px] font-semibold text-[#66706B] uppercase tracking-wider mb-1">
-            {siteName}
+            KNUST {siteName}
           </div>
         </div>
 

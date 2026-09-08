@@ -18,7 +18,21 @@ export const S04PatientDetail: React.FC = () => {
 
   const [showSmsModal, setShowSmsModal] = useState(false);
 
-  const app = appointments.find((a) => a.id === selectedStaffAppointmentId) || appointments[0];
+  const app = appointments.find((a) => a.id === selectedStaffAppointmentId);
+
+  if (!app) {
+    return (
+      <div className="max-w-xl space-y-4">
+        <p className="text-sm text-[#66706B]">
+          Select a student from the roster or desk lookup to open their record.
+        </p>
+        <Button variant="secondary" size="md" onClick={() => setStaffScreen('S03_APPOINTMENTS')}>
+          Open roster
+        </Button>
+      </div>
+    );
+  }
+
   const isBooked = app.status === 'BOOKED';
   const isArrived = app.status === 'CHECKED_IN';
   const canStaffCheckIn = isBooked || isArrived;
@@ -49,7 +63,7 @@ export const S04PatientDetail: React.FC = () => {
       <div className="bg-white border border-[#D8DCD9] p-6 md:p-8 space-y-6 shadow-xs">
         <div>
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B] block mb-1">
-            KNUST Student Clinical Record
+            KNUST student clinical record
           </span>
           <h1 className="text-2xl font-bold tracking-tight text-[#111111]">
             {app.patientName}

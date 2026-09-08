@@ -6,3 +6,4 @@ export { StatusBadge } from './StatusBadge';
 export { Toast } from './Toast';
 export { SmsModal } from './SmsModal';
 export { ConnectivityBanner } from './ConnectivityBanner';
+export { YenCareLogo } from './YenCareLogo';

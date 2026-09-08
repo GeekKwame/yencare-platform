@@ -177,3 +177,35 @@ The design system implements **Clinical Brutalism & High-Contrast Minimalism**:
   - Error: `#C53030` (`#FDF2F2` soft)
 - **Elevation**: Subtle, crisp shadow `0 2px 8px rgba(0,0,0,0.05)` applied to cards to prevent flatness without resorting to generic SaaS floating cards.
 - **Typography**: Hanken Grotesk with deliberate weight hierarchy (regular 400 for body, medium 500 for secondary, semibold 600 for card headers/buttons, bold 700 for titles and queue numbers).
+
+---
+
+## 7. Backend SMS (`sendSms`)
+
+The interactive prototype stores SMS rows in `ClinicContext` for the **Simulated SMS** viewer. That is UI-only.
+
+Production Gate 2 confirmation texts use the Node wrapper in `backend/src/sms/sendSms.js`. Booking, persistence, and SMS send are three steps: write the appointment, return the speakable reference to the web client, then send SMS asynchronously from the server. **Booking success does not depend on SMS delivery.**
+
+```
+Patient books (web)
+        │
+        ▼
+Express booking route
+        │
+        ├── PostgreSQL insert (source of truth)
+        ├── HTTP 201 + reference (YC-4821)
+        └── sendSms(to, message)
+                ├── SMS_PROVIDER=mock            → terminal log (offline)
+                ├── SMS_PROVIDER=mnotify         → mNotify Quick SMS → real Ghana handset
+                └── SMS_PROVIDER=africastalking  → AT sandbox → simulator inbox
+```
+
+| Rule | Detail |
+|---|---|
+| Single API | Import `sendSms(to, message)` only. Do not call mNotify or Africa's Talking from route files. |
+| Phone format | Ghana numbers are normalised to E.164 (`024 123 4567` → `+233241234567`). mNotify is sent the local form (`024…`). |
+| Failures | Invalid phone throws. Provider errors return `{ ok: false }`. Missing live keys fall back to mock. |
+| Live proof | mNotify delivers to a real Ghana phone (signup bonus / paid credits). |
+| Secrets | `MNOTIFY_API_KEY` (and optional `AT_API_KEY`) live in `backend/.env` (gitignored). |
+
+Full developer contract: [`backend/README.md`](../../backend/README.md).

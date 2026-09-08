@@ -21,8 +21,22 @@ function getArriveBy(time: string): string {
 export const P07BookingConfirmed: React.FC = () => {
   const { currentPatientAppointment, setPatientScreen } = useClinic();
   const app = currentPatientAppointment;
-  const refCode = app?.id || 'YC-4821';
   const [smsOpen, setSmsOpen] = useState(false);
+
+  if (!app) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center py-8 px-4">
+        <div className="text-center">
+          <p className="text-sm text-[#66706B]">No confirmed booking in this session yet.</p>
+          <Button variant="secondary" size="md" onClick={() => setPatientScreen('P01_HOME')} className="mt-4">
+            Return Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const refCode = app.id;
 
   const siteName = CLINIC_SITE_LABELS[app?.clinicSite || 'students-clinic']?.name || "Students' Clinic";
   const visitLabel = VISIT_TYPE_LABELS[app?.visitType || 'general-opd'] || 'General OPD';
@@ -61,30 +75,30 @@ export const P07BookingConfirmed: React.FC = () => {
         <div className="border border-[#D8DCD9] p-4 bg-[#F7F8F7] text-left space-y-2.5 mb-3 text-xs">
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Patient:</span>
-            <span className="font-semibold text-[#111111]">{app?.patientName || 'Akosua Boateng'}</span>
+            <span className="font-semibold text-[#111111]">{app.patientName}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Clinician:</span>
             <span className="font-semibold text-[#111111]">
-              {app?.doctor.name || 'Dr. Kwame Boateng'}
+              {app.doctor.name}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Clinic:</span>
             <span className="font-medium text-[#111111]">
-              {siteName} · {app?.doctor.room || 'Room 1'}
+              KNUST {siteName} · {app.doctor.room}
             </span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-[#E5E7E6]">
             <span className="text-[#66706B] font-normal">Date & Time:</span>
             <span className="font-bold text-[#087F6C]">
-              {app?.date || 'Tuesday, 15 September 2026'}, {app?.time || '9:30 AM'}
+              {app.date}, {app.time}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#087F6C] font-semibold">Arrive By:</span>
             <span className="font-bold text-[#087F6C]">
-              {getArriveBy(app?.time || '9:30 AM')}
+              {getArriveBy(app.time)}
             </span>
           </div>
         </div>
@@ -93,7 +107,7 @@ export const P07BookingConfirmed: React.FC = () => {
         <div className="bg-[#E7F5F1] border border-[#99D5C8] p-3.5 mb-5 text-left text-xs flex items-center justify-between">
           <div className="flex items-center gap-2 text-[#087F6C]">
             <span className="material-symbols-outlined text-[16px]">check_circle</span>
-            <span className="font-semibold">Confirmation sent to {app?.phone || '024 XXX XXXX'}</span>
+            <span className="font-semibold">Confirmation sent to {app.phone}</span>
           </div>
           <button
             onClick={() => setSmsOpen(true)}

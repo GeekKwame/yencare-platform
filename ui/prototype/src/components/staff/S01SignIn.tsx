@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
+import { YenCareLogo } from '../common/YenCareLogo';
 import { StaffRole } from '../../types/clinic';
 
 export const S01SignIn: React.FC = () => {
@@ -22,19 +23,14 @@ export const S01SignIn: React.FC = () => {
     <div className="min-h-[85vh] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-[460px] bg-white border border-[#D8DCD9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-6 md:p-8 text-left">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#E5E7E6]">
-          <div className="w-10 h-10 bg-[#111111] text-white flex items-center justify-center font-bold text-lg">
-            Y
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-[#111111] flex items-center gap-1.5">
-              <span>YɛnCare Clinical Operations</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#087F6C]"></span>
-            </h1>
-            <p className="text-xs font-medium text-[#66706B] uppercase tracking-wider">
-              KNUST Students' Clinic Staff Workstation
-            </p>
-          </div>
+        <div className="flex flex-col items-center text-center mb-6 pb-4 border-b border-[#E5E7E6]">
+          <YenCareLogo variant="auth" />
+          <h1 className="text-lg font-bold tracking-tight text-[#111111] mt-4">
+            Staff portal
+          </h1>
+          <p className="text-xs font-medium text-[#66706B] mt-1">
+            KNUST Students' Clinic
+          </p>
         </div>
 
         <form
