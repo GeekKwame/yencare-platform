@@ -26,8 +26,10 @@ yencare-platform/
 ├── .gitignore                # Recursive ignore for dependencies & build artifacts
 ├── README.md                 # Project executive overview & developer guide
 │
-├── backend/                  # Node SMS wrapper (sendSms) + future Express API
-│   ├── README.md             # Mock vs Africa's Talking sandbox; how to import sendSms
+├── backend/                  # Express API (patients) + MongoDB + SMS wrapper
+│   ├── README.md             # Patient endpoints, MongoDB, sendSms
+│   ├── src/server.js         # API entry
+│   ├── src/models/Patient.js # Mongoose Patient schema
 │   └── src/sms/sendSms.js    # Reusable sendSms(to, message) for Able & Emmanuella
 │
 └── ui/                       # Consolidated UI & Frontend Hub
@@ -71,6 +73,7 @@ yencare-platform/
 ### Prerequisites
 - Node.js 18+ or 20+
 - npm 9+
+- MongoDB for the API (Atlas `MONGODB_URI`, or `docker compose up -d` in `backend/`)
 
 ### Running the Application
 
@@ -98,8 +101,10 @@ Open **[http://localhost:5173/](http://localhost:5173/)** in your browser.
 | `npm run build` | Compile TypeScript and build production bundle |
 | `npm run preview` | Preview production build locally |
 | `npm run format` | Run code formatter |
+| `npm run dev:api` | Launch the Express API (`backend`, default http://localhost:4000) |
+| `npm run start:api` | Start the API without `--watch` |
 | `npm run sms:test` | Send a mock (or sandbox) SMS via `backend` |
-| `npm run test:sms` | Run SMS wrapper unit tests |
+| `npm run test:sms` / `npm run test:backend` | Run backend tests (patients API + SMS) |
 
 ---
 
@@ -151,6 +156,23 @@ A non-intrusive floating controller at the bottom-right allows complete scenario
 
 ---
 
+## Backend API (patients)
+
+`POST /api/patients` find-or-creates a student from prototype P02 (full name, 8-digit student index, Ghana phone, optional NHIS). `GET /api/patients/:identifier` looks up by index or phone. MongoDB `Patient` is the source of truth.
+
+```bash
+cd backend
+copy .env.example .env
+# Set MONGODB_URI, or: docker compose up -d
+npm install
+npm run db:migrate
+npm run dev
+```
+
+Health check: [http://localhost:4000/health](http://localhost:4000/health). Postman, curl, and status codes: [`backend/README.md`](./backend/README.md). Schema: [`backend/docs/DATABASE_ARCHITECTURE.md`](./backend/docs/DATABASE_ARCHITECTURE.md).
+
+Frontend calls these routes when `VITE_API_BASE_URL=http://localhost:4000/api` ([`frontend/.env.example`](./frontend/.env.example), [`frontend/src/services/patients.js`](./frontend/src/services/patients.js)).
+
 ## SMS (backend)
 
 Gate 2 confirmation texts go through one function: `sendSms(to, message)` in [`backend/src/sms/sendSms.js`](./backend/src/sms/sendSms.js). Able and Emmanuella should import that wrapper and not call mNotify or Africa's Talking from booking routes.
@@ -184,4 +206,5 @@ Sandbox messages **do not** reach a physical Ghana phone. The prototype **Simula
 - Product Design Lock Decisions: [`ui/docs/STITCH_DESIGN_LOCK.md`](./ui/docs/STITCH_DESIGN_LOCK.md)
 - Full UX Architecture Specifications: [`ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md`](./ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md)
 - Visual Wireframe Guide: [`ui/wireframe/README.md`](./ui/wireframe/README.md)
-- SMS wrapper (`sendSms`): [`backend/README.md`](./backend/README.md)
+- Backend API + SMS (`sendSms`): [`backend/README.md`](./backend/README.md)
+- MongoDB schemas & indexes: [`backend/docs/DATABASE_ARCHITECTURE.md`](./backend/docs/DATABASE_ARCHITECTURE.md)
