@@ -229,10 +229,13 @@ Set `SMS_PROVIDER=mock`, then `npm test` and `npm run sms:test`.
 | `SMS_PROVIDER` | `mock` | `mock`, `mnotify`, or `africastalking` |
 | `MNOTIFY_API_KEY` | empty | mNotify API v2 key |
 | `MNOTIFY_SENDER_ID` | `YenCare` | Max 11 chars; must be registered |
+| `MNOTIFY_API_URL` | `https://api.mnotify.com/api/sms/quick` | mNotify Quick SMS endpoint |
 | `AT_USERNAME` | `sandbox` | Only if using Africa's Talking |
 | `AT_API_KEY` | empty | AT sandbox key |
+| `AT_SENDER_ID` | empty | Optional Africa's Talking sender ID |
 
-Share keys with Able and Emmanuella privately. Do not put them in git. `backend/.env` is gitignored.
+Share keys with Able and Emmanuella privately. Do not put them in git. `backend/.env` is gitignored. Complete configuration details: [`../docs/development/environment-variables.md`](../docs/development/environment-variables.md).
+
 
 ---
 
