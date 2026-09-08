@@ -30,7 +30,10 @@ ui/
 
 ### 3. [`docs/`](./docs) — Product & Design Specifications
 - **`YENCARE_UX_ARCHITECTURE_SPEC.md`**: Complete end-to-end user journeys and state machine specifications.
-- **`ARCHITECTURE.md`**: Technical architecture, clinical workflow rules, and Gate 2 `/api/patients` contract. Backend details: [`../backend/README.md`](../backend/README.md).
+- **`ARCHITECTURE.md`**: Technical architecture, clinical workflow rules, and screen state machines.
 - **`STITCH_DESIGN_LOCK.md`**: Core design tokens, typography, and Clinical Brutalism styling rules.
 - **`FIGMA_AGENT_MASTER_PROMPT.md`**: Component-by-component prompt specifications.
 - Presentation decks and product gate scope sheets.
+
+For central system-wide architecture, REST API references, and developer guides, see the main [Platform Documentation Hub](../docs/README.md).
+

@@ -1,19 +1,20 @@
-# YɛnCare — System Architecture & Technical Specification
+# YɛnCare — UI Architecture & Technical Specification
 
-This document provides a comprehensive technical overview of the YɛnCare platform architecture, component hierarchy, state management, data models, and screen state machines.
+> **Interactive Web Application Architecture, Component Hierarchy & Screen State Machines**  
+> Tailored for **KNUST University Health Services · Students' Clinic** and **Social Science Block GF7**.
 
 ---
 
 ## 1. System Overview
 
-YɛnCare is a clinic appointment booking and live virtual queue system designed for partner outpatient clinics in Ghana. It eliminates chaotic physical waiting rooms by providing:
-1. **Patient Web Experience**: Frictionless booking, phone/reference lookup, and real-time live queue tracking without requiring account passwords.
-2. **Staff Clinical Operations Portal**: Reception check-in, doctor consultation management, and real-time waiting corridor queue management.
-3. **Clinical Brutalism Design System**: High-contrast, structured, editorial minimalism optimized for legibility, trust, low cognitive load, and accessibility.
+The YɛnCare UI architecture is designed as a unified application supporting two distinct operational shells:
+1. **Student Web Experience (`Shell 1`)**: Frictionless 6-step appointment booking, tabbed student lookup, real-time pre-check-in clinic intelligence, and live virtual queue monitoring without mandatory passwords.
+2. **Staff Clinical Operations Portal (`Shell 2`)**: Workstation for receptionists, doctors, and clinic administrators to check in students, manage multi-room consultation queues, register walk-ins, and broadcast to public waiting area display boards.
+3. **Clinical Brutalism Design System**: High-contrast, structured, editorial minimalism optimized for legibility under bright Ghanaian sunlight, low cognitive load, and accessibility on standard mobile web browsers.
 
 ---
 
-## 2. Component Hierarchy & Flow
+## 2. Component Hierarchy & Shell Routing
 
 ```mermaid
 graph TD
@@ -23,21 +24,24 @@ graph TD
         G01[G01NetworkError]
     end
     
-    subgraph PatientShell [Shell 1: Patient Web Experience]
+    subgraph PatientShell [Shell 1: Student Web Experience]
         PHeader[PatientHeader]
         P01[P01 Home Dashboard]
         P02[P02 Your Details]
+        P02B[P02B Clinic Site]
+        P02C[P02C Visit Type & Emergency Gate]
         P03[P03 Choose Doctor]
         P0405[P04/P05 Date & Time Picker]
         P06[P06 Review Booking]
         P07[P07 Booking Confirmed]
         P08[P08 Slot Taken Clash]
         P09[P09 Find Appointment]
+        P10[P10 Clinic Activity]
         P11[P11 Appointment Details Hub]
         P1213[P12/P13 Cancel Flow]
         P1417[P14-P17 Reschedule Flow]
         P18[P18 Live Queue Status]
-        PFooter[Patient Footer]
+        P19[P19 After-Hours Notice]
     end
     
     subgraph StaffShell [Shell 2: Staff Operations Portal]
@@ -45,10 +49,14 @@ graph TD
         SLayout[StaffLayout]
         S02[S02 Today Operations Dashboard]
         S03[S03 Appointments Roster]
-        S04[S04 Patient Detail Dossier]
+        S04[S04 Student Clinical Record]
         S05[S05 Live Queue Board]
         S05E[S05 Empty Queue State]
+        S06[S06 Register Walk-In]
         S07[S07 Session Expired]
+        S08[S08 Change Appointment]
+        S09[S09 Mark No-Show]
+        S10[S10 Public Display Board]
     end
     
     subgraph GlobalUtilities [Global Utilities]
@@ -68,63 +76,64 @@ graph TD
 
 ## 3. State Management (`ClinicContext`)
 
-All application state is managed centrally via `ClinicContext` (`src/context/ClinicContext.tsx`), providing reactive updates across both shells.
+All client-side state is centrally orchestrated by `ClinicContext` (`src/context/ClinicContext.tsx`):
 
-### Key State Fields
+### Core State Fields
 
 | State Property | Type | Description |
 |---|---|---|
 | `activeShell` | `'PATIENT' \| 'STAFF'` | Currently displayed shell |
-| `patientScreen` | `PatientScreen` | Active patient screen enum (`P01_HOME` ... `P18_QUEUE`) |
-| `staffScreen` | `StaffScreen` | Active staff screen enum (`S01_SIGN_IN` ... `S07_SESSION_EXPIRED`) |
-| `appointments` | `Appointment[]` | Live list of clinic appointments |
-| `draftBooking` | `DraftBooking` | Temporary state for new patient booking flow |
+| `patientScreen` | `PatientScreen` | Active patient screen enum (`P01_HOME` ... `P19_AFTER_HOURS`) |
+| `staffScreen` | `StaffScreen` | Active staff screen enum (`S01_SIGN_IN` ... `S10_DISPLAY_BOARD`) |
+| `appointments` | `Appointment[]` | Active list of clinic appointments |
+| `draftBooking` | `DraftBooking` | Temporary wizard state for new student booking |
 | `rescheduleDraft`| `RescheduleDraft`| Temporary state for appointment rescheduling |
 | `activePatientAppointmentId` | `string` | ID of patient viewing their details (default: `YC-4821`) |
 | `selectedStaffAppointmentId` | `string` | ID of patient selected in staff roster |
-| `staffUser` | `StaffUser` | Active staff profile (Abena Osei / Dr. Boateng / Kojo Mensah) |
-| `isOffline` | `boolean` | Flag to trigger G01 network error scenario |
-| `isSessionExpired` | `boolean` | Flag to trigger S07 session expired scenario |
-| `simulateSlotTaken` | `boolean` | Flag to trigger P08 slot conflict scenario on submit |
+| `staffUser` | `StaffUser` | Active staff profile (Receptionist / Doctor / Admin) |
+| `connectivity` | `ConnectivityState` | Network simulation state (`online`, `poor`, `offline`, `restored`) |
+| `isSessionExpired` | `boolean` | Flag triggering S07 session timeout modal |
+| `simulateSlotTaken` | `boolean` | Flag triggering P08 slot conflict recovery on submit |
 
 ---
 
-## 4. Data Models (`src/types/clinic.ts`)
+## 4. Canonical Data Models (`src/types/clinic.ts`)
 
-### `Appointment`
+### 4.1 `Appointment`
 ```typescript
 interface Appointment {
-  id: string;                      // e.g. "YC-4821" (speakable reference)
-  patientName: string;             // e.g. "Ama Mensah"
-  phone: string;                   // e.g. "024 123 4567"
-  doctor: Doctor;                  // Attending clinician
-  date: string;                    // e.g. "Tuesday 15 September 2026"
-  time: string;                    // e.g. "10:00 AM"
-  status: AppointmentStatus;       // 'BOOKED' | 'WAITING' | 'CALLED' | 'COMPLETED' | 'CANCELLED'
-  queueToken?: string;             // e.g. "#4" (assigned upon reception check-in)
-  estimatedWaitMinutes?: number;   // e.g. 30
-  room?: string;                   // e.g. "Consultation Room 3"
+  id: string;                    // Speakable reference code e.g. "YC-4821" or "W-024"
+  patientName: string;           // Full name e.g. "Akosua Boateng"
+  phone: string;                 // Ghana phone e.g. "024 123 4567"
+  studentIndex?: string;         // 8-digit KNUST index e.g. "20612345"
+  nhisNumber?: string;           // Optional NHIS card number
+  doctor: Doctor;                // Attending clinician profile
+  date: string;                  // Formatted date e.g. "Tuesday 15 September 2026"
+  time: string;                  // Consultation time e.g. "9:30 AM"
+  status: AppointmentStatus;     // 'BOOKED' | 'CHECKED_IN' | 'WAITING' | 'CALLED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+  clinicSite: ClinicSite;        // 'students-clinic' | 'social-science-gf7'
+  visitType: VisitType;          // 'general-opd' | 'follow-up' | 'dressing' | 'other'
+  bookingType: BookingType;      // 'BOOKED' | 'WALK_IN'
+  queueToken?: string;           // e.g. "#4" or "W-024"
+  estimatedWaitMinutes?: number; // Estimated wait in corridor
+  room?: string;                 // Assigned consultation room (e.g. "Room 1")
+  assignedRoom?: string;         // Room confirmed when patient is called
+  createdAt?: string;            // Timestamp
+  notes?: string;                // Clinical triage notes
+  staffChangeReason?: string;    // Reason if staff rescheduled
+  staffChangedTime?: string;     // Previous time before staff change
 }
 ```
 
-### `Doctor`
+### 4.2 `Doctor`
 ```typescript
 interface Doctor {
   id: string;
-  name: string;                    // "Dr. Kwame Boateng"
-  title: string;                   // "Senior Medical Officer"
-  specialty: string;               // "General Practice & Outpatient"
-  room: string;                    // "Consultation Room 3"
-}
-```
-
-### `StaffUser`
-```typescript
-interface StaffUser {
-  id: string;
-  name: string;
-  role: 'Receptionist' | 'Doctor' | 'Admin';
-  clinic: string;                  // "[Partner clinic]"
+  name: string;                  // "Dr. Kwame Boateng"
+  title: string;                 // "Senior Medical Officer"
+  specialty: string;             // "General Practice & Outpatient"
+  room: string;                  // "Room 1"
+  available: boolean;            // Duty status
 }
 ```
 
@@ -132,95 +141,51 @@ interface StaffUser {
 
 ## 5. Screen Navigation & State Machines
 
-### Patient Journey
-1. **P01 Home Dashboard**: Landing card with direct actions:
-   - "Book an appointment" &rarr; `P02_DETAILS`
-   - "Find my appointment" &rarr; `P09_FIND`
-   - "Check queue" &rarr; `P18_QUEUE`
-2. **P02 Your Details**: Full Name and Ghana phone number (+233).
-3. **P03 Choose Doctor**: Single partner clinic doctor selection (`Dr. Kwame Boateng`).
-4. **P04/P05 Date & Time Picker**: Combined calendar dates + 30-min time slot picker.
-5. **P06 Review Booking**: Summary table + SMS advisory before confirmation.
-6. **P07 Booking Confirmed**: Success screen displaying speakable code `YC-4821`.
-7. **P08 Slot Taken**: Recovery state when a chosen slot was just taken by another patient.
-8. **P09 Find Appointment**: Lookup by phone + reference code with validation for not-found states.
-9. **P11 Appointment Details**: Management hub for checking status, rescheduling, or cancelling.
-10. **P12/P13 Cancel Flow**: Cancellation confirmation prompt & completion screen.
-11. **P14–P17 Reschedule Flow**: 3-step date & time selection, comparison review, and updated confirmation.
-12. **P18 Live Queue Status**: 5-stage lifecycle stepper (`Booked` &rarr; `Checked in` &rarr; `Waiting` &rarr; `Called` &rarr; `Completed`), big `#4` token, and wait time guide.
+### 5.1 Student Journey
+1. **P01 Home**: Welcome hub with live queue preview, booking CTA, and after-hours check.
+2. **P02 Your Details (Step 1/6)**: Full name, 8-digit student index (`20612345`), Ghana phone (`+233`), optional NHIS.
+3. **P02B Clinic Site (Step 2/6)**: Site selector (**Students' Clinic · Main Campus** vs **Social Science Block GF7**).
+4. **P02C Visit Type & Emergency Gate (Step 3/6)**: Select General OPD, Review, Dressing, or Other; emergency symptoms redirect immediately to hospital emergency services.
+5. **P03 Choose Doctor (Step 4/6)**: Clinician and room selector (**Dr. Kwame Boateng · Room 1** or **Dr. Ama Serwaa · Room 2**).
+6. **P04/P05 Date & Time (Step 5/6)**: Calendar date picker and 30-minute consultation slot with arrive-by guidance.
+7. **P06 Review Booking (Step 6/6)**: Summary verification table with SMS advisory before submission.
+8. **P07 Booking Confirmed**: Success screen presenting speakable code **`YC-4821`**, calendar details, and SMS simulation preview.
+9. **P08 Slot Taken**: Recovery state when a chosen slot was just booked by another student.
+10. **P09 Find Appointment**: Tabbed lookup by Student Index, `YC-` Reference, or Phone number.
+11. **P10 Clinic Activity**: Pre-check-in intelligence showing doctors on duty, waiting counts, and wait estimates.
+12. **P11 Appointment Details**: Management hub for checking status, viewing staff change notices, rescheduling, or cancelling.
+13. **P12/P13 Cancel Flow**: Cancellation prompt with reason confirmation and slot release.
+14. **P14–P17 Reschedule Flow**: 3-step date selection, time slot selection, comparison review, and updated confirmation.
+15. **P18 Live Virtual Queue Status**: 5-stage lifecycle stepper (`Booked` &rarr; `Checked in` &rarr; `Waiting` &rarr; `Called` &rarr; `Completed`), dynamic token (`#4`), and assigned room notification.
+16. **P19 After-Hours Notice**: Clean closed state with operating hours and KNUST Hospital urgent care guidance.
 
-### Staff Workflows
-1. **S01 Sign In**: Staff login with quick demo role switcher (`Receptionist`, `Doctor`, `Admin`).
-2. **S02 Today Operations**: Real-time counters (Total Bookings, Waiting, In Consultation, Completed) and roster preview.
-3. **S03 Appointments Roster**: Searchable table by name/phone/reference with status filter tabs and distinct teal `Check In` action.
-4. **S04 Patient Detail**: Clinical dossier with primary check-in/call action.
-5. **S05 Live Queue**: Split-view queue board with currently called patient in Room 3 and waiting corridor table with one-click `Call` actions.
-6. **S05 Empty Queue**: Clean empty state when no patients are waiting.
-7. **S07 Session Expired**: Security timeout dialog with re-authentication.
+### 5.2 Staff Operations Workflows
+1. **S01 Sign In**: Fast 1-click demo role switching (`Receptionist`, `Doctor`, `Admin`).
+2. **S02 Today Operations**: Real-time counters (Total Patients, Waiting, In Consult, Completed, Walk-Ins, No-Shows) and active room status cards.
+3. **S03 Appointments Roster**: Searchable table by student index or name with status filters and quick check-in actions.
+4. **S04 Student Clinical Record**: Full clinical record with student index, NHIS, clinic site, and multi-room dispatch.
+5. **S05 Live Queue Board**: Queue management for **Room 1** and **Room 2** with distinct `WALK-IN` and `BOOKED` badges.
+6. **S05E Empty Queue**: Clean empty state when no patients are in the waiting corridor.
+7. **S06 Register Walk-In**: Front-desk walk-in registration issuing `W-XXX` tokens directly into queue.
+8. **S07 Session Expired**: Security timeout dialog with instant re-authentication.
+9. **S08 Change Appointment**: Staff-initiated schedule change with required reason and student SMS alert.
+10. **S09 Mark No-Show**: Confirmation dialog to release missed slots and update queue state.
+11. **S10 Public Display Board**: Full-screen corridor display view showing currently called tokens and room assignments for waiting room TVs.
 
 ---
 
-## 6. Design System Architecture
+## 6. Design System Architecture (Clinical Brutalism)
 
-The design system implements **Clinical Brutalism & High-Contrast Minimalism**:
-- **Geometry**: Crisp, structured containers with intentional borders and minimal decoration.
 - **Palette**:
-  - Primary text / Action: `#111111`
-  - Background: `#F7F8F7`
-  - Surface: `#FFFFFF`
-  - Secondary surface: `#F0F2F1`
+  - Dark Neutral: `#111111`
+  - Canvas Background: `#F7F8F7`
+  - Clean Surface: `#FFFFFF`
+  - Subtle Surface: `#F0F2F1`
   - Clinic Border: `#D8DCD9`
-  - Input Border: `#C8CDCA`
-  - Healthcare Accent: `#087F6C` (Clinical teal)
-  - Soft Accent: `#E7F5F1`
-  - Warning: `#B7791F` (`#FEF7ED` soft)
-  - Error: `#C53030` (`#FDF2F2` soft)
-- **Elevation**: Subtle, crisp shadow `0 2px 8px rgba(0,0,0,0.05)` applied to cards to prevent flatness without resorting to generic SaaS floating cards.
-- **Typography**: Hanken Grotesk with deliberate weight hierarchy (regular 400 for body, medium 500 for secondary, semibold 600 for card headers/buttons, bold 700 for titles and queue numbers).
-
----
-
-## 7. Backend API
-
-### Patients (`/api/patients`)
-
-Prototype **P02 Your Details** collects full name, KNUST student index (`20612345`), Ghana phone, and optional NHIS. **P09 Find** looks up by index or phone. The Express API persists that student on the Mongoose `Patient` collection (MongoDB).
-
-| Method | Path | Behaviour |
-|---|---|---|
-| `POST` | `/api/patients` | Find-or-create. **200** if the index or phone already exists; **201** if inserted |
-| `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone. **200** or **404** |
-
-Student index is **8 digits**. Phones are stored as E.164 (`024 123 4567` → `+233241234567`). Invalid formats return **400**; a colliding index/phone pair returns **409**.
-
-HTTP contract (Postman, curl, field map): [`backend/README.md`](../../backend/README.md). Collections and indexes: [`backend/docs/DATABASE_ARCHITECTURE.md`](../../backend/docs/DATABASE_ARCHITECTURE.md).
-
-### SMS (`sendSms`)
-
-The interactive prototype stores SMS rows in `ClinicContext` for the **Simulated SMS** viewer. That is UI-only.
-
-Production Gate 2 confirmation texts use the Node wrapper in `backend/src/sms/sendSms.js`. Booking, persistence, and SMS send are three steps: write the appointment, return the speakable reference to the web client, then send SMS asynchronously from the server. **Booking success does not depend on SMS delivery.**
-
-```
-Patient books (web)
-        │
-        ▼
-Express booking route
-        │
-        ├── MongoDB Patient insert (source of truth)
-        ├── HTTP 201 + reference (YC-4821)
-        └── sendSms(to, message)
-                ├── SMS_PROVIDER=mock            → terminal log (offline)
-                ├── SMS_PROVIDER=mnotify         → mNotify Quick SMS → real Ghana handset
-                └── SMS_PROVIDER=africastalking  → AT sandbox → simulator inbox
-```
-
-| Rule | Detail |
-|---|---|
-| Single API | Import `sendSms(to, message)` only. Do not call mNotify or Africa's Talking from route files. |
-| Phone format | Ghana numbers are normalised to E.164 (`024 123 4567` → `+233241234567`). mNotify is sent the local form (`024…`). |
-| Failures | Invalid phone throws. Provider errors return `{ ok: false }`. Missing live keys fall back to mock. |
-| Live proof | mNotify delivers to a real Ghana phone (signup bonus / paid credits). |
-| Secrets | `MNOTIFY_API_KEY` (and optional `AT_API_KEY`) live in `backend/.env` (gitignored). |
-
-Full developer contract: [`backend/README.md`](../../backend/README.md).
+  - Form Border: `#C8CDCA`
+  - Healthcare Accent Teal: `#087F6C`
+  - Soft Teal Accent: `#E7F5F1`
+  - Clinical Amber / Warning: `#B7791F` (`#FEF7ED` soft)
+  - Alert Red / Emergency: `#C53030` (`#FDF2F2` soft)
+- **Typography**: Hanken Grotesk with deliberate clinical weight hierarchy (Regular 400, Medium 500, Semibold 600, Bold 700).
+- **Elevation**: Flat surfaces with subtle 1px borders and minimal crisp shadows (`0 2px 8px rgba(0,0,0,0.05)`) preventing visual clutter while maintaining high contrast.
