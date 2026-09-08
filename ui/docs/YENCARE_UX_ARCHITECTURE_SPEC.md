@@ -6,7 +6,7 @@
 **Document type:** UX architecture and product design specification (no visual UI)  
 **Sources of truth:** `YenCare_Week1_Pitch.pdf` · `YenCare_Product4_ScopeSheet_Gate1.docx`  
 **Audience:** UI/UX designer, Figma Agent, frontend (React), backend, product team  
-**Stack constraint:** React web app · Node.js/Express · PostgreSQL · one SMS sandbox provider  
+**Stack constraint:** React web app · Node.js/Express · MongoDB · one SMS sandbox provider  
 
 This document defines **what the product needs, how users move through it, what screens exist, what each screen contains, and how parts connect.** It does not specify colours, typefaces, illustrations, or high-fidelity layouts.
 

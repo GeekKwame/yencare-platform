@@ -6,7 +6,7 @@ import StaffPortal from './pages/StaffPortal'
 import NotFound from './pages/NotFound'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
-import { Route, Routes } from "react-router-dom"
+import { Route, Routes } from 'react-router-dom'
 
 const App = () => {
   return (
@@ -20,8 +20,7 @@ const App = () => {
         <Route path="/staff" element={<StaffPortal />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-            <Footer />
-
+      <Footer />
     </section>
   )
 }

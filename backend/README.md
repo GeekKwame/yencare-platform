@@ -1,6 +1,116 @@
-# YɛnCare SMS (`sendSms`)
+# YɛnCare backend
 
-Reusable backend wrapper for Gate 2 confirmation texts. **Able** (appointments API) and **Emmanuella** (patient registration / trigger SMS on book) should import `sendSms()` and not call mNotify or Africa's Talking themselves.
+Express API + MongoDB for Gate 2, plus the SMS wrapper. Patient registration follows the interactive prototype: **P02 Your Details** (register) and **P09 Find** (lookup by student index or Ghana phone). It writes to the Mongoose `Patient` collection (`phone`, `studentIndex`, `nhisNumber`).
+
+Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./docs/DATABASE_ARCHITECTURE.md).
+
+---
+
+## Patient registration & verification
+
+| Method | Path | Behaviour |
+|---|---|---|
+| `GET` | `/health` | Liveness. **200** `{ "ok": true, "service": "yencare-api" }` |
+| `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
+| `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
+
+No auth on these routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+
+### Status codes
+
+| Status | When |
+|---|---|
+| **200** | `POST` found an existing patient, or `GET` lookup succeeded |
+| **201** | `POST` inserted a new patient |
+| **400** | Invalid JSON, invalid student index, or invalid Ghana phone |
+| **404** | `GET` — no patient for that identifier |
+| **409** | `POST` — the student index and phone belong to two different patients |
+| **500** | Unexpected server error |
+
+### Field mapping
+
+JSON (frontend / Postman) uses camelCase. MongoDB uses the Mongoose names.
+
+| JSON aliases | MongoDB | Rules |
+|---|---|---|
+| `fullName`, `full_name`, `patientName` | `fullName` | Required **to create**. 2–120 characters |
+| `studentIndex`, `student_index` | `studentIndex` | Optional for walk-ins. If present: **exactly 8 digits** |
+| `phoneNumber`, `phone_number`, `phone` | `phone` | Required **to create**. Ghana mobile; stored as E.164 (`+233…`) |
+| `nhis`, `nhisNumber`, `nhis_number` | `nhisNumber` | Optional |
+
+`POST` needs at least one of student index or phone so it can look someone up. Creating a **new** row also needs `fullName` and a valid phone (P02 + `Patient` schema).
+
+### Response body
+
+```json
+{
+  "id": "68bf2c0e9c1a2b0012345678",
+  "fullName": "Efua Darko",
+  "studentIndex": "20620111",
+  "phoneNumber": "+233247001122",
+  "nhis": "12345678",
+  "createdAt": "2026-09-08T14:00:00.000Z",
+  "updatedAt": "2026-09-08T14:00:00.000Z"
+}
+```
+
+Error body: `{ "error": "Patient not found" }`.
+
+### Run locally
+
+```bash
+cd backend
+copy .env.example .env
+# Set MONGODB_URI (Atlas or local). Optional local DB: docker compose up -d
+npm install
+npm run db:migrate
+npm test
+npm run dev
+```
+
+API: [http://localhost:4000](http://localhost:4000). Frontend: `VITE_API_BASE_URL=http://localhost:4000/api` (see `frontend/.env.example`).
+
+### Postman
+
+1. Start the API (`npm run dev` in `backend`). Confirm `GET http://localhost:4000/health` returns **200**.
+2. No auth. For POST, set header `Content-Type: application/json`.
+
+**Register (create)** — `POST http://localhost:4000/api/patients`
+
+```json
+{
+  "fullName": "Efua Darko",
+  "studentIndex": "20620111",
+  "phoneNumber": "024 700 1122",
+  "nhis": "12345678"
+}
+```
+
+First send → **201**. Same body again → **200** and the same `id`.
+
+| Request | Expect |
+|---|---|
+| `GET http://localhost:4000/api/patients/20620111` | **200** by student index |
+| `GET http://localhost:4000/api/patients/0247001122` | **200** by local phone |
+| `GET http://localhost:4000/api/patients/%2B233247001122` | **200** (`+` encoded as `%2B`) |
+| `GET http://localhost:4000/api/patients/20699999` | **404** |
+| POST `"studentIndex": "12"` | **400** (must be 8 digits) |
+| POST `"phoneNumber": "123"` | **400** |
+
+Walk-in (no index): `{ "fullName": "Kwame Ofori Atta", "phoneNumber": "024 555 1234" }`.
+
+### curl
+
+```bash
+curl -s -X POST http://localhost:4000/api/patients -H "content-type: application/json" -d "{\"fullName\":\"Efua Darko\",\"studentIndex\":\"20620111\",\"phoneNumber\":\"024 700 1122\"}"
+curl -s http://localhost:4000/api/patients/20620111
+```
+
+---
+
+## SMS (`sendSms`)
+
+Reusable wrapper for Gate 2 confirmation texts. **Able** (appointments API) and **Emmanuella** (patient registration / trigger SMS on book) should import `sendSms()` and not call mNotify or Africa's Talking themselves.
 
 This is the only SMS surface the backend should use.
 
@@ -114,22 +224,28 @@ Set `SMS_PROVIDER=mock`, then `npm test` and `npm run sms:test`.
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `PORT` | `4000` | Express listen port |
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/yencare` | MongoDB connection string (required to start the API) |
 | `SMS_PROVIDER` | `mock` | `mock`, `mnotify`, or `africastalking` |
 | `MNOTIFY_API_KEY` | empty | mNotify API v2 key |
 | `MNOTIFY_SENDER_ID` | `YenCare` | Max 11 chars; must be registered |
+| `MNOTIFY_API_URL` | `https://api.mnotify.com/api/sms/quick` | mNotify Quick SMS endpoint |
 | `AT_USERNAME` | `sandbox` | Only if using Africa's Talking |
 | `AT_API_KEY` | empty | AT sandbox key |
+| `AT_SENDER_ID` | empty | Optional Africa's Talking sender ID |
 
-Share keys with Able and Emmanuella privately. Do not put them in git.
+Share keys with Able and Emmanuella privately. Do not put them in git. `backend/.env` is gitignored. Complete configuration details: [`../docs/development/environment-variables.md`](../docs/development/environment-variables.md).
+
 
 ---
 
 ## Hooking this into booking (Able / Emmanuella)
 
-1. Save the appointment first.
-2. Call `await sendSms(phone, confirmationBody)`.
-3. If `result.ok === false`, log `result.error` and still return HTTP 201 with `YC-4821`.
-4. Web confirmation is the source of truth — do not block on SMS.
+1. Upsert the patient with `POST /api/patients` (or the `Patient` model).
+2. Save the appointment.
+3. Call `await sendSms(phone, confirmationBody)`.
+4. If `result.ok === false`, log `result.error` and still return HTTP 201 with `YC-4821`.
+5. Web confirmation is the source of truth — do not block on SMS.
 
 ---
 
@@ -137,11 +253,13 @@ Share keys with Able and Emmanuella privately. Do not put them in git.
 
 | Symptom | What to check |
 |---|---|
+| API will not start / `[db] connection error` | `MONGODB_URI` in `backend/.env`. Atlas SRV needs network DNS; local: `docker compose up -d` |
 | Falls back to mock | `MNOTIFY_API_KEY` is empty |
 | mNotify 401 / invalid key | Generate the key under **API v2**, not an old v1 key |
 | Sender ID rejected | Register `YenCare` in the dashboard and wait for approval |
 | No text on the phone | Number must be a real Ghana mobile; check mNotify delivery report |
 | `Invalid Ghana phone` | Use `024…` or `+233…`, not `024 XXX XXXX` |
+| GET with `+233…` returns 404 | Encode plus as `%2B` (`/api/patients/%2B233247001122`) |
 
 ---
 
@@ -151,7 +269,16 @@ Share keys with Able and Emmanuella privately. Do not put them in git.
 backend/
 ├── README.md
 ├── .env.example
+├── docker-compose.yml          # optional local MongoDB
+├── docs/DATABASE_ARCHITECTURE.md
+├── scripts/migrate.js
+├── scripts/seed.js
 ├── scripts/send-test-sms.js
+├── src/server.js               # Express entry (connect Mongo + listen)
+├── src/http/                   # app + /api/patients
+├── src/db/                     # mongoose connection + collection specs
+├── src/models/                 # Patient, Appointment, Clinician, Room, TimeSlot
+├── src/patients/               # validate + find-or-create service
 ├── src/sms/sendSms.js
 ├── src/sms/normalizePhone.js
 └── src/sms/providers/

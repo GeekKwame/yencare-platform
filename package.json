@@ -8,8 +8,15 @@
     "build": "npm --prefix ui/prototype run build",
     "preview": "npm --prefix ui/prototype run preview",
     "format": "npm --prefix ui/prototype run format",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "dev:api": "npm --prefix backend run dev",
+    "start:api": "npm --prefix backend start",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:seed": "npm --prefix backend run db:seed",
     "sms:test": "npm --prefix backend run sms:test",
-    "test:sms": "npm --prefix backend test"
+    "test:sms": "npm --prefix backend test",
+    "test:backend": "npm --prefix backend test"
   },
   "keywords": [
     "yencare",

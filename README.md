@@ -1,187 +1,279 @@
-# YɛnCare — Production Healthcare Platform
+# YɛnCare — Outpatient Healthcare & Virtual Queue Platform
 
 > **Healthcare access, wherever you are. Ghana.**  
-> Outpatient clinic appointment scheduling and live virtual queue management for KNUST University Health Services / Students' Clinic.
+> Outpatient clinic appointment scheduling and live virtual queue management for **KNUST University Health Services · Students' Clinic** and **Social Science Block GF7**.
+
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B-green.svg)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
+[![Express](https://img.shields.io/badge/Express-4.21-lightgrey.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-brightgreen.svg)](https://www.mongodb.com/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
+[![Tests](https://img.shields.io/badge/Tests-61%20passing-success.svg)](./backend/test/)
 
 ---
 
-## Overview
+## 1. Project Overview
 
-**YɛnCare** is an outpatient healthcare platform designed for campus and regional healthcare clinics across Ghana, centered on the **KNUST University Health Services · Students' Clinic** and **Social Science Block GF7**. It replaces crowded waiting corridors with structured appointment scheduling, speakable booking references (`YC-4821`), and real-time live virtual queue monitoring.
+**YɛnCare** is an outpatient clinic management and virtual queue platform designed for campus and regional healthcare clinics across Ghana, centered on the **KNUST University Health Services · Students' Clinic** and its satellite facility at **Social Science Block GF7**.
+
+### The Problem It Solves
+University healthcare corridors frequently suffer from severe overcrowding, long physical waiting queues, and chaotic triage desks. Students waste hours sitting in waiting rooms during lectures, while clinic staff struggle to manage unscheduled walk-ins alongside pre-booked visits.
 
 ### Core Value Propositions
-- **No Password Barrier**: Students book with their Full Name, Student Index Number, and Ghana phone number (`+233`), and manage bookings via phone + speakable reference code.
-- **Speakable Reference Codes**: Memorable reference codes (`YC-4821`) designed for oral verification at reception desks and via SMS.
-- **Virtual Waiting & Nearby Freedom**: Students monitor their live position (`#4`), estimated wait time (`~20 min`), and assigned room (`Room 1` or `Room 2`) from anywhere on campus.
-- **Unified Clinical Operations**: Reception check-in, doctor room assignment, unscheduled walk-in registration, and no-show handling in a single operational dashboard.
-- **Clinical Brutalism Identity**: High-contrast, structured editorial minimalism featuring a calm healthcare palette (`#111111`, `#F7F8F7`, `#087F6C`, `#E7F5F1`), crisp typography, and accessible design.
+- **No Password Barrier**: Students book appointments using only their Full Name, 8-digit KNUST Student Index Number (`20612345`), and Ghana mobile number (`+233`). No password creation, password recovery, or account setup is required.
+- **Speakable Reference Codes**: Every booking generates an oral, memorable 4-digit code (**`YC-4821`**) designed for quick verification at the reception desk and in SMS notifications.
+- **Virtual Waiting & Campus Freedom**: Students track their live queue position (`#4`), estimated wait time (`~20 min`), and assigned consultation room (`Room 1` or `Room 2`) remotely from anywhere on campus.
+- **Unified Clinical Operations**: Reception check-in, doctor room assignment, unscheduled walk-in registration (`W-024`), and no-show slot recovery in a single operational workstation.
+- **Clinical Brutalism Design Identity**: High-contrast, structured editorial minimalism featuring a calm healthcare palette (`#111111`, `#F7F8F7`, `#087F6C`, `#E7F5F1`), crisp typography (Hanken Grotesk), and accessible 44px+ touch targets.
 
 ---
 
-## Repository Structure
+## 2. Key Implemented Features
 
-```
+### Patient Web Experience
+- **6-Step Booking Funnel**: Details (name, index, phone, NHIS) &rarr; Clinic Site &rarr; Visit Type &rarr; Clinician &rarr; Date & Slot Time &rarr; Review & Confirm.
+- **Emergency Safety Gate**: Automatic triage detector on visit selection that triggers immediate safety guidance and direct telephone routing to emergency services for acute symptoms.
+- **Tabbed Appointment Lookup**: Self-service lookup using Student Index, `YC-` Reference, or Phone number.
+- **Pre-Check-In Clinic Activity**: Real-time waiting intelligence, active doctor duty roster, and wait-time advisories before students leave their dormitories.
+- **Self-Service Reschedule & Cancellation**: Instant 3-step date/time modification and slot release.
+- **5-Stage Live Queue Tracker**: Live progress tracking (`Booked` &rarr; `Checked in` &rarr; `Waiting` &rarr; `Called` &rarr; `Completed`).
+- **Resilience Recovery**: Offline network recovery screen (G01) displaying cached reference codes when cellular signal drops.
+
+### Clinical Operations Workstation
+- **Role-Based Demo Access**: 1-click role switching for `Receptionist`, `Doctor`, and `Admin`.
+- **Today Dashboard**: Real-time metrics tracking Total Patients, Waiting, In Consult, Completed, Walk-Ins, and No-Shows.
+- **Appointments Roster**: Filterable and searchable daily schedule with one-click check-in.
+- **Dual-Room Live Queue Board**: Queue management for Room 1 and Room 2 with distinct `BOOKED` vs `WALK-IN` badges.
+- **Walk-In Registration**: Front-desk intake workflow allocating dedicated daily walk-in tokens (`W-024`).
+- **Public Corridor Display Board**: Full-screen TV display board for waiting areas showing called tokens and room assignments.
+- **Missed Slot Recovery**: Formal No-Show confirmation workflow to release unused consultation slots.
+
+### Backend REST API & SMS Gateway
+- **Idempotent Patient Registration**: `POST /api/patients` find-or-creates students without identity duplication.
+- **Fast Identifier Lookup**: `GET /api/patients/:identifier` by 8-digit index or Ghana mobile number.
+- **Double-Booking Engine Guards**: MongoDB engine-level unique compound indexes preventing clinician or room clashes.
+- **Multi-Provider SMS Gateway**: Unified `sendSms(to, message)` engine supporting real Ghana mobile delivery (mNotify), developer simulation (Africa's Talking Sandbox), and offline terminal logging (Mock).
+
+---
+
+## 3. Technology Stack
+
+| Layer | Technologies | Role |
+|---|---|---|
+| **Public Frontend** | React 19, React Router v7/v8, Axios, TailwindCSS v4, Vite | Lightweight public web client connected to Express API |
+| **Interactive Prototype** | React 19, TypeScript, Vite, TailwindCSS v4, Custom Design Tokens | 30-screen clinical simulation hub & scenario tester |
+| **Backend API** | Node.js 18+, Express 4, Mongoose 8, Native MongoDB Driver | REST API service, business logic, validation |
+| **Persistence** | MongoDB 7 (via Docker Compose or MongoDB Atlas) | Schemas, unique indexes, double-booking prevention |
+| **SMS Gateway** | mNotify API v2, Africa's Talking SDK, Local Mock Provider | Outbound SMS delivery to MTN, Telecel, and AT Ghana |
+| **Testing** | Node.js Native Test Runner (`node:test`) | 61+ automated unit and integration tests |
+
+---
+
+## 4. Repository Structure
+
+```text
 yencare-platform/
-├── package.json              # Root proxy scripts (npm run dev, npm run build)
-├── .gitignore                # Recursive ignore for dependencies & build artifacts
-├── README.md                 # Project executive overview & developer guide
+├── docs/                     # Central documentation hub
+│   ├── architecture/         # System architecture, database schema, state transitions
+│   ├── api/                  # REST API specification, request/response models
+│   ├── development/          # Local developer setup, environment variables, Git workflow
+│   ├── testing/              # Test suites, runner commands, scenario simulation
+│   ├── security/             # Data privacy, token security, secret isolation
+│   ├── operations/           # SMS providers (mNotify/AT/Mock), DB migrations & seeds
+│   ├── contributing/         # Contribution standards, branch conventions, PR checklist
+│   └── README.md             # Documentation portal table of contents
 │
-├── backend/                  # Node SMS wrapper (sendSms) + future Express API
-│   ├── README.md             # Mock vs Africa's Talking sandbox; how to import sendSms
-│   └── src/sms/sendSms.js    # Reusable sendSms(to, message) for Able & Emmanuella
+├── backend/                  # Node.js + Express REST API + MongoDB + SMS Gateway
+│   ├── docker-compose.yml    # Local MongoDB 7 service
+│   ├── package.json          # Backend dependencies & npm scripts
+│   ├── README.md             # Backend developer guide & curl examples
+│   ├── docs/                 # Backend schema & database architecture reference
+│   ├── scripts/              # Migration (`migrate.js`), seed (`seed.js`), test SMS
+│   ├── src/                  # Express app, HTTP routes, models, services, SMS providers
+│   └── test/                 # 61+ automated unit and integration tests (node:test)
 │
-└── ui/                       # Consolidated UI & Frontend Hub
-    ├── README.md             # UI directory overview & guide
-    │
-    ├── docs/                 # Product specifications, architecture & design locks
-    │   ├── ARCHITECTURE.md                 # Full technical architecture & state rules
-    │   ├── STITCH_DESIGN_LOCK.md           # Product lock & canonical design decisions
-    │   ├── YENCARE_UX_ARCHITECTURE_SPEC.md # End-to-end UX journey specifications
-    │   ├── FIGMA_AGENT_MASTER_PROMPT.md    # Design system prompts & token definitions
-    │   ├── YenCare_Product4_ScopeSheet_Gate1.docx
-    │   └── YenCare_Week1_Pitch.pdf
-    │
-    ├── prototype/            # Active React 19 + TypeScript + Vite Interactive Web Prototype
-    │   ├── package.json      # Prototype dependencies & build scripts
-    │   ├── README.md         # Detailed prototype documentation
-    │   ├── vite.config.ts    # Vite + TailwindCSS v4 configuration
-    │   ├── tsconfig.json     # TypeScript configuration
-    │   ├── index.html        # HTML entry point (Hanken Grotesk & Material Symbols)
-    │   └── src/
-    │       ├── App.tsx       # Shell router (Student Web vs Staff Operations Portal)
-    │       ├── index.css     # Clinical Brutalism design system tokens & theme
-    │       ├── main.tsx      # Application mount
-    │       ├── context/      # State machine & data provider (ClinicContext)
-    │       ├── types/        # TypeScript data models & enums
-    │       └── components/
-    │           ├── common/   # Primitives (Button, Badge, SmsModal, ConnectivityBanner, ProtoToolbar)
-    │           ├── patient/  # Student booking & queue screens (P01–P19)
-    │           ├── staff/    # Clinical operations workstation (S01–S09)
-    │           └── edge/     # Edge recovery (G01 Network Error & offline cache)
-    │
-    └── wireframe/            # Stitch visual export reference frames (HTML & PNG guides)
-        ├── README.md         # Wireframe usage guidelines
-        └── [screen folders]  # Export frames for mobile and desktop screens
+├── frontend/                 # Public web application (React 19 + TailwindCSS v4 + Vite)
+│   ├── package.json          # Dependencies & scripts
+│   ├── README.md             # Web client architecture & service integration guide
+│   ├── src/pages/            # Home, Appointments, Queue, StaffPortal, NotFound
+│   ├── src/services/         # Axios API clients for backend patient & appointment routes
+│   └── src/components/       # Reusable UI sections and navigation elements
+│
+├── ui/                       # Design Hub, Reference Wireframes & Prototype Simulator
+│   ├── README.md             # UI directory overview & navigation
+│   ├── prototype/            # High-fidelity React 19 + TypeScript clinical simulator
+│   ├── wireframe/            # Visual reference HTML & PNG export frames (Stitch UI)
+│   └── docs/                 # UX architecture specifications, Figma prompts, design locks
+│
+├── package.json              # Root proxy scripts (npm run dev, npm run dev:api, etc.)
+└── .gitignore                # Environment & build artifact exclusion rules
 ```
 
 ---
 
-## Quickstart Guide
+## 5. Prerequisites
 
-### Prerequisites
-- Node.js 18+ or 20+
-- npm 9+
+- **Node.js**: `v18.0.0+` or `v20.x LTS` (Recommended)
+- **npm**: `v9.0.0+`
+- **Docker & Docker Compose**: Recommended for local MongoDB 7 *(or a free MongoDB Atlas connection string)*
 
-### Running the Application
+---
 
-You can start the web prototype directly from the repository root:
+## 6. Quickstart & Installation
 
+### Step 1: Clone Repository & Install Dependencies
 ```bash
-# Start the local development server (from repo root)
-npm run dev
-```
+git clone https://github.com/GeekKwame/yencare-platform.git
+cd yencare-platform
 
-Alternatively, run from the prototype directory:
-```bash
-cd ui/prototype
+# Install root dependencies
 npm install
-npm run dev
+
+# Install backend dependencies
+npm --prefix backend install
+
+# Install frontend web client dependencies
+npm --prefix frontend install
+
+# Install interactive clinical prototype dependencies
+npm --prefix ui/prototype install
 ```
 
-Open **[http://localhost:5173/](http://localhost:5173/)** in your browser.
+### Step 2: Configure Environment Files
+```bash
+# Windows PowerShell
+copy backend\.env.example backend\.env
+copy frontend\.env.example frontend\.env
+
+# macOS / Linux / Git Bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+*For offline local development, the default `.env` files work immediately with zero configuration.*
+
+### Step 3: Start MongoDB
+```bash
+docker compose -f backend/docker-compose.yml up -d
+```
+
+### Step 4: Run Database Migrations & Seed Data
+```bash
+# Apply schema validators and create unique indexes
+npm run db:migrate
+
+# Seed demo clinicians, rooms, and sample schedule
+npm run db:seed
+```
+
+---
+
+## 7. Running the Application
+
+| Target | Command | URL | Description |
+|---|---|---|---|
+| **Interactive Prototype** | `npm run dev` | `http://localhost:5173/` | Complete 30-screen clinical simulation hub |
+| **Backend Express API** | `npm run dev:api` | `http://localhost:4000/` | Express REST API (`GET /health`, `/api/patients`) |
+| **Public Frontend** | `npm run dev:frontend` | `http://localhost:5174/` | Public web client connected to Express API |
 
 ### Available Root Commands
 
-| Command | Action |
-|---|---|
-| `npm run dev` | Launch local Vite dev server with Hot Module Replacement |
-| `npm run build` | Compile TypeScript and build production bundle |
-| `npm run preview` | Preview production build locally |
-| `npm run format` | Run code formatter |
-| `npm run sms:test` | Send a mock (or sandbox) SMS via `backend` |
-| `npm run test:sms` | Run SMS wrapper unit tests |
+```bash
+# Development
+npm run dev               # Launch interactive prototype (Vite on :5173)
+npm run dev:api           # Launch Express API with file-watch (Node on :4000)
+npm run dev:frontend      # Launch public frontend web client (Vite on :5174)
 
----
+# Production Builds
+npm run build             # Build interactive prototype bundle into ui/prototype/dist
+npm run build:frontend    # Build public web client bundle into frontend/dist
 
-## Application Architecture
+# Database
+npm run db:migrate        # Apply collection validators and unique indexes
+npm run db:seed           # Populate sample demo clinicians, rooms, and schedule
 
-YɛnCare is organized into two primary user shells:
-
-### 1. Student Web Experience (`Shell 1`)
-- **P01 Home Dashboard**: Welcome landing, live queue summary card, and after-hours checking.
-- **P02 Student Details (Step 1/6)**: Full Name, Student Index Number (`20612345`), optional NHIS number, and Ghana phone number with `+233`.
-- **P02B Clinic Site (Step 2/6)**: Choose between **Students' Clinic (Main Campus)** and **Social Science Block GF7**.
-- **P02C Visit Type & Emergency Gate (Step 3/6)**: Select General OPD, Review, Dressing, or Other; emergency symptoms trigger an immediate safety redirect to emergency services.
-- **P03 Attending Clinician (Step 4/6)**: Attending doctor selection (**Dr. Kwame Boateng · Room 1** or **Dr. Ama Serwaa · Room 2**).
-- **P04/P05 Date & Slot Time (Step 5/6)**: Date selection and 30-minute consultation slot with **"Arrive by XX:XX"** guidance.
-- **P06 Review Booking (Step 6/6)**: Key-value summary table of index number, site, visit type, and time before confirming.
-- **P07 Booking Confirmed**: Confirmation card with speakable reference code **`YC-4821`**, arrive-by advisory, and simulated SMS message viewer.
-- **P08 Slot Taken**: Conflict recovery screen offering alternative available slots.
-- **P09 Find Appointment**: Tabbed search by Student Index Number, YC Reference, or Phone number.
-- **P11 Appointment Details**: Student management hub with status badge, staff reschedule alerts, and SMS history.
-- **P12/P13 Cancel Flow**: Confirmation prompt and slot release confirmation.
-- **P14–P17 Reschedule Flow**: 3-step date & time selection, comparison review, and updated confirmation.
-- **P18 Live Virtual Queue Status**: 5-stage lifecycle tracker (`Booked` &rarr; `Checked in` &rarr; `In Queue` &rarr; `Called` &rarr; `Completed`), dynamic queue position (`#4`), estimated wait, and room call notification.
-- **P19 Clinic Closed (After-Hours)**: Clear closed notice with operating hours and urgent care guidance.
-
-### 2. Staff Clinical Operations Portal (`Shell 2`)
-- **S01 Sign In**: Fast 1-click demo role switching (`Receptionist`, `Doctor`, `Admin`).
-- **S02 Today Operations**: Real-time operational dashboard with metrics (Total Patients, Waiting, In Consult, Completed, **Walk-Ins**, **No-Shows**) and active consultation room snapshots.
-- **S03 Appointments Roster**: Searchable table by student index or name with status filters (including Walk-ins and No-shows) and quick check-in actions.
-- **S04 Student Clinical Record**: Full clinical record with student index, NHIS, clinic site, and multi-room dispatch.
-- **S05 Live Queue Board**: Live queue management for **Room 1** and **Room 2** with distinct `WALK-IN` and `BOOKED` badges.
-- **S06 Register Walk-In**: Front-desk walk-in registration that generates `W-024` tokens and immediately queues students.
-- **S08 Change Appointment**: Staff-initiated schedule change with required reason and student SMS alert.
-- **S09 Mark No-Show**: Confirmation flow to release missed slots and update queue state.
-- **S07 Session Expired**: Security timeout dialog with instant re-authentication.
-
----
-
-## Prototype Testing & Scenario Simulator (`ProtoToolbar`)
-
-A non-intrusive floating controller at the bottom-right allows complete scenario testing:
-- **Session progressor**: After you **book** or **find** a student, step that session through `BOOKED` → `CHECKED_IN` → `WAITING` → `CALLED (Room 2)` → `COMPLETED`. The prototype does not start signed in as a named patient.
-- **Scenario Triggers**:
-  - `+ Simulate Walk-in (W-024)`: Injects an unscheduled walk-in student into the live queue.
-  - `Mark YC-4822 No-Show`: Tests slot release for a seeded roster appointment.
-  - `Staff Change current to 10:30`: Reschedules the focused student session and shows the student alert.
-  - `Toggle After-Hours (P19)`: Toggles clinic closed mode.
-  - `Network State Selector`: Test `online`, `poor`, `offline`, and `restored` states.
-- **All Screens Grid**: One-click jump to all 17 patient screens and 10 staff screens.
-
----
-
-## SMS (backend)
-
-Gate 2 confirmation texts go through one function: `sendSms(to, message)` in [`backend/src/sms/sendSms.js`](./backend/src/sms/sendSms.js). Able and Emmanuella should import that wrapper and not call mNotify or Africa's Talking from booking routes.
-
-```js
-import { sendSms } from './sms/sendSms.js';
-
-const result = await sendSms(patient.phone, confirmationText);
-if (!result.ok) {
-  // Log and continue — the booking is still valid
-}
+# Testing
+npm run test:backend      # Execute all 61 backend unit & integration tests
+npm run sms:test          # Send a test SMS via configured provider (Mock / mNotify / AT)
 ```
 
-| Mode | Cost | Where the message appears |
-|---|---|---|
-| `SMS_PROVIDER=mock` | Free | Terminal (`[SMS mock] to=+233…`) |
-| `SMS_PROVIDER=mnotify` + API key | Signup bonus / paid credits | Real Ghana phone |
-| `SMS_PROVIDER=africastalking` + sandbox key | Free | [Africa's Talking simulator](https://simulator.africastalking.com:1517/) inbox |
+---
 
-Sandbox messages **do not** reach a physical Ghana phone. The prototype **Simulated SMS** viewer (`SmsModal`) is a separate UI fake log and is not this module.
+## 8. Environment Variables
 
-- Copy [`backend/.env.example`](./backend/.env.example) → `backend/.env` (gitignored). Never commit `MNOTIFY_API_KEY` or `AT_API_KEY`.
-- Invalid numbers throw. Provider failures return `{ ok: false }` so booking can still succeed.
-- Full contract, mNotify steps, and troubleshooting: [`backend/README.md`](./backend/README.md).
+| Variable | Scope | Default | Description |
+|---|---|---|---|
+| `PORT` | `backend/.env` | `4000` | Express API HTTP listen port |
+| `MONGODB_URI` | `backend/.env` | `mongodb://127.0.0.1:27017/yencare` | MongoDB connection URI (Docker or Atlas) |
+| `SMS_PROVIDER` | `backend/.env` | `mock` | Outbound SMS provider: `mock`, `mnotify`, or `africastalking` |
+| `MNOTIFY_API_KEY` | `backend/.env` | *Empty* | mNotify API v2 key for real Ghana phone delivery |
+| `MNOTIFY_SENDER_ID` | `backend/.env` | `YenCare` | Approved alphanumeric SMS sender header (max 11 chars) |
+| `AT_USERNAME` | `backend/.env` | `sandbox` | Africa's Talking sandbox username |
+| `AT_API_KEY` | `backend/.env` | *Empty* | Africa's Talking sandbox API key |
+| `VITE_API_BASE_URL` | `frontend/.env` | `http://localhost:4000/api` | Base URL used by Axios in the public frontend client |
 
-## Documentation Links
+*(Full details: [Environment Variables Reference](./docs/development/environment-variables.md))*.
 
-- UI Hub Overview: [`ui/README.md`](./ui/README.md)
-- Interactive Prototype Documentation: [`ui/prototype/README.md`](./ui/prototype/README.md)
-- Technical Architecture & State Model: [`ui/docs/ARCHITECTURE.md`](./ui/docs/ARCHITECTURE.md)
-- Product Design Lock Decisions: [`ui/docs/STITCH_DESIGN_LOCK.md`](./ui/docs/STITCH_DESIGN_LOCK.md)
-- Full UX Architecture Specifications: [`ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md`](./ui/docs/YENCARE_UX_ARCHITECTURE_SPEC.md)
-- Visual Wireframe Guide: [`ui/wireframe/README.md`](./ui/wireframe/README.md)
-- SMS wrapper (`sendSms`): [`backend/README.md`](./backend/README.md)
+---
+
+## 9. Testing & Quality Assurance
+
+### Automated Backend Tests
+Run the automated test suite powered by Node's native test runner (`node:test`):
+
+```bash
+npm run test:backend
+```
+
+Tests validate:
+- Patient find-or-create API (`POST /api/patients`) and identifier lookups (`GET /api/patients/:identifier`).
+- Ghana telephone normalization (E.164 conversion and local 0-prefix formatting).
+- Speakable reference code generation (`YC-XXXX`).
+- Mongoose schema integrity and double-booking compound index constraints.
+- Multi-provider SMS fallback and delivery engine.
+
+### Interactive Clinical Scenario Simulator (`ProtoToolbar`)
+When running `npm run dev` at `http://localhost:5173/`:
+- Use the floating control panel at the bottom right to step patient sessions through `BOOKED` &rarr; `CHECKED_IN` &rarr; `WAITING` &rarr; `CALLED` &rarr; `COMPLETED`.
+- Inject live walk-ins (`W-024`), mark seeded appointments as `NO_SHOW`, test staff-initiated reschedules, toggle after-hours mode, and simulate cellular disconnections (`offline` &rarr; G01).
+
+---
+
+## 10. Development Workflow & Contributing
+
+The team follows a Git feature-branch workflow.
+
+### Keeping Feature Branches Synchronized
+```bash
+git fetch origin
+git checkout main
+git pull origin main
+git checkout feat/your-feature
+git merge main
+```
+
+Before opening a pull request, confirm:
+1. All backend tests pass (`npm run test:backend`).
+2. Prototype and frontend build cleanly (`npm run build`, `npm run build:frontend`).
+3. No secrets or private `.env` files are tracked by Git.
+
+*(Read our complete [Contribution Guidelines](./docs/contributing/CONTRIBUTING.md) and [Git Workflow Guide](./docs/development/workflow.md))*.
+
+---
+
+## 11. Documentation Directory
+
+For in-depth architectural, operational, and API specifications, consult our central documentation portal in [`docs/`](./docs/README.md):
+
+- 🏛️ **[System Architecture](./docs/architecture/overview.md)**
+- 🗄️ **[Database Architecture & Schema](./docs/architecture/database.md)**
+- 🔄 **[Queue & State Machines](./docs/architecture/state-machine.md)**
+- 🔌 **[REST API Reference](./docs/api/reference.md)**
+- 🚀 **[Developer Setup Guide](./docs/development/setup.md)**
+- ⚙️ **[Environment Variables Reference](./docs/development/environment-variables.md)**
+- 🌿 **[Git Workflow & Synchronization](./docs/development/workflow.md)**
+- 🧪 **[Testing & Verification Guide](./docs/testing/testing-guide.md)**
+- 🛡️ **[Security & Compliance](./docs/security/security-and-compliance.md)**
+- 📱 **[SMS Provider Handbook](./docs/operations/sms-providers.md)**
+- 🗃️ **[Database Operations & Maintenance](./docs/operations/database-ops.md)**
+- 🤝 **[Contribution Guidelines](./docs/contributing/CONTRIBUTING.md)**
