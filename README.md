@@ -153,7 +153,7 @@ A non-intrusive floating controller at the bottom-right allows complete scenario
 
 ## SMS (backend)
 
-Gate 2 confirmation texts go through one function: `sendSms(to, message)` in [`backend/src/sms/sendSms.js`](./backend/src/sms/sendSms.js). Able and Emmanuella should import that wrapper and not call Africa's Talking (or Hubtel) from booking routes.
+Gate 2 confirmation texts go through one function: `sendSms(to, message)` in [`backend/src/sms/sendSms.js`](./backend/src/sms/sendSms.js). Able and Emmanuella should import that wrapper and not call mNotify or Africa's Talking from booking routes.
 
 ```js
 import { sendSms } from './sms/sendSms.js';
@@ -166,14 +166,15 @@ if (!result.ok) {
 
 | Mode | Cost | Where the message appears |
 |---|---|---|
-| `SMS_PROVIDER=mock` (default) | Free | Terminal (`[SMS mock] to=+233…`) |
+| `SMS_PROVIDER=mock` | Free | Terminal (`[SMS mock] to=+233…`) |
+| `SMS_PROVIDER=mnotify` + API key | Signup bonus / paid credits | Real Ghana phone |
 | `SMS_PROVIDER=africastalking` + sandbox key | Free | [Africa's Talking simulator](https://simulator.africastalking.com:1517/) inbox |
 
 Sandbox messages **do not** reach a physical Ghana phone. The prototype **Simulated SMS** viewer (`SmsModal`) is a separate UI fake log and is not this module.
 
-- Copy [`backend/.env.example`](./backend/.env.example) → `backend/.env` (gitignored). Never commit `AT_API_KEY`.
+- Copy [`backend/.env.example`](./backend/.env.example) → `backend/.env` (gitignored). Never commit `MNOTIFY_API_KEY` or `AT_API_KEY`.
 - Invalid numbers throw. Provider failures return `{ ok: false }` so booking can still succeed.
-- Full contract, simulator steps, and troubleshooting: [`backend/README.md`](./backend/README.md).
+- Full contract, mNotify steps, and troubleshooting: [`backend/README.md`](./backend/README.md).
 
 ## Documentation Links
 

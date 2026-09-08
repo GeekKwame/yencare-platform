@@ -1,1 +1,1 @@
-export { sendSms, normalizeGhanaPhone } from './sms/sendSms.js';
+export { sendSms, normalizeGhanaPhone, toLocalGhanaPhone } from './sms/sendSms.js';

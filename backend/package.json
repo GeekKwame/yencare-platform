@@ -11,7 +11,7 @@
   },
   "scripts": {
     "sms:test": "node scripts/send-test-sms.js",
-    "test": "node --test ./test/normalizePhone.test.js ./test/sendSms.test.js"
+    "test": "node --test ./test/normalizePhone.test.js ./test/sendSms.test.js ./test/mnotify.test.js"
   },
   "engines": {
     "node": ">=18"

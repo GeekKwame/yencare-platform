@@ -1,12 +1,33 @@
 import { normalizeGhanaPhone } from './normalizePhone.js';
 import { sendViaMock } from './providers/mock.js';
 import { sendViaAfricasTalking } from './providers/africastalking.js';
+import { sendViaMnotify } from './providers/mnotify.js';
+
+function resolveProvider() {
+  const requested = (process.env.SMS_PROVIDER || 'mock').toLowerCase().trim();
+
+  if (requested === 'mnotify') {
+    if (process.env.MNOTIFY_API_KEY?.trim()) return 'mnotify';
+    console.warn('[sms] SMS_PROVIDER=mnotify but MNOTIFY_API_KEY is missing; using mock fallback');
+    return 'mock';
+  }
+
+  if (requested === 'africastalking') {
+    if (process.env.AT_API_KEY?.trim()) return 'africastalking';
+    console.warn(
+      '[sms] SMS_PROVIDER=africastalking but AT_API_KEY is missing; using mock fallback',
+    );
+    return 'mock';
+  }
+
+  return 'mock';
+}
 
 /**
  * Send an SMS. Able & Emmanuella should import this and nothing else.
  *
- * Default is mock (offline, free). Set SMS_PROVIDER=africastalking and
- * AT_API_KEY to hit the free Africa's Talking sandbox simulator.
+ * Default is mock (offline). Set SMS_PROVIDER=mnotify and MNOTIFY_API_KEY
+ * to deliver to a real Ghana number (uses mNotify credits / signup bonus).
  *
  * Invalid numbers throw. Provider failures return `{ ok: false }` so a
  * booking can still succeed if SMS delivery fails.
@@ -22,19 +43,13 @@ export async function sendSms(to, message) {
 
   const phone = normalizeGhanaPhone(to);
   const body = String(message);
-  const requested = (process.env.SMS_PROVIDER || 'mock').toLowerCase().trim();
-  const useAfricaTalking = requested === 'africastalking' && Boolean(process.env.AT_API_KEY);
-
-  if (requested === 'africastalking' && !process.env.AT_API_KEY) {
-    console.warn(
-      '[sms] SMS_PROVIDER=africastalking but AT_API_KEY is missing; using mock fallback',
-    );
-  }
-
-  const provider = useAfricaTalking ? 'africastalking' : 'mock';
+  const provider = resolveProvider();
 
   try {
-    if (useAfricaTalking) {
+    if (provider === 'mnotify') {
+      return await sendViaMnotify(phone, body);
+    }
+    if (provider === 'africastalking') {
       return await sendViaAfricasTalking(phone, body);
     }
     return await sendViaMock(phone, body);
@@ -50,4 +65,4 @@ export async function sendSms(to, message) {
   }
 }
 
-export { normalizeGhanaPhone } from './normalizePhone.js';
+export { normalizeGhanaPhone, toLocalGhanaPhone } from './normalizePhone.js';

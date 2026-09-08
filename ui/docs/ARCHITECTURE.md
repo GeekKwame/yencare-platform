@@ -196,15 +196,16 @@ Express booking route
         ├── HTTP 201 + reference (YC-4821)
         └── sendSms(to, message)
                 ├── SMS_PROVIDER=mock            → terminal log (offline)
+                ├── SMS_PROVIDER=mnotify         → mNotify Quick SMS → real Ghana handset
                 └── SMS_PROVIDER=africastalking  → AT sandbox → simulator inbox
 ```
 
 | Rule | Detail |
 |---|---|
-| Single API | Import `sendSms(to, message)` only. Do not call Africa's Talking or Hubtel from route files. |
-| Phone format | Ghana numbers are normalised to E.164 (`024 123 4567` → `+233241234567`). |
-| Failures | Invalid phone throws. Provider errors return `{ ok: false }`. |
-| Sandbox proof | Messages appear at [simulator.africastalking.com:1517](https://simulator.africastalking.com:1517/), not on a handset. |
-| Secrets | `AT_API_KEY` lives in `backend/.env` (gitignored). Username is always `sandbox`. |
+| Single API | Import `sendSms(to, message)` only. Do not call mNotify or Africa's Talking from route files. |
+| Phone format | Ghana numbers are normalised to E.164 (`024 123 4567` → `+233241234567`). mNotify is sent the local form (`024…`). |
+| Failures | Invalid phone throws. Provider errors return `{ ok: false }`. Missing live keys fall back to mock. |
+| Live proof | mNotify delivers to a real Ghana phone (signup bonus / paid credits). |
+| Secrets | `MNOTIFY_API_KEY` (and optional `AT_API_KEY`) live in `backend/.env` (gitignored). |
 
 Full developer contract: [`backend/README.md`](../../backend/README.md).
