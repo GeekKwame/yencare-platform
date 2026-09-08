@@ -1,0 +1,207 @@
+import React, { useState } from "react";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+
+const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    updateFormData({
+      [name]: value,
+    });
+
+    // Remove error when user starts correcting the field
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Please enter your name";
+    }
+
+    if (!formData.indexNumber.trim()) {
+      newErrors.indexNumber = "Please enter your index number";
+    }
+
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Please enter your phone number";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleContinue = (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    onNext();
+  };
+
+  return (
+    <main>
+      <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
+        {/*  Back Button */}
+        <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center justify-center gap-2 rounded-xl border border-[#dce8df] px-5 py-3 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
+          >
+            <FaArrowLeft size={12} />
+            <span>Back</span>
+          </button>
+        </div>
+
+        {/* Header */}
+        <div className="flex flex-col items-center justify-center text-center">
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
+            Personal Details
+          </p>
+
+          <h2 className="display-font mt-2 text-center text-2xl font-bold leading-tight text-[#173b3a] sm:text-3xl">
+            Your Details
+          </h2>
+
+          <span className="mt-2 rounded-full bg-[#dce8df] px-3 py-1 text-xs font-semibold text-[#173b3a]">
+            Step 2 of 3
+          </span>
+
+          <p className="mt-3 max-w-xl text-center text-sm leading-6 text-gray-500">
+            Please enter your student details. We will send your appointment
+            reference by SMS.
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleContinue} className="mt-6 space-y-4">
+          {/* Name */}
+          <div>
+            <label
+              htmlFor="name"
+              className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
+            >
+              Name <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              id="name"
+              name="name"
+              type="text"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="e.g. Akosua Boateng"
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
+                errors.name
+                  ? "border-red-400"
+                  : "border-gray-200 focus:border-[#176b5f]"
+              }`}
+            />
+
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+            )}
+          </div>
+
+          {/* Index Number */}
+          <div>
+            <label
+              htmlFor="indexNumber"
+              className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
+            >
+              Index Number <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              id="indexNumber"
+              name="indexNumber"
+              type="text"
+              value={formData.indexNumber}
+              onChange={handleChange}
+              placeholder="e.g. 454356890"
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
+                errors.indexNumber
+                  ? "border-red-400"
+                  : "border-gray-200 focus:border-[#176b5f]"
+              }`}
+            />
+
+            {errors.indexNumber && (
+              <p className="mt-1 text-xs text-red-500">{errors.indexNumber}</p>
+            )}
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <label
+              htmlFor="phoneNumber"
+              className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
+            >
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              id="phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              placeholder="e.g. 0200000000"
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
+                errors.phoneNumber
+                  ? "border-red-400"
+                  : "border-gray-200 focus:border-[#176b5f]"
+              }`}
+            />
+
+            {errors.phoneNumber && (
+              <p className="mt-1 text-xs text-red-500">{errors.phoneNumber}</p>
+            )}
+          </div>
+
+          {/* NHIS Number */}
+          <div>
+            <label
+              htmlFor="nhisNumber"
+              className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
+            >
+              NHIS Number{" "}
+              <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+
+            <input
+              id="nhisNumber"
+              name="nhisNumber"
+              type="text"
+              value={formData.nhisNumber}
+              onChange={handleChange}
+              placeholder="e.g. NHIS-000000000"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#176b5f] focus:ring-2 focus:ring-[#176b5f]/20"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f] cursor-pointer"
+          >
+            <span>Continue</span>
+
+            <FaArrowRight size={12} className="absolute right-6" />
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+};
+
+export default PersonalDetails;
