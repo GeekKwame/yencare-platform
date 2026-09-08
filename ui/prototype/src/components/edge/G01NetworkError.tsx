@@ -3,7 +3,7 @@ import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 
 export const G01NetworkError: React.FC = () => {
-  const { setConnectivityState, setPatientScreen, canonicalAppointment } = useClinic();
+  const { setConnectivityState, setPatientScreen, currentPatientAppointment } = useClinic();
 
   const handleRetry = () => {
     setConnectivityState('restored');
@@ -36,7 +36,9 @@ export const G01NetworkError: React.FC = () => {
         </p>
 
         <div className="bg-[#F0F2F1] border border-[#D8DCD9] p-3.5 mb-6 text-left text-xs text-[#66706B] leading-relaxed">
-          <strong className="text-[#111111] font-semibold">Offline Cache Active:</strong> Your appointment reference ({canonicalAppointment?.id || 'YC-4821'}) and booking data remain safely preserved on this device.
+          <strong className="text-[#111111] font-semibold">Offline Cache Active:</strong> {currentPatientAppointment
+            ? `Your appointment reference (${currentPatientAppointment.id}) and booking data remain safely preserved on this device.`
+            : 'You can still review this screen. Book or find an appointment once you reconnect.'}
         </div>
 
         <div className="space-y-2.5">

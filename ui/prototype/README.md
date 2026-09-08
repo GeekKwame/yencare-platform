@@ -17,6 +17,8 @@ npm run dev
 
 The application will be served locally at `http://localhost:5173/`.
 
+Student Home does **not** start as a named patient. Book a new visit (new `YC-` reference) or **Find appointment** against today's seeded roster. Names on that roster, including Akosua Boateng, are sample clinic-day data for staff screens — not the signed-in student.
+
 ---
 
 ## Architecture & Directory Structure

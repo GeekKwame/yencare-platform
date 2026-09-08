@@ -3,13 +3,29 @@ import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 import { GhanaPhoneInput } from '../common/GhanaPhoneInput';
 
+const SAMPLE_STUDENTS = [
+  { patientName: 'Efua Darko', studentIndex: '20620111', phone: '024 700 1122' },
+  { patientName: 'Yaw Sarpong', studentIndex: '20620222', phone: '020 811 3344' },
+  { patientName: 'Abena Kusi', studentIndex: '20620333', phone: '027 922 5566' },
+];
+
 export const P02YourDetails: React.FC = () => {
   const { draftBooking, updateDraftBooking, setPatientScreen } = useClinic();
-  const [name, setName] = useState(draftBooking.patientName || 'Akosua Boateng');
-  const [phone, setPhone] = useState(draftBooking.phone || '024 XXX XXXX');
-  const [studentIndex, setStudentIndex] = useState(draftBooking.studentIndex || '20612345');
+  const [name, setName] = useState(draftBooking.patientName || '');
+  const [phone, setPhone] = useState(draftBooking.phone || '');
+  const [studentIndex, setStudentIndex] = useState(draftBooking.studentIndex || '');
   const [nhis, setNhis] = useState(draftBooking.nhisNumber || '');
+  const [sampleIndex, setSampleIndex] = useState(0);
   const [errors, setErrors] = useState<{ name?: string; phone?: string; studentIndex?: string }>({});
+
+  const fillSampleStudent = () => {
+    const sample = SAMPLE_STUDENTS[sampleIndex % SAMPLE_STUDENTS.length];
+    setName(sample.patientName);
+    setPhone(sample.phone);
+    setStudentIndex(sample.studentIndex);
+    setSampleIndex((i) => i + 1);
+    setErrors({});
+  };
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +71,18 @@ export const P02YourDetails: React.FC = () => {
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             <span>Home</span>
           </button>
-          <span className="text-[11px] font-semibold tracking-wider text-[#087F6C] bg-[#E7F5F1] px-2.5 py-0.5 uppercase">
-            Step 1 of 6
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={fillSampleStudent}
+              className="text-[11px] font-semibold text-[#087F6C] hover:underline cursor-pointer"
+            >
+              Use a sample student
+            </button>
+            <span className="text-[11px] font-semibold tracking-wider text-[#087F6C] bg-[#E7F5F1] px-2.5 py-0.5 uppercase">
+              Step 1 of 6
+            </span>
+          </div>
         </div>
 
         <div className="mb-6">

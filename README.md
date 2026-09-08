@@ -134,11 +134,11 @@ YɛnCare is organized into two primary user shells:
 ## Prototype Testing & Scenario Simulator (`ProtoToolbar`)
 
 A non-intrusive floating controller at the bottom-right allows complete scenario testing:
-- **Akosua Boateng Progressor**: Quick step through `BOOKED` &rarr; `CHECKED_IN` &rarr; `WAITING` &rarr; `CALLED (Room 2)` &rarr; `COMPLETED`.
+- **Session progressor**: After you **book** or **find** a student, step that session through `BOOKED` → `CHECKED_IN` → `WAITING` → `CALLED (Room 2)` → `COMPLETED`. The prototype does not start signed in as a named patient.
 - **Scenario Triggers**:
   - `+ Simulate Walk-in (W-024)`: Injects an unscheduled walk-in student into the live queue.
-  - `Mark YC-4822 No-Show`: Tests slot release for missed appointments.
-  - `Staff Change Akosua to 10:30`: Triggers a staff reschedule and student alert.
+  - `Mark YC-4822 No-Show`: Tests slot release for a seeded roster appointment.
+  - `Staff Change current to 10:30`: Reschedules the focused student session and shows the student alert.
   - `Toggle After-Hours (P19)`: Toggles clinic closed mode.
   - `Network State Selector`: Test `online`, `poor`, `offline`, and `restored` states.
 - **All Screens Grid**: One-click jump to all 17 patient screens and 10 staff screens.

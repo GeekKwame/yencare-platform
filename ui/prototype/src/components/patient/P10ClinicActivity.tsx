@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { ClinicSite, CLINIC_SITE_LABELS } from '../../types/clinic';
+import { getArriveBy } from '../../lib/clinicQueue';
 
 export const P10ClinicActivity: React.FC = () => {
   const { 
     currentPatientAppointment,
-    canonicalAppointment, 
     setPatientScreen, 
     getClinicActivity, 
     arrivePatient,
@@ -13,7 +13,7 @@ export const P10ClinicActivity: React.FC = () => {
     setClinicActivityOverride,
   } = useClinic();
 
-  const appointment = currentPatientAppointment || canonicalAppointment;
+  const appointment = currentPatientAppointment;
   const initialSite: ClinicSite = appointment?.clinicSite || 'students-clinic';
   const [selectedSite, setSelectedSite] = useState<ClinicSite>(initialSite);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -437,7 +437,7 @@ export const P10ClinicActivity: React.FC = () => {
           <div className="text-xs text-[#3D4541] space-y-2 leading-relaxed">
             <p className="font-semibold text-[#111111]">
               {appointment 
-                ? `Your appointment is at ${appointment.time}. Arrive by ${appointment.time === '9:30 AM' ? '9:15 AM' : '15 minutes early'}.`
+                ? `Your appointment is at ${appointment.time}. Arrive by ${getArriveBy(appointment.time)}.`
                 : 'Plan to arrive 15 minutes before your scheduled appointment time.'}
             </p>
             <ul className="list-disc pl-4 space-y-1 text-[#66706B] text-[11px]">

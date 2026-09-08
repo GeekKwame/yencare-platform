@@ -22,18 +22,31 @@ export const S08ChangeAppointment: React.FC = () => {
     setStaffScreen,
   } = useClinic();
 
-  const app = appointments.find((a) => a.id === selectedStaffAppointmentId) || appointments[0];
+  const app = appointments.find((a) => a.id === selectedStaffAppointmentId);
   const [newTime, setNewTime] = useState('10:30 AM');
   const [reason, setReason] = useState('Clinic schedule adjustment due to emergency consult');
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reason.trim()) return;
+    if (!app || !reason.trim()) return;
 
     changeAppointmentTime(app.id, newTime, reason);
     setSubmitted(true);
   };
+
+  if (!app) {
+    return (
+      <div className="max-w-xl space-y-4">
+        <p className="text-sm text-[#66706B]">
+          Select a student from the roster first, then change their appointment time.
+        </p>
+        <Button variant="secondary" size="md" onClick={() => setStaffScreen('S03_APPOINTMENTS')}>
+          Open roster
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-6">

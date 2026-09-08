@@ -1,41 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
+import { getArriveBy } from '../../lib/clinicQueue';
 
 const DATES = [
-  { day: 'Tue', date: '15 Sep 2026', full: 'Tuesday 15 September 2026', available: true },
-  { day: 'Wed', date: '16 Sep 2026', full: 'Wednesday 16 September 2026', available: true },
-  { day: 'Thu', date: '17 Sep 2026', full: 'Thursday 17 September 2026', available: true },
-  { day: 'Fri', date: '18 Sep 2026', full: 'Friday 18 September 2026', available: true },
+  { day: 'Tue', date: '15 Sep 2026', full: 'Tuesday 15 September 2026' },
+  { day: 'Wed', date: '16 Sep 2026', full: 'Wednesday 16 September 2026' },
+  { day: 'Thu', date: '17 Sep 2026', full: 'Thursday 17 September 2026' },
+  { day: 'Fri', date: '18 Sep 2026', full: 'Friday 18 September 2026' },
 ];
 
 const TIME_SLOTS = [
-  { time: '8:30 AM', available: true },
-  { time: '9:00 AM', available: false },  // Taken
-  { time: '9:30 AM', available: true },   // Canonical slot
-  { time: '10:00 AM', available: true },
-  { time: '10:30 AM', available: true },
-  { time: '11:00 AM', available: true },
-  { time: '2:00 PM', available: true },
-  { time: '2:30 PM', available: true },
+  '8:30 AM',
+  '9:00 AM',
+  '9:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '2:00 PM',
+  '2:30 PM',
 ];
 
-function getArriveBy(time: string): string {
-  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return time;
-  let h = parseInt(match[1]);
-  let m = parseInt(match[2]);
-  const period = match[3].toUpperCase();
-  m -= 15;
-  if (m < 0) { m += 60; h -= 1; }
-  if (h <= 0) h = 12;
-  return `${h}:${String(m).padStart(2, '0')} ${period}`;
-}
-
 export const P04P05DateTime: React.FC = () => {
-  const { draftBooking, updateDraftBooking, setPatientScreen, simulateSlotTaken, setSimulateSlotTaken } = useClinic();
+  const {
+    draftBooking,
+    updateDraftBooking,
+    setPatientScreen,
+    simulateSlotTaken,
+    setSimulateSlotTaken,
+    isSlotOccupied,
+    appointments,
+  } = useClinic();
   const [selectedDate, setSelectedDate] = useState(draftBooking.date || 'Tuesday 15 September 2026');
-  const [selectedTime, setSelectedTime] = useState(draftBooking.time || '9:30 AM');
+  const [selectedTime, setSelectedTime] = useState(draftBooking.time || '10:30 AM');
+
+  const doctorId = draftBooking.doctor.id;
+  const slotTaken = (time: string) => isSlotOccupied(doctorId, selectedDate, time);
+
+  useEffect(() => {
+    if (!slotTaken(selectedTime)) return;
+    const nextFree = TIME_SLOTS.find((time) => !isSlotOccupied(doctorId, selectedDate, time));
+    if (nextFree) setSelectedTime(nextFree);
+  }, [selectedDate, doctorId, selectedTime, appointments]);
 
   const handleContinue = () => {
     updateDraftBooking({
@@ -43,7 +49,7 @@ export const P04P05DateTime: React.FC = () => {
       time: selectedTime,
     });
 
-    if (simulateSlotTaken) {
+    if (simulateSlotTaken || slotTaken(selectedTime)) {
       setPatientScreen('P08_SLOT_TAKEN');
       return;
     }
@@ -120,15 +126,15 @@ export const P04P05DateTime: React.FC = () => {
             <span className="text-[11px] text-[#66706B]">30-min window</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {TIME_SLOTS.map((slot) => {
-              const isSelected = selectedTime === slot.time;
-              const isAvailable = slot.available;
+            {TIME_SLOTS.map((time) => {
+              const isSelected = selectedTime === time;
+              const isAvailable = !slotTaken(time);
               return (
                 <button
-                  key={slot.time}
+                  key={time}
                   type="button"
                   disabled={!isAvailable}
-                  onClick={() => setSelectedTime(slot.time)}
+                  onClick={() => setSelectedTime(time)}
                   className={`p-3 text-center border transition-all ${
                     !isAvailable
                       ? 'bg-[#F0F2F1] text-[#8A948F] border-[#E5E7E6] cursor-not-allowed line-through opacity-70'
@@ -137,7 +143,7 @@ export const P04P05DateTime: React.FC = () => {
                         : 'bg-white text-[#111111] border-[#D8DCD9] hover:border-[#087F6C] hover:bg-[#E7F5F1]/30 font-medium cursor-pointer'
                   }`}
                 >
-                  <span className="text-sm">{slot.time}</span>
+                  <span className="text-sm">{time}</span>
                   {!isAvailable && (
                     <span className="block text-[10px] font-normal text-[#8A948F] no-underline">
                       Taken
