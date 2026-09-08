@@ -17,8 +17,9 @@ import {
   RoomConsultationState,
   ClinicSiteActivity,
 } from '../types/clinic';
-import { getArriveBy, nextQueueToken, sortByQueueToken, waitingOnSite } from '../lib/clinicQueue';
+import { getArriveBy, nextQueueToken, sortByQueueToken, waitingOnSite, isSlotOccupied as slotIsTaken, nextYcReference } from '../lib/clinicQueue';
 import { announcePatientCall } from '../lib/clinicSpeech';
+import { VISIT_TYPE_LABELS } from '../types/clinic';
 
 // ─── Clinicians ──────────────────────────────────────────────────
 export const DR_KWAME_BOATENG: Doctor = {
@@ -45,9 +46,8 @@ export const ALL_DOCTORS: Doctor[] = [DR_KWAME_BOATENG, DR_AMA_SERWAA];
 export const CANONICAL_DOCTOR = DR_KWAME_BOATENG;
 
 // ─── Initial Appointments ────────────────────────────────────────
-// ─── Initial Appointments ────────────────────────────────────────
 export const INITIAL_APPOINTMENTS: Appointment[] = [
-  // Primary Demo Patient: Akosua Boateng (BOOKED, Not Checked In)
+  // Sample booked students on the clinic day roster (not the signed-in session)
   {
     id: 'YC-4821',
     patientName: 'Akosua Boateng',
@@ -319,7 +319,7 @@ const INITIAL_SMS: SmsMessage[] = [
     appointmentId: 'YC-4821',
     type: 'confirmation',
     phone: '024 XXX XXXX',
-    body: `KNUST Students' Clinic\n\nAppointment Confirmed\nTue 15 Sep, 9:30 AM\nRef: YC-4821\nArrive by 9:15 AM\n\nDr. Kwame Boateng · Room 1\nGeneral OPD`,
+    body: `YɛnCare\n\nAppointment Confirmed\nTue 15 Sep, 9:30 AM\nRef: YC-4821\nArrive by 9:15 AM\n\nDr. Kwame Boateng · Room 1\nGeneral OPD\nKNUST Students' Clinic`,
     timestamp: '2026-09-14 14:22',
   },
   {
@@ -334,15 +334,15 @@ const INITIAL_SMS: SmsMessage[] = [
 
 // ─── Default Draft Booking ───────────────────────────────────────
 const DEFAULT_DRAFT: DraftBooking = {
-  patientName: 'Akosua Boateng',
-  phone: '024 XXX XXXX',
-  studentIndex: '20612345',
+  patientName: '',
+  phone: '',
+  studentIndex: '',
   nhisNumber: '',
   clinicSite: 'students-clinic',
   visitType: 'general-opd',
   doctor: DR_KWAME_BOATENG,
   date: 'Tuesday 15 September 2026',
-  time: '9:30 AM',
+  time: '10:30 AM',
 };
 
 // ─── Context Type ────────────────────────────────────────────────
@@ -358,10 +358,9 @@ interface ClinicContextType {
 
   // Data
   appointments: Appointment[];
-  activePatientAppointmentId: string;
-  setActivePatientAppointmentId: (id: string) => void;
+  activePatientAppointmentId: string | null;
+  setActivePatientAppointmentId: (id: string | null) => void;
   currentPatientAppointment: Appointment | undefined;
-  canonicalAppointment: Appointment;
   staffUser: StaffUser;
   setStaffRole: (role: StaffRole) => void;
   allDoctors: Doctor[];
@@ -370,6 +369,7 @@ interface ClinicContextType {
   draftBooking: DraftBooking;
   updateDraftBooking: (partial: Partial<DraftBooking>) => void;
   confirmBooking: () => string;
+  isSlotOccupied: (doctorId: string, date: string, time: string, excludeId?: string) => boolean;
 
   // Rescheduling
   rescheduleDraft: RescheduleDraft;
@@ -425,8 +425,8 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeShell, setActiveShell] = useState<ActiveShell>('PATIENT');
   const [patientScreen, setPatientScreen] = useState<PatientScreen>('P01_HOME');
   const [staffScreen, setStaffScreen] = useState<StaffScreen>('S02_TODAY');
-  const [selectedStaffAppointmentId, setSelectedStaffAppointmentId] = useState<string | null>('YC-4821');
-  const [activePatientAppointmentId, setActivePatientAppointmentId] = useState<string>('YC-4821');
+  const [selectedStaffAppointmentId, setSelectedStaffAppointmentId] = useState<string | null>(null);
+  const [activePatientAppointmentId, setActivePatientAppointmentId] = useState<string | null>(null);
 
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
   const [smsLog, setSmsLog] = useState<SmsMessage[]>(INITIAL_SMS);
@@ -491,39 +491,46 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // ─── Confirm Booking ────────────────────────────────────────
   const confirmBooking = (): string => {
-    const newRef = 'YC-4821';
+    const doctor = draftBooking.doctor || DR_KWAME_BOATENG;
+    const date = draftBooking.date || 'Tuesday 15 September 2026';
+    const time = draftBooking.time || '9:30 AM';
+
+    if (simulateSlotTaken || slotIsTaken(appointments, doctor.id, date, time)) {
+      setPatientScreen('P08_SLOT_TAKEN');
+      showToast('That slot was just taken. Please choose another time.');
+      return '';
+    }
+
+    const newRef = nextYcReference(appointments);
+    const visitLabel = VISIT_TYPE_LABELS[draftBooking.visitType || 'general-opd'];
     const newAppointment: Appointment = {
       id: newRef,
-      patientName: draftBooking.patientName || 'Akosua Boateng',
-      phone: draftBooking.phone || '024 XXX XXXX',
-      studentIndex: draftBooking.studentIndex || '20612345',
+      patientName: draftBooking.patientName.trim(),
+      phone: draftBooking.phone.trim(),
+      studentIndex: draftBooking.studentIndex.trim(),
       nhisNumber: draftBooking.nhisNumber || undefined,
-      doctor: draftBooking.doctor || DR_KWAME_BOATENG,
-      date: draftBooking.date || 'Tuesday 15 September 2026',
-      time: draftBooking.time || '9:30 AM',
+      doctor,
+      date,
+      time,
       status: 'BOOKED',
       clinicSite: draftBooking.clinicSite || 'students-clinic',
       visitType: draftBooking.visitType || 'general-opd',
       bookingType: 'BOOKED',
-      queueToken: '#4',
-      estimatedWaitMinutes: 30,
-      notes: 'New appointment created via Patient Web Portal',
+      notes: 'Booked via student web',
     };
 
-    setAppointments((prev) => {
-      const filtered = prev.filter((a) => a.id !== newRef);
-      return [newAppointment, ...filtered];
-    });
+    setAppointments((prev) => [newAppointment, ...prev]);
 
-    // SMS confirmation
     addSms({
       appointmentId: newRef,
       type: 'confirmation',
       phone: newAppointment.phone,
-      body: `KNUST Students' Clinic\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\nGeneral OPD`,
+      body: `YɛnCare\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\n${visitLabel}\nKNUST ${newAppointment.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}`,
     });
 
     setActivePatientAppointmentId(newRef);
+    setSelectedStaffAppointmentId(newRef);
+    setDraftBooking({ ...DEFAULT_DRAFT });
     setPatientScreen('P07_CONFIRMED');
     showToast(`Appointment confirmed: ${newRef}`);
     return newRef;
@@ -531,6 +538,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // ─── Confirm Reschedule ─────────────────────────────────────
   const confirmReschedule = () => {
+    if (!activePatientAppointmentId) return;
     const oldApp = appointments.find((a) => a.id === activePatientAppointmentId);
     setAppointments((prev) =>
       prev.map((app) => {
@@ -589,7 +597,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: id,
       type: 'arrived',
       phone: target.phone,
-      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
+      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'social-science-gf7' ? 'KNUST Social Science Block GF7' : "KNUST Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
     });
 
     showToast(`${target.patientName} has arrived. Reception can now check them into the live queue.`);
@@ -771,7 +779,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: token,
       type: 'walk-in-confirmation',
       phone: draft.phone,
-      body: `KNUST Students' Clinic\n\nWalk-In Registered\nToken: ${token}\n\nYou have been added to the queue.\nEstimated wait: ~${newAppointment.estimatedWaitMinutes} min`,
+      body: `YɛnCare\n\nWalk-In Registered\nToken: ${token}\n\nYou have been added to the queue at KNUST Students' Clinic.\nEstimated wait: ~${newAppointment.estimatedWaitMinutes} min`,
     });
 
     showToast(`Walk-in ${draft.patientName} added to queue as ${token}`);
@@ -825,10 +833,10 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     walkInCounter = 24;
     setAppointments(INITIAL_APPOINTMENTS);
     setSmsLog(INITIAL_SMS);
-    setActivePatientAppointmentId('YC-4821');
+    setActivePatientAppointmentId(null);
     setPatientScreen('P01_HOME');
     setStaffScreen('S02_TODAY');
-    setSelectedStaffAppointmentId('YC-4821');
+    setSelectedStaffAppointmentId(null);
     setIsOfflineRaw(false);
     setConnectivityState('online');
     setIsSessionExpired(false);
@@ -840,10 +848,8 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newDate: 'Wednesday 16 September 2026',
       newTime: '11:00 AM',
     });
-    showToast('Reset to canonical YC-4821 demo state');
+    showToast('Reset clinic day. Book or find a student to start a session.');
   };
-
-  const canonicalAppointment = appointments.find((a) => a.id === 'YC-4821') || appointments[0];
 
   const [clinicActivityOverride, setClinicActivityOverride] = useState<ClinicActivityOverride>('normal');
 
@@ -969,13 +975,14 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         activePatientAppointmentId,
         setActivePatientAppointmentId,
         currentPatientAppointment,
-        canonicalAppointment,
         staffUser,
         setStaffRole,
         allDoctors: ALL_DOCTORS,
         draftBooking,
         updateDraftBooking,
         confirmBooking,
+        isSlotOccupied: (doctorId, date, time, excludeId) =>
+          slotIsTaken(appointments, doctorId, date, time, excludeId),
         rescheduleDraft,
         updateRescheduleDraft,
         confirmReschedule,

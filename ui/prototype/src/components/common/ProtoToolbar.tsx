@@ -26,13 +26,22 @@ export const ProtoToolbar: React.FC = () => {
     resetDemoData,
     staffUser,
     setStaffRole,
-    canonicalAppointment,
     clinicActivityOverride,
     setClinicActivityOverride,
     setSelectedStaffAppointmentId,
+    selectedStaffAppointmentId,
+    currentPatientAppointment,
+    setActivePatientAppointmentId,
   } = useClinic();
 
-  const akosua = (appointments && appointments.find((a) => a?.id === (canonicalAppointment?.id || 'YC-4821'))) || canonicalAppointment || appointments?.[0];
+  const staffSelected = selectedStaffAppointmentId
+    ? appointments.find((a) => a.id === selectedStaffAppointmentId)
+    : undefined;
+  const focused =
+    activeShell === 'PATIENT'
+      ? currentPatientAppointment || staffSelected
+      : staffSelected || currentPatientAppointment;
+  const givenName = focused?.patientName.trim().split(/\s+/)[0];
 
   return (
     <aside
@@ -44,17 +53,17 @@ export const ProtoToolbar: React.FC = () => {
         <div className="flex items-center gap-2 bg-[#111111] text-white px-3.5 py-2 shadow-xl border border-[#333333] hover:border-[#555555] transition-all">
           <div className="flex items-center gap-1.5 font-semibold text-[11px] tracking-wide">
             <span className="w-2 h-2 rounded-full bg-[#087F6C] animate-pulse"></span>
-            <span className="text-[#8A948F]">KNUST Demo:</span>
+            <span className="text-[#8A948F]">YɛnCare Demo:</span>
             <span className="text-white font-bold">{activeShell === 'PATIENT' ? 'Patient Web' : 'Staff Portal'}</span>
-            <span className="text-[#8A948F]">· Akosua ({akosua?.status || 'BOOKED'})</span>
+            <span className="text-[#8A948F]">· {focused ? `${givenName} (${focused.status})` : 'No student session'}</span>
           </div>
 
           <div className="h-3.5 w-[1px] bg-[#333333] mx-1"></div>
 
           {/* Quick status progressor shortcut */}
-          {akosua?.status === 'BOOKED' && (
+          {focused?.status === 'BOOKED' && (
             <button
-              onClick={() => arrivePatient(akosua.id)}
+              onClick={() => arrivePatient(focused.id)}
               className="px-2 py-0.5 bg-[#FEF7ED] text-[#B7791F] text-[10px] font-bold border border-[#FCD34D] hover:bg-[#FDE8CE] transition-colors cursor-pointer"
               title="Student arrives at clinic"
             >
@@ -62,34 +71,34 @@ export const ProtoToolbar: React.FC = () => {
             </button>
           )}
 
-          {akosua?.status === 'CHECKED_IN' && (
+          {focused?.status === 'CHECKED_IN' && (
             <button
               onClick={() => {
-                checkInPatient(akosua.id);
-                setSelectedStaffAppointmentId(akosua.id);
+                checkInPatient(focused.id);
+                setSelectedStaffAppointmentId(focused.id);
                 setActiveShell('STAFF');
                 setStaffScreen('S05_LIVE_QUEUE');
               }}
               className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
-              title="Reception checks Akosua into the live queue"
+              title="Reception checks this student into the live queue"
             >
               Staff Check In
             </button>
           )}
 
-          {akosua?.status === 'WAITING' && (
+          {focused?.status === 'WAITING' && (
             <button
-              onClick={() => callPatient(akosua.id, 'Room 2')}
+              onClick={() => callPatient(focused.id, 'Room 2')}
               className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
-              title="Simulate Dr. Ama Serwaa calling Akosua"
+              title="Call this student into Room 2"
             >
               Call (Room 2)
             </button>
           )}
 
-          {akosua?.status === 'CALLED' && (
+          {focused?.status === 'CALLED' && (
             <button
-              onClick={() => completeVisit(akosua.id)}
+              onClick={() => completeVisit(focused.id)}
               className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
               title="Simulate doctor finishing consultation"
             >
@@ -114,7 +123,7 @@ export const ProtoToolbar: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#087F6C]"></span>
               <span className="font-bold text-xs tracking-wider uppercase text-white">
-                KNUST Students' Clinic · Prototype Testing Center
+                YɛnCare · KNUST Students' Clinic · Prototype Testing Center
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -168,25 +177,27 @@ export const ProtoToolbar: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick progression for Akosua Boateng */}
+            {/* Quick progression for the focused student session */}
             <div className="flex items-center gap-2 text-[11px]">
-              <span className="text-[#8A948F]">Akosua (20612345):</span>
-              <span className="px-2 py-0.5 font-mono text-[10px] bg-[#222222] border border-[#333333] text-[#087F6C]">
-                {akosua?.status || 'BOOKED'} {akosua?.queueToken ? `(${akosua.queueToken})` : ''}
+              <span className="text-[#8A948F]">
+                {focused ? `${givenName} (${focused.studentIndex || focused.id}):` : 'No student session:'}
               </span>
-              {akosua?.status === 'BOOKED' && (
+              <span className="px-2 py-0.5 font-mono text-[10px] bg-[#222222] border border-[#333333] text-[#087F6C]">
+                {focused ? `${focused.status}${focused.queueToken ? ` (${focused.queueToken})` : ''}` : 'Book or find'}
+              </span>
+              {focused?.status === 'BOOKED' && (
                 <button
-                  onClick={() => arrivePatient(akosua.id)}
+                  onClick={() => arrivePatient(focused.id)}
                   className="px-2 py-0.5 bg-[#FEF7ED] text-[#B7791F] text-[10px] font-bold border border-[#FCD34D] hover:bg-[#FDE8CE] transition-colors cursor-pointer"
                 >
                   Arrive →
                 </button>
               )}
-              {akosua?.status === 'CHECKED_IN' && (
+              {focused?.status === 'CHECKED_IN' && (
                 <button
                   onClick={() => {
-                    checkInPatient(akosua.id);
-                    setSelectedStaffAppointmentId(akosua.id);
+                    checkInPatient(focused.id);
+                    setSelectedStaffAppointmentId(focused.id);
                     setActiveShell('STAFF');
                     setStaffScreen('S05_LIVE_QUEUE');
                   }}
@@ -195,17 +206,17 @@ export const ProtoToolbar: React.FC = () => {
                   Staff Check In →
                 </button>
               )}
-              {akosua?.status === 'WAITING' && (
+              {focused?.status === 'WAITING' && (
                 <button
-                  onClick={() => callPatient(akosua.id, 'Room 2')}
+                  onClick={() => callPatient(focused.id, 'Room 2')}
                   className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
                 >
                   Call Room 2 →
                 </button>
               )}
-              {akosua?.status === 'CALLED' && (
+              {focused?.status === 'CALLED' && (
                 <button
-                  onClick={() => completeVisit(akosua.id)}
+                  onClick={() => completeVisit(focused.id)}
                   className="px-2 py-0.5 bg-[#E7F5F1] text-[#087F6C] text-[10px] font-bold border border-[#99D5C8] hover:bg-[#CBECE4] transition-colors cursor-pointer"
                 >
                   Complete Visit →
@@ -252,14 +263,17 @@ export const ProtoToolbar: React.FC = () => {
             {/* Staff Reschedule shortcut */}
             <button
               onClick={() => {
-                changeAppointmentTime(akosua.id, '10:30 AM', 'Doctor emergency consultation');
+                if (!focused) return;
+                changeAppointmentTime(focused.id, '10:30 AM', 'Doctor emergency consultation');
+                setActivePatientAppointmentId(focused.id);
                 setActiveShell('PATIENT');
                 setPatientScreen('P11_DETAILS');
                 setIsOpen(false);
               }}
-              className="px-2 py-1 bg-[#D69E2E] text-black font-semibold hover:bg-[#B7791F] hover:text-white transition-colors cursor-pointer"
+              disabled={!focused}
+              className="px-2 py-1 bg-[#D69E2E] text-black font-semibold hover:bg-[#B7791F] hover:text-white transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Staff Change Akosua to 10:30
+              Staff Change current to 10:30
             </button>
 
             {/* After-hours toggle */}
@@ -416,7 +430,7 @@ export const ProtoToolbar: React.FC = () => {
                   onClick={() => { setActiveShell('PATIENT'); setPatientScreen('P18_QUEUE'); setIsOpen(false); }}
                   className={`text-left p-1.5 border transition-colors cursor-pointer ${patientScreen === 'P18_QUEUE' && activeShell === 'PATIENT' ? 'bg-[#087F6C] text-white font-bold border-[#087F6C]' : 'border-[#333333] hover:border-[#666666] text-white bg-[#087F6C]/20'}`}
                 >
-                  P18 Queue Status ({akosua?.status})
+                  P18 Queue Status ({focused?.status || 'no session'})
                 </button>
                 <button
                   onClick={() => { setActiveShell('PATIENT'); setPatientScreen('P19_AFTER_HOURS'); setIsOpen(false); }}

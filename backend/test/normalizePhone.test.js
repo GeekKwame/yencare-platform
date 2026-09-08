@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { normalizeGhanaPhone } from '../src/sms/normalizePhone.js';
+import { normalizeGhanaPhone, toLocalGhanaPhone } from '../src/sms/normalizePhone.js';
 
 describe('normalizeGhanaPhone', () => {
   it('keeps E.164 numbers', () => {
@@ -24,5 +24,12 @@ describe('normalizeGhanaPhone', () => {
   it('rejects empty and invalid values', () => {
     assert.throws(() => normalizeGhanaPhone(''), /required/);
     assert.throws(() => normalizeGhanaPhone('123'), /Invalid Ghana phone/);
+  });
+});
+
+describe('toLocalGhanaPhone', () => {
+  it('converts E.164 to a 0-prefixed local number for mNotify', () => {
+    assert.equal(toLocalGhanaPhone('+233241234567'), '0241234567');
+    assert.equal(toLocalGhanaPhone('0551234567'), '0551234567');
   });
 });

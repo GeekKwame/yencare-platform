@@ -61,3 +61,34 @@ export function patientsAheadOf(app: Appointment, appointments: Appointment[]): 
     (a) => a.id !== app.id && parseTokenNumber(a.queueToken) < mine
   ).length;
 }
+
+const BLOCKING_STATUSES = new Set(['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED']);
+
+export function isSlotOccupied(
+  appointments: Appointment[],
+  doctorId: string,
+  date: string,
+  time: string,
+  excludeId?: string
+): boolean {
+  return appointments.some(
+    (a) =>
+      a.id !== excludeId &&
+      a.doctor.id === doctorId &&
+      a.date === date &&
+      a.time === time &&
+      BLOCKING_STATUSES.has(a.status)
+  );
+}
+
+/** Next unused YC-NNNN for a new student booking. Skips 9xxx (seeded other-site IDs). */
+export function nextYcReference(appointments: Appointment[]): string {
+  const nums = appointments
+    .map((a) => {
+      const match = a.id.match(/^YC-(\d+)$/i);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter((n) => n > 0 && n < 9000);
+  const next = Math.max(6000, ...(nums.length ? nums : [5999])) + 1;
+  return `YC-${String(next).padStart(4, '0')}`;
+}

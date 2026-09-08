@@ -29,3 +29,9 @@ export function normalizeGhanaPhone(raw) {
 
   throw new Error(`Invalid Ghana phone: ${raw}`);
 }
+
+/** mNotify expects local numbers such as `0241234567`. */
+export function toLocalGhanaPhone(raw) {
+  const e164 = normalizeGhanaPhone(raw);
+  return `0${e164.slice(4)}`;
+}

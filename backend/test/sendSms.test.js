@@ -37,6 +37,15 @@ describe('sendSms mock fallback', () => {
     process.env.SMS_PROVIDER = 'mock';
   });
 
+  it('falls back to mock when mnotify is selected without a key', async () => {
+    process.env.SMS_PROVIDER = 'mnotify';
+    delete process.env.MNOTIFY_API_KEY;
+    const result = await sendSms('+233536064409', 'Missing mNotify key');
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, 'mock');
+    process.env.SMS_PROVIDER = 'mock';
+  });
+
   it('throws when the message is empty', async () => {
     await assert.rejects(() => sendSms('+233241234567', '   '), /SMS message is required/);
   });

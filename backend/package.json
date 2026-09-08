@@ -16,7 +16,7 @@
     "db:migrate:dry": "node scripts/migrate.js --dry-run",
     "db:seed": "node scripts/seed.js",
     "db:seed:dry": "node scripts/seed.js --dry-run",
-    "test": "node --test ./test/normalizePhone.test.js ./test/sendSms.test.js ./test/referenceCode.test.js ./test/models.test.js ./test/migration.test.js"
+    "test": "node --test ./test/normalizePhone.test.js ./test/sendSms.test.js ./test/mnotify.test.js ./test/referenceCode.test.js ./test/models.test.js ./test/migration.test.js"
   },
   "engines": {
     "node": ">=18"

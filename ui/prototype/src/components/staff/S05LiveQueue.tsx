@@ -313,7 +313,7 @@ export const S05LiveQueue: React.FC = () => {
 
             {/* Quick footer */}
             <div className="p-3 bg-[#F7F8F7] border-t border-[#E5E7E6] flex justify-between items-center text-xs text-[#66706B]">
-              <span>KNUST Virtual Queue Active</span>
+              <span>YɛnCare queue · KNUST Students' Clinic</span>
               <button
                 onClick={() => setStaffScreen('S03_APPOINTMENTS')}
                 className="font-semibold text-[#087F6C] hover:underline cursor-pointer flex items-center gap-1"

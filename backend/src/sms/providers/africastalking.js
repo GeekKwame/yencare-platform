@@ -6,9 +6,20 @@ const require = createRequire(import.meta.url);
  * Africa's Talking sandbox (free). Messages land in the web simulator,
  * not on a physical handset: https://simulator.africastalking.com:1517/
  */
+function describeAtError(err) {
+  const status = err?.response?.status;
+  const body = err?.response?.data;
+  const detail = typeof body === 'string' ? body : body ? JSON.stringify(body) : err.message;
+  const hint =
+    status === 401
+      ? ' Generate the key in the Sandbox app (username must stay "sandbox"), not the live account.'
+      : '';
+  return `Africa's Talking ${status ?? 'error'}: ${detail}.${hint}`;
+}
+
 export async function sendViaAfricasTalking(to, message) {
-  const apiKey = process.env.AT_API_KEY;
-  const username = process.env.AT_USERNAME || 'sandbox';
+  const apiKey = process.env.AT_API_KEY?.trim();
+  const username = (process.env.AT_USERNAME || 'sandbox').trim();
 
   if (!apiKey) {
     throw new Error('AT_API_KEY is not set');
@@ -27,7 +38,12 @@ export async function sendViaAfricasTalking(to, message) {
     options.senderId = senderId;
   }
 
-  const response = await sms.send(options);
+  let response;
+  try {
+    response = await sms.send(options);
+  } catch (err) {
+    throw new Error(describeAtError(err));
+  }
   const recipient = response?.SMSMessageData?.Recipients?.[0];
 
   if (!recipient) {
