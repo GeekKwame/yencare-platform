@@ -180,7 +180,22 @@ The design system implements **Clinical Brutalism & High-Contrast Minimalism**:
 
 ---
 
-## 7. Backend SMS (`sendSms`)
+## 7. Backend API
+
+### Patients (`/api/patients`)
+
+Prototype **P02 Your Details** collects full name, KNUST student index (`20612345`), Ghana phone, and optional NHIS. **P09 Find** looks up by index or phone. The Express API persists that student on the Mongoose `Patient` collection (MongoDB).
+
+| Method | Path | Behaviour |
+|---|---|---|
+| `POST` | `/api/patients` | Find-or-create. **200** if the index or phone already exists; **201** if inserted |
+| `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone. **200** or **404** |
+
+Student index is **8 digits**. Phones are stored as E.164 (`024 123 4567` → `+233241234567`). Invalid formats return **400**; a colliding index/phone pair returns **409**.
+
+HTTP contract (Postman, curl, field map): [`backend/README.md`](../../backend/README.md). Collections and indexes: [`backend/docs/DATABASE_ARCHITECTURE.md`](../../backend/docs/DATABASE_ARCHITECTURE.md).
+
+### SMS (`sendSms`)
 
 The interactive prototype stores SMS rows in `ClinicContext` for the **Simulated SMS** viewer. That is UI-only.
 
@@ -192,7 +207,7 @@ Patient books (web)
         ▼
 Express booking route
         │
-        ├── PostgreSQL insert (source of truth)
+        ├── MongoDB Patient insert (source of truth)
         ├── HTTP 201 + reference (YC-4821)
         └── sendSms(to, message)
                 ├── SMS_PROVIDER=mock            → terminal log (offline)
