@@ -32,7 +32,7 @@ export const G01NetworkError: React.FC = () => {
           Network Connection Lost
         </h1>
         <p className="text-sm text-[#66706B] font-normal mb-6 leading-relaxed max-w-md mx-auto">
-          We are unable to reach the KNUST Students' Clinic server. Please check your mobile network or campus Wi-Fi connection and try again.
+          We are unable to reach the YɛnCare server for KNUST Students' Clinic. Please check your mobile network or campus Wi-Fi connection and try again.
         </p>
 
         <div className="bg-[#F0F2F1] border border-[#D8DCD9] p-3.5 mb-6 text-left text-xs text-[#66706B] leading-relaxed">

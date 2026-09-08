@@ -39,12 +39,12 @@ export const P02CVisitType: React.FC = () => {
             This Is Not for Emergencies
           </h1>
           <p className="text-sm text-[#66706B] font-normal leading-relaxed mb-6 max-w-md mx-auto">
-            YɛnCare appointments are not intended for emergencies. Please seek immediate medical attention at the appropriate University Health Services facility.
+            YɛnCare appointments are not intended for emergencies. Please seek immediate medical attention at KNUST University Health Services.
           </p>
 
           <div className="bg-[#FDF2F2] border border-[#F8B4B4] p-4 mb-6 text-left text-xs text-[#C53030] leading-relaxed">
             <strong className="block mb-1">If you are experiencing a medical emergency:</strong>
-            Please go directly to the University Hospital or call for emergency assistance immediately. Do not wait for an appointment.
+            Please go directly to KNUST University Hospital or call for emergency assistance immediately. Do not wait for an appointment.
           </div>
 
           <div className="space-y-2.5">

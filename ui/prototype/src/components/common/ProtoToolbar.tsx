@@ -53,7 +53,7 @@ export const ProtoToolbar: React.FC = () => {
         <div className="flex items-center gap-2 bg-[#111111] text-white px-3.5 py-2 shadow-xl border border-[#333333] hover:border-[#555555] transition-all">
           <div className="flex items-center gap-1.5 font-semibold text-[11px] tracking-wide">
             <span className="w-2 h-2 rounded-full bg-[#087F6C] animate-pulse"></span>
-            <span className="text-[#8A948F]">KNUST Demo:</span>
+            <span className="text-[#8A948F]">YɛnCare Demo:</span>
             <span className="text-white font-bold">{activeShell === 'PATIENT' ? 'Patient Web' : 'Staff Portal'}</span>
             <span className="text-[#8A948F]">· {focused ? `${givenName} (${focused.status})` : 'No student session'}</span>
           </div>
@@ -123,7 +123,7 @@ export const ProtoToolbar: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#087F6C]"></span>
               <span className="font-bold text-xs tracking-wider uppercase text-white">
-                KNUST Students' Clinic · Prototype Testing Center
+                YɛnCare · KNUST Students' Clinic · Prototype Testing Center
               </span>
             </div>
             <div className="flex items-center gap-2">

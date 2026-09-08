@@ -32,7 +32,7 @@ export const S01SignIn: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#087F6C]"></span>
             </h1>
             <p className="text-xs font-medium text-[#66706B] uppercase tracking-wider">
-              KNUST Students' Clinic Staff Workstation
+              KNUST Students' Clinic
             </p>
           </div>
         </div>

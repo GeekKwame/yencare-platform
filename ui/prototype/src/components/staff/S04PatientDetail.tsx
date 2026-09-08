@@ -63,7 +63,7 @@ export const S04PatientDetail: React.FC = () => {
       <div className="bg-white border border-[#D8DCD9] p-6 md:p-8 space-y-6 shadow-xs">
         <div>
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[#66706B] block mb-1">
-            KNUST Student Clinical Record
+            KNUST student clinical record
           </span>
           <h1 className="text-2xl font-bold tracking-tight text-[#111111]">
             {app.patientName}

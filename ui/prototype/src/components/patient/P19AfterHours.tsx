@@ -32,7 +32,7 @@ export const P19AfterHours: React.FC = () => {
             <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">emergency</span>
             <div>
               <strong className="block mb-1">For urgent or emergency medical needs</strong>
-              Please seek immediate medical attention at the appropriate University Health Services facility. Do not wait for a clinic appointment.
+              Please seek immediate medical attention at KNUST University Health Services. Do not wait for a clinic appointment.
             </div>
           </div>
         </div>

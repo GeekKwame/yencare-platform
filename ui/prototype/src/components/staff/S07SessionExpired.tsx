@@ -27,7 +27,7 @@ export const S07SessionExpired: React.FC = () => {
           Session Expired
         </h1>
         <p className="text-sm text-[#66706B] font-normal mb-8 leading-relaxed max-w-sm mx-auto">
-          For clinical confidentiality and data security at KNUST Students' Clinic, your workstation session has timed out. Please authenticate again to continue.
+          For clinical confidentiality and data security at KNUST Students' Clinic, your YɛnCare workstation session has timed out. Please authenticate again to continue.
         </p>
 
         <div>
