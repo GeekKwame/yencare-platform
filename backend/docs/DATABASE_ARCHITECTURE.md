@@ -212,7 +212,7 @@ Implemented in `src/http/` + `src/patients/`. This is the Gate 2 registration/ve
 | `POST /api/patients` | Find-or-create by `studentIndex` and/or Ghana `phoneNumber` | **200** existing, **201** created |
 | `GET /api/patients/:identifier` | Lookup by 8-digit index or Ghana phone | **200** or **404** |
 
-JSON uses camelCase (`phoneNumber`, `nhis`). Documents store `phone` (E.164) and `nhisNumber`. Full contract, Postman, and status codes: [`README.md`](../README.md#patient-registration--verification).
+Mongo / `Appointment.populate()` use **`phone`** and **`nhisNumber`**. HTTP JSON repeats aliases (`phoneNumber`, `nhis`) with the same values so SMS never reads `undefined`. Catalog: `GET /api/rooms`, `GET /api/clinicians`, `GET /api/time-slots`. Full contract: [`README.md`](../README.md#patient-registration--verification).
 
 ---
 
@@ -232,8 +232,8 @@ JSON uses camelCase (`phoneNumber`, `nhis`). Documents store `phone` (E.164) and
 | Path | Responsibility |
 |---|---|
 | `src/server.js` | Express entry: connect Mongo, listen on `PORT` |
-| `src/http/` | App, CORS, JSON, `/health`, `/api/patients` |
-| `src/patients/` | Validation, find-or-create, Mongo store adapter |
+| `src/http/` | App, CORS, JSON, `/health`, `/api/patients`, `/api/rooms`, `/api/clinicians`, `/api/time-slots` |
+| `src/patients/` | Validation, find-or-create, Mongo store adapter, `phone`/`phoneNumber` aliases |
 | `src/db/connection.js` | Pool, reconnect logs, graceful shutdown |
 | `src/db/constants.js` | Enums, date/time/code regexes, status transitions |
 | `src/db/collections.js` | JSON Schema validators + index specs |

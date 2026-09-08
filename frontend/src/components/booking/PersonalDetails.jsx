@@ -23,12 +23,12 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Please enter your name";
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Please enter your name";
     }
 
-    if (!formData.indexNumber.trim()) {
-      newErrors.indexNumber = "Please enter your index number";
+    if (!formData.studentIndex.trim()) {
+      newErrors.studentIndex = "Please enter your student index number";
     }
 
     if (!formData.phoneNumber.trim()) {
@@ -88,56 +88,57 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
           {/* Name */}
           <div>
             <label
-              htmlFor="name"
+              htmlFor="fullName"
               className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
             >
               Name <span className="text-red-500">*</span>
             </label>
 
             <input
-              id="name"
-              name="name"
+              id="fullName"
+              name="fullName"
               type="text"
-              value={formData.name}
+              value={formData.fullName}
               onChange={handleChange}
               placeholder="e.g. Akosua Boateng"
               className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
-                errors.name
+                errors.fullName
                   ? "border-red-400"
                   : "border-gray-200 focus:border-[#176b5f]"
               }`}
             />
 
-            {errors.name && (
-              <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+            {errors.fullName && (
+              <p className="mt-1 text-xs text-red-500">{errors.fullName}</p>
             )}
           </div>
 
           {/* Index Number */}
           <div>
             <label
-              htmlFor="indexNumber"
+              htmlFor="studentIndex"
               className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
             >
-              Index Number <span className="text-red-500">*</span>
+              Student Index Number <span className="text-red-500">*</span>
             </label>
 
             <input
-              id="indexNumber"
-              name="indexNumber"
+              id="studentIndex"
+              name="studentIndex"
               type="text"
-              value={formData.indexNumber}
+              value={formData.studentIndex}
               onChange={handleChange}
-              placeholder="e.g. 454356890"
+              placeholder="e.g. 20612345"
+              maxLength={8}
               className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
-                errors.indexNumber
+                errors.studentIndex
                   ? "border-red-400"
                   : "border-gray-200 focus:border-[#176b5f]"
               }`}
             />
 
-            {errors.indexNumber && (
-              <p className="mt-1 text-xs text-red-500">{errors.indexNumber}</p>
+            {errors.studentIndex && (
+              <p className="mt-1 text-xs text-red-500">{errors.studentIndex}</p>
             )}
           </div>
 

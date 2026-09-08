@@ -56,7 +56,10 @@ describe('patients HTTP', () => {
     const createdBody = await created.json();
     assert.equal(createdBody.fullName, 'Efua Darko');
     assert.equal(createdBody.studentIndex, '20620111');
+    assert.equal(createdBody.phone, '+233247001122');
     assert.equal(createdBody.phoneNumber, '+233247001122');
+    assert.equal(createdBody.nhisNumber, '12345678');
+    assert.equal(createdBody.nhis, '12345678');
 
     const found = await fetch(`${url}/api/patients`, {
       method: 'POST',
@@ -86,7 +89,9 @@ describe('patients HTTP', () => {
 
     const byPhone = await fetch(`${url}/api/patients/${encodeURIComponent('0208113344')}`);
     assert.equal(byPhone.status, 200);
-    assert.equal((await byPhone.json()).phoneNumber, '+233208113344');
+    const byPhoneBody = await byPhone.json();
+    assert.equal(byPhoneBody.phone, '+233208113344');
+    assert.equal(byPhoneBody.phoneNumber, '+233208113344');
   });
 
   it('GET returns 404 when the patient does not exist', async () => {

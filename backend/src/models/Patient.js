@@ -70,6 +70,9 @@ patientSchema.set('toJSON', {
   versionKey: false,
   transform(_doc, ret) {
     ret.id = String(ret._id);
+    // Aliases so HTTP clients and populate() consumers agree.
+    ret.phoneNumber = ret.phone ?? ret.phoneNumber ?? null;
+    ret.nhis = ret.nhisNumber ?? ret.nhis ?? null;
     return ret;
   },
 });

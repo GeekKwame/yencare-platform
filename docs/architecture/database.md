@@ -121,6 +121,8 @@ Stores registered students and walk-in patients.
 - `patients_phone_unique`: `{ phone: 1 }` (Unique)
 - `patients_studentIndex_unique`: `{ studentIndex: 1 }` (Unique, Sparse)
 
+HTTP JSON also emits `phoneNumber` (same E.164 as `phone`) and `nhis` (same as `nhisNumber`) so booking/SMS code that reads `patient.phone` after `Appointment.populate()` never gets `undefined`. See [REST API Reference](../api/reference.md).
+
 ---
 
 ### 3.2 `rooms`

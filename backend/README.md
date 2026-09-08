@@ -13,6 +13,9 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/health` | Liveness. **200** `{ "ok": true, "service": "yencare-api" }` |
 | `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
 | `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
+| `GET` | `/api/rooms` | Seeded rooms (`id` → `roomId`) |
+| `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
+| `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
 
 No auth on these routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
 
@@ -31,12 +34,14 @@ No auth on these routes. Identifier is an 8-digit KNUST index (`20612345`) or a 
 
 JSON (frontend / Postman) uses camelCase. MongoDB uses the Mongoose names.
 
-| JSON aliases | MongoDB | Rules |
+| JSON (request aliases) | MongoDB / populate / SMS | Rules |
 |---|---|---|
 | `fullName`, `full_name`, `patientName` | `fullName` | Required **to create**. 2–120 characters |
 | `studentIndex`, `student_index` | `studentIndex` | Optional for walk-ins. If present: **exactly 8 digits** |
-| `phoneNumber`, `phone_number`, `phone` | `phone` | Required **to create**. Ghana mobile; stored as E.164 (`+233…`) |
-| `nhis`, `nhisNumber`, `nhis_number` | `nhisNumber` | Optional |
+| `phone`, `phoneNumber`, `phone_number` | **`phone`** | Required **to create**. Ghana mobile; stored as E.164 (`+233…`) |
+| `nhisNumber`, `nhis`, `nhis_number` | **`nhisNumber`** | Optional |
+
+Responses include **both** `phone` and `phoneNumber` (same E.164 value) so Able’s `.populate('patientId', 'fullName phone studentIndex')` and the web client never read `undefined` for SMS.
 
 `POST` needs at least one of student index or phone so it can look someone up. Creating a **new** row also needs `fullName` and a valid phone (P02 + `Patient` schema).
 
@@ -47,7 +52,9 @@ JSON (frontend / Postman) uses camelCase. MongoDB uses the Mongoose names.
   "id": "68bf2c0e9c1a2b0012345678",
   "fullName": "Efua Darko",
   "studentIndex": "20620111",
+  "phone": "+233247001122",
   "phoneNumber": "+233247001122",
+  "nhisNumber": "12345678",
   "nhis": "12345678",
   "createdAt": "2026-09-08T14:00:00.000Z",
   "updatedAt": "2026-09-08T14:00:00.000Z"
@@ -98,6 +105,14 @@ First send → **201**. Same body again → **200** and the same `id`.
 | POST `"phoneNumber": "123"` | **400** |
 
 Walk-in (no index): `{ "fullName": "Kwame Ofori Atta", "phoneNumber": "024 555 1234" }`.
+
+**Clinic IDs for booking (Postman)** — after `npm run db:seed`:
+
+| Request | Use |
+|---|---|
+| `GET http://localhost:4000/api/rooms` | Copy `id` → `roomId` |
+| `GET http://localhost:4000/api/clinicians` | Copy `id` → `clinicianId` (`roomId` is populated) |
+| `GET http://localhost:4000/api/time-slots?date=2026-09-15&available=true` | Copy `id` → `timeSlotId` |
 
 ### curl
 
@@ -275,10 +290,10 @@ backend/
 ├── scripts/seed.js
 ├── scripts/send-test-sms.js
 ├── src/server.js               # Express entry (connect Mongo + listen)
-├── src/http/                   # app + /api/patients
+├── src/http/                   # app, /api/patients, /api/rooms, /api/clinicians, /api/time-slots
 ├── src/db/                     # mongoose connection + collection specs
 ├── src/models/                 # Patient, Appointment, Clinician, Room, TimeSlot
-├── src/patients/               # validate + find-or-create service
+├── src/patients/               # validate + find-or-create + phone/NHIS field aliases
 ├── src/sms/sendSms.js
 ├── src/sms/normalizePhone.js
 └── src/sms/providers/

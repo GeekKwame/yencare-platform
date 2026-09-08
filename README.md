@@ -8,7 +8,7 @@
 [![Express](https://img.shields.io/badge/Express-4.21-lightgrey.svg)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-7-brightgreen.svg)](https://www.mongodb.com/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-61%20passing-success.svg)](./backend/test/)
+[![Tests](https://img.shields.io/badge/Tests-66%20passing-success.svg)](./backend/test/)
 
 ---
 
@@ -49,8 +49,9 @@ University healthcare corridors frequently suffer from severe overcrowding, long
 - **Missed Slot Recovery**: Formal No-Show confirmation workflow to release unused consultation slots.
 
 ### Backend REST API & SMS Gateway
-- **Idempotent Patient Registration**: `POST /api/patients` find-or-creates students without identity duplication.
+- **Idempotent Patient Registration**: `POST /api/patients` find-or-creates students without identity duplication. JSON returns both **`phone`** (Mongo / populate / SMS) and **`phoneNumber`**.
 - **Fast Identifier Lookup**: `GET /api/patients/:identifier` by 8-digit index or Ghana mobile number.
+- **Clinic Catalog**: `GET /api/rooms`, `GET /api/clinicians`, `GET /api/time-slots` for booking ObjectIds (Postman).
 - **Double-Booking Engine Guards**: MongoDB engine-level unique compound indexes preventing clinician or room clashes.
 - **Multi-Provider SMS Gateway**: Unified `sendSms(to, message)` engine supporting real Ghana mobile delivery (mNotify), developer simulation (Africa's Talking Sandbox), and offline terminal logging (Mock).
 
@@ -65,7 +66,7 @@ University healthcare corridors frequently suffer from severe overcrowding, long
 | **Backend API** | Node.js 18+, Express 4, Mongoose 8, Native MongoDB Driver | REST API service, business logic, validation |
 | **Persistence** | MongoDB 7 (via Docker Compose or MongoDB Atlas) | Schemas, unique indexes, double-booking prevention |
 | **SMS Gateway** | mNotify API v2, Africa's Talking SDK, Local Mock Provider | Outbound SMS delivery to MTN, Telecel, and AT Ghana |
-| **Testing** | Node.js Native Test Runner (`node:test`) | 61+ automated unit and integration tests |
+| **Testing** | Node.js Native Test Runner (`node:test`) | 66 automated unit and integration tests |
 
 ---
 
@@ -90,7 +91,7 @@ yencare-platform/
 │   ├── docs/                 # Backend schema & database architecture reference
 │   ├── scripts/              # Migration (`migrate.js`), seed (`seed.js`), test SMS
 │   ├── src/                  # Express app, HTTP routes, models, services, SMS providers
-│   └── test/                 # 61+ automated unit and integration tests (node:test)
+│   └── test/                 # 66 automated unit and integration tests (node:test)
 │
 ├── frontend/                 # Public web application (React 19 + TailwindCSS v4 + Vite)
 │   ├── package.json          # Dependencies & scripts
@@ -173,7 +174,7 @@ npm run db:seed
 | Target | Command | URL | Description |
 |---|---|---|---|
 | **Interactive Prototype** | `npm run dev` | `http://localhost:5173/` | Complete 30-screen clinical simulation hub |
-| **Backend Express API** | `npm run dev:api` | `http://localhost:4000/` | Express REST API (`GET /health`, `/api/patients`) |
+| **Backend Express API** | `npm run dev:api` | `http://localhost:4000/` | Express REST API (`/health`, `/api/patients`, `/api/rooms`, `/api/clinicians`, `/api/time-slots`) |
 | **Public Frontend** | `npm run dev:frontend` | `http://localhost:5174/` | Public web client connected to Express API |
 
 ### Available Root Commands
@@ -193,7 +194,7 @@ npm run db:migrate        # Apply collection validators and unique indexes
 npm run db:seed           # Populate sample demo clinicians, rooms, and schedule
 
 # Testing
-npm run test:backend      # Execute all 61 backend unit & integration tests
+npm run test:backend      # Execute all 66 backend unit & integration tests
 npm run sms:test          # Send a test SMS via configured provider (Mock / mNotify / AT)
 ```
 
@@ -226,7 +227,8 @@ npm run test:backend
 ```
 
 Tests validate:
-- Patient find-or-create API (`POST /api/patients`) and identifier lookups (`GET /api/patients/:identifier`).
+- Patient find-or-create API (`POST /api/patients`) and identifier lookups (`GET /api/patients/:identifier`), including dual `phone` / `phoneNumber` JSON.
+- Clinic catalog (`GET /api/rooms`, `/api/clinicians`, `/api/time-slots`).
 - Ghana telephone normalization (E.164 conversion and local 0-prefix formatting).
 - Speakable reference code generation (`YC-XXXX`).
 - Mongoose schema integrity and double-booking compound index constraints.

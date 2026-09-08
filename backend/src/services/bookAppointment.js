@@ -7,6 +7,7 @@
 
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
+import { resolvePatientPhone } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 
 /**
@@ -27,12 +28,8 @@ export async function createAppointment(data) {
     return { appointment, sms: { ok: false, error: 'Patient not found for SMS' } };
   }
 
-  // Resilient to either field name — Able's Appointment.js populate() call
-  // expects `phone`, but the patients API response used `phoneNumber`.
-  // Rather than depend on that being resolved/renamed correctly everywhere,
-  // accept whichever field is actually present so this never silently
-  // breaks if the Patient schema changes or the two don't match.
-  const phone = patient.phone ?? patient.phoneNumber;
+  // Mongo stores `phone`. HTTP JSON also exposes `phoneNumber`.
+  const phone = resolvePatientPhone(patient);
   if (!phone) {
     console.error(
       '[booking] Appointment created but patient has no phone field (checked "phone" and "phoneNumber"):',

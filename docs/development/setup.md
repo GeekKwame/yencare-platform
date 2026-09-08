@@ -163,7 +163,7 @@ npm run dev:frontend
 
 | Port | Service | Configuration Variable | Purpose |
 |---|---|---|---|
-| **4000** | Express API Server | `PORT=4000` (`backend/.env`) | REST endpoints (`/health`, `/api/patients`) |
+| **4000** | Express API Server | `PORT=4000` (`backend/.env`) | REST endpoints (`/health`, `/api/patients`, `/api/rooms`, `/api/clinicians`, `/api/time-slots`) |
 | **5173** | Interactive Prototype | Default Vite Port (`ui/prototype`) | Complete clinical simulation & scenario tester |
 | **5174** | Public Web Frontend | Default Vite Port (`frontend/`) | Public web app connected to backend API |
 | **27017** | MongoDB Engine | `MONGODB_URI` (`backend/.env`) | Local database storage (via Docker) |
@@ -174,6 +174,6 @@ npm run dev:frontend
 
 Confirm your setup is operational:
 1. `GET http://localhost:4000/health` returns `{"ok":true,"service":"yencare-api"}`.
-2. `npm run test:backend` executes and passes all 61 automated tests.
+2. `npm run test:backend` executes and passes all 66 automated tests.
 3. Prototype runs at `http://localhost:5173/` and allows walking through booking screens P01–P07.
 4. Terminal displays `[SMS mock] to=+233...` when registering a patient or booking in mock mode.

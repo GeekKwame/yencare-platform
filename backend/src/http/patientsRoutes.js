@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { serializePatient } from '../patients/serialize.js';
+import { asyncHandler } from './asyncHandler.js';
 
 /**
  * @param {ReturnType<import('../patients/service.js').createPatientService>} patientService
@@ -18,10 +19,4 @@ export function createPatientsRouter(patientService) {
   }));
 
   return router;
-}
-
-function asyncHandler(fn) {
-  return (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
 }

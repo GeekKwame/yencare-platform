@@ -5,8 +5,8 @@ import ClinicSelection from "./ClinicSelection";
 import ServiceSelection from "./ServiceSelection";
 
 const initialFormData = {
-  name: "",
-  indexNumber: "",
+  fullName: "",
+  studentIndex: "",
   phoneNumber: "",
   nhisNumber: "",
   clinic: "",

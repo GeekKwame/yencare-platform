@@ -85,6 +85,8 @@ npm run db:seed:dry
 npm run db:seed
 ```
 
+After seed, copy ObjectIds for Postman booking bodies from `GET /api/rooms`, `GET /api/clinicians`, and `GET /api/time-slots?date=2026-09-15&available=true`.
+
 ---
 
 ## 4. Troubleshooting Index Conflicts

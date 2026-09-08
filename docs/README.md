@@ -48,7 +48,7 @@ yencare-platform/
 │   ├── docker-compose.yml    # Local MongoDB 7 service
 │   ├── scripts/              # Migration (`migrate.js`), seed (`seed.js`), SMS testing
 │   ├── src/                  # Express app, HTTP routes, models, services, SMS providers
-│   └── test/                 # Node.js native test runner suite (61+ passing tests)
+│   └── test/                 # Node.js native test runner suite (66 passing tests)
 │
 ├── frontend/                 # Public web application (React 19 + Vite + TailwindCSS v4)
 │   ├── src/pages/            # Home, Appointments, Queue, StaffPortal, NotFound

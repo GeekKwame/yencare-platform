@@ -84,11 +84,13 @@ Content-Type: application/json
 |---|---|---|---|
 | `fullName` | `string` | Required to create | Full name of the patient (2 to 120 characters). Aliases: `full_name`, `patientName`. |
 | `studentIndex`| `string` | Optional | KNUST student index number. If provided, must be **exactly 8 numeric digits** (e.g., `"20612345"`). Aliases: `student_index`. |
-| `phoneNumber` | `string` | Required to create | Ghana telephone number. Accepted formats: `024 123 4567`, `0241234567`, `241234567`, `233241234567`, `+233241234567`. Stored in E.164 (`+233...`). Aliases: `phone_number`, `phone`. |
-| `nhis` | `string` | Optional | National Health Insurance Scheme card number. Trimmed string. Aliases: `nhisNumber`, `nhis_number`. |
+| `phone` / `phoneNumber` | `string` | Required to create | Ghana telephone number. Accepted formats: `024 123 4567`, `0241234567`, `241234567`, `233241234567`, `+233241234567`. **Mongo / `Appointment.populate()` / SMS use `phone`.** HTTP also accepts `phoneNumber` and `phone_number`. Stored as E.164 (`+233...`). |
+| `nhis` / `nhisNumber` | `string` | Optional | National Health Insurance Scheme card number. Mongo stores **`nhisNumber`**. HTTP also accepts `nhis` and `nhis_number`. |
 
 > [!NOTE]
-> At least one identifier (`studentIndex` or `phoneNumber`) must be present in the request body for lookup. Creating a **new** patient also requires `fullName` and a valid `phoneNumber`.
+> At least one identifier (`studentIndex` or `phone` / `phoneNumber`) must be present for lookup. Creating a **new** patient also requires `fullName` and a valid Ghana phone.
+>
+> Responses always include **both** `phone` and `phoneNumber` (same E.164 value) so booking/SMS code that reads `patient.phone` never gets `undefined`.
 
 #### Example Request Body (Student Booking)
 ```json
@@ -116,7 +118,9 @@ Content-Type: application/json
   "id": "66dd8f1a2b0c3d0012e45678",
   "fullName": "Akosua Boateng",
   "studentIndex": "20612345",
+  "phone": "+233241234567",
   "phoneNumber": "+233241234567",
+  "nhisNumber": "NHIS-992144",
   "nhis": "NHIS-992144",
   "createdAt": "2026-09-08T14:30:00.000Z",
   "updatedAt": "2026-09-08T14:30:00.000Z"
@@ -182,7 +186,9 @@ None.
     "id": "66dd8f1a2b0c3d0012e45678",
     "fullName": "Akosua Boateng",
     "studentIndex": "20612345",
+    "phone": "+233241234567",
     "phoneNumber": "+233241234567",
+    "nhisNumber": "NHIS-992144",
     "nhis": "NHIS-992144",
     "createdAt": "2026-09-08T14:30:00.000Z",
     "updatedAt": "2026-09-08T14:30:00.000Z"
@@ -217,6 +223,24 @@ curl -i http://localhost:4000/api/patients/%2B233241234567
 
 ---
 
+### 2.4 Clinic Catalog (IDs for booking / Postman)
+
+After `npm run db:seed`, these read-only lists return Mongo `id` values to copy into `POST /api/appointments` (when that route lands).
+
+| Method | Path | Query | Use the `id` as |
+|---|---|---|---|
+| `GET` | `/api/rooms` | — | `roomId` |
+| `GET` | `/api/clinicians` | — | `clinicianId` (`roomId` is populated) |
+| `GET` | `/api/time-slots` | `date=2026-09-15`, `clinicSite=students-clinic`, `available=true` | `timeSlotId` |
+
+```bash
+curl -s http://localhost:4000/api/rooms
+curl -s http://localhost:4000/api/clinicians
+curl -s "http://localhost:4000/api/time-slots?date=2026-09-15&available=true"
+```
+
+---
+
 ## 3. Client Integration Service Examples (JavaScript)
 
 ### 3.1 Patient Service Wrapper (`frontend/src/services/patients.js`)
@@ -226,10 +250,16 @@ import api from "./api";
 
 /**
  * Register a new patient or look up an existing record.
- * @param {Object} data - { fullName, studentIndex, phoneNumber, nhis }
+ * @param {Object} data - { fullName, studentIndex, phoneNumber | phone, nhis | nhisNumber }
+ * Response includes both `phone` (Mongo / SMS) and `phoneNumber`.
  */
 export async function registerPatient(data) {
-  const response = await api.post("/patients", data);
+  const response = await api.post("/patients", {
+    fullName: data.fullName ?? data.name,
+    studentIndex: data.studentIndex ?? data.indexNumber,
+    phoneNumber: data.phoneNumber ?? data.phone,
+    nhis: data.nhis ?? data.nhisNumber,
+  });
   return response.data;
 }
 
@@ -251,6 +281,7 @@ The following endpoints are defined in architecture specifications and frontend 
 
 ### 4.1 Create Appointment (`POST /api/appointments`) — Planned
 - **Purpose**: Creates an appointment reservation linked to an existing `patientId`, `timeSlotId`, `clinicianId`, and `roomId`.
+- **IDs**: Copy `id` from `GET /api/patients/:identifier`, `GET /api/clinicians`, `GET /api/rooms`, and `GET /api/time-slots`.
 - **Expected Payload**:
   ```json
   {

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connectDb, disconnectDb } from './db/connection.js';
 import { createApp } from './http/app.js';
+import { createMongoCatalog } from './http/mongoCatalog.js';
 import { createMongoPatientStore } from './patients/mongoStore.js';
 import { createPatientService } from './patients/service.js';
 
@@ -15,6 +16,7 @@ await connectDb();
 
 const app = createApp({
   patientService: createPatientService(createMongoPatientStore()),
+  catalog: createMongoCatalog(),
 });
 
 const server = app.listen(port, () => {

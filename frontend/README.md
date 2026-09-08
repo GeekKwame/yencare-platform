@@ -105,7 +105,7 @@ All commands can be run from within `frontend/` or from the repository root:
 The application integrates with the backend Express API via `src/services/`:
 
 ### 6.1 `patients.js`
-- `registerPatient(data)`: Posts to `POST /api/patients` to find-or-create a student record.
+- `registerPatient(data)`: Posts `{ fullName, studentIndex, phoneNumber, nhis }` to `POST /api/patients`. The JSON response includes **`phone` and `phoneNumber`** (same E.164 value). Use `phone` when talking to Mongo/SMS.
 - `lookupPatient(identifier)`: Queries `GET /api/patients/:identifier` using student index or Ghana phone number.
 
 ### 6.2 `appointments.js`

@@ -37,11 +37,13 @@ graph TB
         MockSMS["Local Mock Terminal SMS\n(Zero-cost Offline Development)"]
     end
 
-    StudentMobile -->|HTTP REST: /api/patients| Router
-    StaffDesktop -->|HTTP REST: /api/patients| Router
+    StudentMobile -->|HTTP REST: /api/patients /api/rooms /api/clinicians /api/time-slots| Router
+    StaffDesktop -->|HTTP REST: /api/patients /api/rooms /api/clinicians /api/time-slots| Router
     Router --> PatientService
+    Router --> CatalogService["Clinic Catalog (rooms, clinicians, slots)"]
     Router --> AppointmentService
     PatientService -->|Mongoose / Native Driver| Mongo
+    CatalogService -->|Mongoose| Mongo
     AppointmentService -->|Mongoose / Native Driver| Mongo
     AppointmentService --> SmsModule
     SmsModule -->|SMS_PROVIDER=mnotify| Mnotify
@@ -77,7 +79,9 @@ graph TB
   - `src/server.js`: Process entry point, connects to MongoDB, starts HTTP listener on `PORT` (default: `4000`).
   - `src/http/app.js`: Express app assembly, CORS configuration, body parsing (32kb limit), error handling middleware.
   - `src/http/patientsRoutes.js`: Controller layer for `/api/patients`.
+  - `src/http/catalogRoutes.js`: Read-only `/api/rooms`, `/api/clinicians`, `/api/time-slots` for booking ObjectIds.
   - `src/patients/service.js`: Domain service coordinating validation, normalization, and persistence.
+  - `src/patients/fields.js`: Shared `phone` / `phoneNumber` and NHIS alias resolution so SMS and `Appointment.populate()` never read `undefined`.
   - `src/models/`: Formal Mongoose models (`Patient`, `Clinician`, `Room`, `TimeSlot`, `Appointment`).
   - `src/sms/`: Unified SMS sending engine (`sendSms.js`) supporting multiple delivery backends.
 

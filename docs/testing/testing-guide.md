@@ -43,7 +43,9 @@ node --test ./test/referenceCode.test.js
 
 | Test File | Target Area | What It Validates |
 |---|---|---|
-| `test/patientsHttp.test.js` | Express HTTP Layer | `POST /api/patients` (200/201/400/409), `GET /api/patients/:identifier` (200/404), `GET /health` |
+| `test/patientsHttp.test.js` | Express HTTP Layer | `POST /api/patients` (200/201/400), `GET /api/patients/:identifier` (200/404), dual `phone` + `phoneNumber` on the JSON body, `GET /health` |
+| `test/catalogHttp.test.js` | Clinic catalog | `GET /api/rooms`, `/api/clinicians`, `/api/time-slots` return `id` values for Postman booking bodies |
+| `test/patientFields.test.js` | Field contract | `resolvePatientPhone` prefers Mongo `phone`; `Appointment.populateQueue` only selects schema paths |
 | `test/patientsService.test.js` | Patient Domain Logic | Find-or-create matching by student index or phone, 409 conflict detection between mismatched identities |
 | `test/validatePatient.test.js` | Validation & Aliasing | camelCase vs snake_case aliases, 8-digit student index validation, required fields |
 | `test/normalizePhone.test.js` | Ghana Phone Formatting | E.164 conversion (`+233...`), local 0-prefix formatting (`024...`), invalid number rejection |
@@ -52,6 +54,8 @@ node --test ./test/referenceCode.test.js
 | `test/migration.test.js` | Database Schema Migrations | Index conflict detection, idempotency of migration script in dry-run mode |
 | `test/sendSms.test.js` | SMS Abstraction Layer | Mock fallback when credentials are empty, error handling, parameter validation |
 | `test/mnotify.test.js` | mNotify Provider | Payload formatting, local phone number translation |
+
+Current suite size: **66** tests (`npm test` in `backend/`).
 
 ---
 

@@ -7,8 +7,14 @@ import api from "./api";
  * Contract: backend/README.md
  */
 export async function registerPatient(data) {
-  // data: { fullName, studentIndex, phoneNumber, nhis }
-  const response = await api.post("/patients", data);
+  // Request: { fullName, studentIndex, phoneNumber | phone, nhis | nhisNumber }
+  // Response includes both `phone` (Mongo / populate / SMS) and `phoneNumber`.
+  const response = await api.post("/patients", {
+    fullName: data.fullName ?? data.name,
+    studentIndex: data.studentIndex ?? data.indexNumber,
+    phoneNumber: data.phoneNumber ?? data.phone,
+    nhis: data.nhis ?? data.nhisNumber,
+  });
   return response.data;
 }
 

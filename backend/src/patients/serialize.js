@@ -1,3 +1,5 @@
+import { resolveNhis, resolvePatientPhone } from './fields.js';
+
 /**
  * @param {Date | string | null | undefined} value
  * @returns {string | null}
@@ -9,24 +11,23 @@ function iso(value) {
 }
 
 /**
- * Public patient record — matches frontend `registerPatient` / `lookupPatient`.
+ * Public patient record.
+ * `phone` / `nhisNumber` match Mongo + Appointment.populate().
+ * `phoneNumber` / `nhis` stay as aliases for the frontend client.
  *
  * @param {object} row
- * @param {string} row.id
- * @param {string} row.fullName
- * @param {string | null} [row.studentIndex]
- * @param {string | null} [row.phoneNumber]
- * @param {string | null} [row.nhis]
- * @param {Date | string | null} [row.createdAt]
- * @param {Date | string | null} [row.updatedAt]
  */
 export function serializePatient(row) {
+  const phone = resolvePatientPhone(row);
+  const nhis = resolveNhis(row);
   return {
     id: row.id,
     fullName: row.fullName,
     studentIndex: row.studentIndex ?? null,
-    phoneNumber: row.phoneNumber ?? null,
-    nhis: row.nhis ?? null,
+    phone,
+    phoneNumber: phone,
+    nhisNumber: nhis,
+    nhis,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

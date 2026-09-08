@@ -80,7 +80,7 @@ Before opening a pull request to merge into `main`, ensure:
    ```bash
    npm --prefix backend test
    ```
-   All 61+ unit and integration tests must pass without errors.
+   All 66 unit and integration tests must pass without errors.
 2. **Prototype Builds Cleanly**:
    ```bash
    npm run build
