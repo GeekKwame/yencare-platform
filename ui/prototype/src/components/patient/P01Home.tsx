@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
+import { YenCareLogo } from '../common/YenCareLogo';
 import { StatusBadge } from '../common/StatusBadge';
 import { CLINIC_SITE_LABELS } from '../../types/clinic';
-import { useAccraClock } from '../../lib/accraTime';
 
 export const P01Home: React.FC = () => {
   const { setPatientScreen, isAfterHours, currentPatientAppointment, getClinicActivity } = useClinic();
-  const { time, isOpen } = useAccraClock();
   const activity = getClinicActivity('students-clinic');
 
   useEffect(() => {
@@ -27,27 +26,14 @@ export const P01Home: React.FC = () => {
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center py-10 md:py-16 px-4">
       <div className="w-full max-w-[600px] bg-white border border-[#D8DCD9] shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-6 sm:p-10 text-center">
-        <div className="mb-6 flex flex-col items-center">
-          <div className="w-13 h-13 bg-[#E7F5F1] border border-[#99D5C8] text-[#087F6C] flex items-center justify-center mb-3">
-            <span className="material-symbols-outlined text-3xl">
-              health_and_safety
-            </span>
-          </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-semibold text-[#087F6C] bg-[#E7F5F1] uppercase tracking-wider">
-            <span>KNUST Students' Clinic</span>
-          </span>
-          <span className="mt-2 text-[11px] font-medium text-[#66706B] flex items-center gap-2">
-            <span className="font-mono tabular-nums">{time} Accra</span>
-            <span className={isOpen ? 'text-[#087F6C] font-semibold' : 'text-[#C53030] font-semibold'}>
-              {isOpen ? 'Open now · 08:00–20:00' : 'Closed · opens 08:00'}
-            </span>
-          </span>
+        <div className="mb-7 flex flex-col items-center">
+          <YenCareLogo variant="hero" />
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111111] mb-2">
-          Akwaaba. Welcome to YɛnCare
+          Akwaaba
         </h1>
-        <p className="text-sm sm:text-base text-[#66706B] font-normal mb-2 max-w-md mx-auto leading-relaxed">
+        <p className="text-sm sm:text-base text-[#66706B] font-normal mb-8 max-w-md mx-auto leading-relaxed">
           Book a visit at KNUST Students' Clinic, find an existing appointment, or check your queue.
         </p>
         <div className="grid grid-cols-3 gap-2 mb-8 text-left">

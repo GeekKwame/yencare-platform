@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { StaffScreen } from '../../types/clinic';
+import { YenCareLogo } from '../common/YenCareLogo';
 
 interface StaffLayoutProps {
   children: React.ReactNode;
@@ -22,16 +23,8 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-[#F7F8F7] flex flex-col md:flex-row text-[#111111]">
       {/* Mobile Top Header */}
       <header className="md:hidden bg-white border-b border-[#D8DCD9] px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#111111] text-white flex items-center justify-center font-bold text-xs">
-            Y
-          </div>
-          <div>
-            <span className="block font-bold text-sm tracking-tight text-[#111111]">YɛnCare</span>
-            <span className="block text-[10px] font-semibold text-[#66706B] uppercase tracking-wide">
-              KNUST Students' Clinic
-            </span>
-          </div>
+        <div className="flex items-center">
+          <YenCareLogo variant="nav" />
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 text-[10px] font-semibold uppercase bg-[#E7F5F1] text-[#087F6C] border border-[#99D5C8]">
@@ -98,19 +91,8 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
       <aside className="hidden md:flex flex-col w-[240px] shrink-0 bg-white border-r border-[#D8DCD9] min-h-screen sticky top-0 p-4 justify-between">
         <div className="space-y-5">
           {/* Brand Header */}
-          <div className="flex items-center gap-2.5 px-1 py-1">
-            <div className="w-8 h-8 bg-[#111111] text-white flex items-center justify-center font-bold text-sm">
-              Y
-            </div>
-            <div>
-              <div className="font-bold text-sm tracking-tight text-[#111111] flex items-center gap-1.5 leading-tight">
-                <span>YɛnCare</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#087F6C]"></span>
-              </div>
-              <span className="text-[10px] font-semibold text-[#66706B] uppercase tracking-wider block">
-                KNUST Students' Clinic
-              </span>
-            </div>
+          <div className="px-1 py-1">
+            <YenCareLogo variant="sidebar" className="mx-auto" />
           </div>
 
           {/* Staff Profile Card */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
+import { YenCareLogo } from '../common/YenCareLogo';
 
 export const S07SessionExpired: React.FC = () => {
   const { setStaffScreen, setIsSessionExpired } = useClinic();
@@ -13,6 +14,9 @@ export const S07SessionExpired: React.FC = () => {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-[460px] bg-white border border-[#D8DCD9] shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-6 md:p-8 text-center">
+        <div className="mb-6 flex justify-center">
+          <YenCareLogo variant="auth" />
+        </div>
         <div className="w-14 h-14 bg-[#F7F8F7] border border-[#D8DCD9] rounded-full mx-auto flex items-center justify-center mb-5 text-[#66706B]">
           <span className="material-symbols-outlined text-3xl">
             lock_clock

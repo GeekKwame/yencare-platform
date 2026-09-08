@@ -3,6 +3,7 @@ import { useClinic } from '../../context/ClinicContext';
 import { ClinicSite, CLINIC_SITE_LABELS } from '../../types/clinic';
 import { sortByQueueToken } from '../../lib/clinicQueue';
 import { useAccraClock } from '../../lib/accraTime';
+import { YenCareLogo } from '../common/YenCareLogo';
 
 export const S10DisplayBoard: React.FC = () => {
   const { appointments, setStaffScreen } = useClinic();
@@ -23,14 +24,11 @@ export const S10DisplayBoard: React.FC = () => {
     <div className="min-h-screen bg-[#111111] text-white flex flex-col px-4 py-4 md:px-8 md:py-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#2A2A2A]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#087F6C] text-white flex items-center justify-center font-bold text-lg">
-            Y
+          <div className="bg-white px-3 py-2">
+            <YenCareLogo variant="nav" />
           </div>
-          <div>
-            <div className="font-bold text-lg tracking-tight">YɛnCare</div>
-            <div className="text-[11px] uppercase tracking-wider text-[#8A948F]">
-              KNUST {siteLabel} · Corridor display
-            </div>
+          <div className="text-[11px] uppercase tracking-wider text-[#8A948F]">
+            KNUST {siteLabel} · Corridor display
           </div>
         </div>
 
