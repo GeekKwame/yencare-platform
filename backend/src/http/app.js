@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { createPatientsRouter } from './patientsRoutes.js';
+import appointmentRoutes from '../routes/appointmentsRoutes.js';
 
 /**
  * @param {{ patientService: ReturnType<import('../patients/service.js').createPatientService> }} deps
@@ -16,6 +17,7 @@ export function createApp({ patientService }) {
   });
 
   app.use('/api/patients', createPatientsRouter(patientService));
+  app.use('/api/appointments', appointmentRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });

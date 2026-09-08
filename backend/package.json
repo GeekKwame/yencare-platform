@@ -31,15 +31,9 @@
   "license": "UNLICENSED",
   "dependencies": {
     "africastalking": "^0.8.3",
-<<<<<<< HEAD
-    "dotenv": "^17.2.2",
-    "express": "^5.2.1",
-    "mongoose": "^9.9.5"
-=======
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.2.1",
     "mongoose": "^9.9.5"
->>>>>>> origin/main
   }
 }
