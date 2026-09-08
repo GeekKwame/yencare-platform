@@ -187,7 +187,7 @@ export const P01Home: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setPatientScreen('P18_QUEUE')}
+              onClick={() => setPatientScreen(app ? 'P18_QUEUE' : 'P09_FIND')}
               className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#E7F5F1] text-[#087F6C] border border-[#D8DCD9] hover:border-[#087F6C] text-xs font-semibold tracking-wide transition-colors shrink-0 cursor-pointer"
             >
               <span>Check queue</span>

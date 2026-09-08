@@ -5,7 +5,21 @@ import { Button } from '../common/Button';
 export const P12CancelConfirm: React.FC = () => {
   const { currentPatientAppointment, cancelAppointment, setPatientScreen } = useClinic();
   const app = currentPatientAppointment;
-  const refCode = app?.id || 'YC-4821';
+
+  if (!app) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center py-8 px-4">
+        <div className="text-center">
+          <p className="text-sm text-[#66706B]">No appointment in this session to cancel.</p>
+          <Button variant="secondary" size="md" onClick={() => setPatientScreen('P01_HOME')} className="mt-4">
+            Return Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const refCode = app.id;
 
   const handleCancel = () => {
     cancelAppointment(refCode);

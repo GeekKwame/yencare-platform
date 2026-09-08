@@ -18,7 +18,21 @@ export const S04PatientDetail: React.FC = () => {
 
   const [showSmsModal, setShowSmsModal] = useState(false);
 
-  const app = appointments.find((a) => a.id === selectedStaffAppointmentId) || appointments[0];
+  const app = appointments.find((a) => a.id === selectedStaffAppointmentId);
+
+  if (!app) {
+    return (
+      <div className="max-w-xl space-y-4">
+        <p className="text-sm text-[#66706B]">
+          Select a student from the roster or desk lookup to open their record.
+        </p>
+        <Button variant="secondary" size="md" onClick={() => setStaffScreen('S03_APPOINTMENTS')}>
+          Open roster
+        </Button>
+      </div>
+    );
+  }
+
   const isBooked = app.status === 'BOOKED';
   const isArrived = app.status === 'CHECKED_IN';
   const canStaffCheckIn = isBooked || isArrived;

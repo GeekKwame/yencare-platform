@@ -3,12 +3,15 @@ import { useClinic } from '../../context/ClinicContext';
 import { Button } from '../common/Button';
 
 export const P08SlotTaken: React.FC = () => {
-  const { setPatientScreen, setSimulateSlotTaken } = useClinic();
+  const { setPatientScreen, setSimulateSlotTaken, draftBooking } = useClinic();
 
   const handleChooseAnother = () => {
     setSimulateSlotTaken(false);
     setPatientScreen('P04_05_DATE_TIME');
   };
+
+  const doctorName = draftBooking.doctor?.name || 'the selected clinician';
+  const attempted = [draftBooking.date, draftBooking.time].filter(Boolean).join(', ') || 'the selected slot';
 
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center py-8 md:py-14 px-4">
@@ -28,18 +31,18 @@ export const P08SlotTaken: React.FC = () => {
           This time slot was just taken
         </h1>
         <p className="text-sm text-[#66706B] font-normal mb-6 leading-relaxed max-w-md mx-auto">
-          Another patient just confirmed the 10:00 AM slot while you were completing your booking. Please choose another available consultation time.
+          Another student confirmed {draftBooking.time || 'this time'} while you were completing your booking. Please choose another available consultation time.
         </p>
 
         {/* Selected Slot Information */}
         <div className="border border-[#D8DCD9] p-4 bg-[#F7F8F7] text-left mb-6 text-xs space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Doctor:</span>
-            <span className="font-semibold text-[#111111]">Dr. Kwame Boateng</span>
+            <span className="font-semibold text-[#111111]">{doctorName}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Attempted Slot:</span>
-            <span className="font-semibold text-[#C53030] line-through">Tue 15 Sep 2026, 10:00 AM</span>
+            <span className="font-semibold text-[#C53030] line-through">{attempted}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B] font-normal">Status:</span>
