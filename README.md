@@ -265,7 +265,7 @@ After first deploy, verify:
 ### Pull Request CI (`main`)
 GitHub Actions workflow file: `.github/workflows/pr-ci.yml`.
 
-On every pull request targeting `main`, CI runs:
+On every pull request targeting `main`, every push to `main`, and on manual dispatch, CI runs:
 1. Backend tests (`backend`: `npm ci`, `npm test`)
 2. Frontend build (`frontend`: `npm ci`, `npm run build`)
 3. Prototype build (`ui/prototype`: `npm ci`, `npm run build`)
