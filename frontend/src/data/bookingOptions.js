@@ -51,6 +51,24 @@ export const AVAILABLE_DATES = [
   { iso: "2026-09-18", day: "Friday", label: "18 Sep 2026" },
 ];
 
+/** Include today so a booking can appear on Staff Portal's "today" roster. */
+export function getAvailableDates() {
+  const now = new Date();
+  const iso = now.toISOString().slice(0, 10);
+  const day = now.toLocaleDateString("en-GB", { weekday: "long" });
+  const label = now.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const dates = [...AVAILABLE_DATES];
+  if (!dates.some((date) => date.iso === iso)) {
+    dates.unshift({ iso, day, label });
+  }
+  return dates;
+}
+
 /** Prototype 30-minute consultation slots (display + 24h value). */
 export const TIME_SLOTS = [
   { value: "08:30", label: "8:30 AM" },
@@ -76,7 +94,7 @@ export function getClinician(id) {
 }
 
 export function getDateOption(iso) {
-  return AVAILABLE_DATES.find((date) => date.iso === iso) || null;
+  return getAvailableDates().find((date) => date.iso === iso) || null;
 }
 
 export function getTimeSlot(value) {
@@ -92,7 +110,7 @@ export function visitTypeLabel(id) {
 }
 
 export function formatDateLabel(iso) {
-  const found = getDateOption(iso);
+  const found = getAvailableDates().find((date) => date.iso === iso);
   if (found) return `${found.day} ${found.label}`;
   return iso || "—";
 }

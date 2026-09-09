@@ -19,11 +19,21 @@ import {
   getArriveByLabel,
   visitTypeLabel,
 } from "../../data/bookingOptions";
+import { createAppointment } from "../../services/appointments";
+import { listClinicians } from "../../services/catalog";
+
+function resolveRoomId(clinician) {
+  const room = clinician?.roomId;
+  if (!room) return null;
+  if (typeof room === "string") return room;
+  return room.id || room._id || null;
+}
 
 const ReviewBooking = ({ formData, onBack, onReset }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
   const clinicLabel = clinicSiteLabel(formData.clinicSite);
   const serviceLabel = visitTypeLabel(formData.visitType);
@@ -31,17 +41,56 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
   const timeLabel = formatTimeLabel(formData.appointmentTime);
   const arriveBy = getArriveByLabel(formData.appointmentTime);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setIsSubmitting(true);
+    setConfirmError("");
 
-    // Local confirmation scaffold (same step as prototype P06→P07).
-    // Live createAppointment wiring stays for a later backend-connected pass.
-    setTimeout(() => {
-      const code = `YC-${Math.floor(1000 + Math.random() * 9000)}`;
-      setBookingRef(code);
-      setIsSubmitting(false);
+    try {
+      if (!formData.patientId) {
+        throw new Error("Patient record is missing. Go back to Your Details and continue again.");
+      }
+
+      const clinicians = await listClinicians();
+      const match =
+        clinicians.find(
+          (clinician) =>
+            clinician.name === formData.clinician &&
+            clinician.clinicSite === formData.clinicSite,
+        ) || clinicians.find((clinician) => clinician.name === formData.clinician);
+
+      if (!match) {
+        throw new Error(
+          "Could not find that clinician in the clinic catalog. Run `npm run db:seed` in backend, then try again.",
+        );
+      }
+
+      const roomId = resolveRoomId(match);
+      if (!roomId) {
+        throw new Error("Clinician has no room assigned. Re-seed the clinic catalog and try again.");
+      }
+
+      const created = await createAppointment({
+        patientId: formData.patientId,
+        clinicianId: match.id,
+        roomId,
+        clinicSite: formData.clinicSite,
+        visitType: formData.visitType,
+        appointmentDate: formData.appointmentDate,
+        appointmentTime: formData.appointmentTime,
+      });
+
+      setBookingRef(created.referenceCode || created.id);
       setIsConfirmed(true);
-    }, 600);
+    } catch (err) {
+      const apiMessage = err.response?.data?.error || err.response?.data?.message;
+      setConfirmError(
+        apiMessage ||
+          err.message ||
+          "Could not confirm this booking. Check that the API is running and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isConfirmed) {
@@ -110,9 +159,10 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
               <div>
                 <p className="text-sm font-bold text-green-800">SMS Confirmation</p>
                 <p className="mt-0.5 text-xs text-green-700">
-                  Keep your phone handy. Confirmation details for{" "}
-                  <strong>{formData.phoneNumber}</strong>
-                  {arriveBy ? ` include arrive-by ${arriveBy}` : ""}.
+                  {formData.phoneNumber
+                    ? `Confirmation SMS will be sent to ${formData.phoneNumber} when the booking is saved.`
+                    : "Confirmation SMS is sent when the booking is saved."}
+                  {arriveBy ? ` Arrive by ${arriveBy}.` : ""}
                 </p>
               </div>
             </div>
@@ -247,6 +297,10 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
         <strong>{arriveBy ? `by ${arriveBy}` : "15 minutes prior"}</strong> to your scheduled time at{" "}
         {clinicLabel || "the clinic"}. If you cannot make it, please cancel or reschedule via the portal so your slot can be released.
       </div>
+
+      {confirmError && (
+        <p className="mt-4 text-sm font-medium text-red-500 text-center">{confirmError}</p>
+      )}
 
       <button
         type="button"

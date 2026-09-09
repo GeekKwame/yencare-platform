@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock } from "react-icons/fa";
 import {
-  AVAILABLE_DATES,
+  getAvailableDates,
   TIME_SLOTS,
   formatDateLabel,
   formatTimeLabel,
@@ -11,6 +11,7 @@ import {
 const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
   const arriveBy = getArriveByLabel(formData.appointmentTime);
+  const availableDates = getAvailableDates();
 
   const handleContinue = () => {
     if (!formData.appointmentDate || !formData.appointmentTime) {
@@ -62,7 +63,7 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
           Available dates
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {AVAILABLE_DATES.map((date) => (
+          {availableDates.map((date) => (
             <button
               key={date.iso}
               type="button"
