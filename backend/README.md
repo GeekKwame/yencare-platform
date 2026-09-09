@@ -151,6 +151,26 @@ In `frontend/`:
 
 Now the frontend booking form can register patients and book appointments without getting `"Unable to connect to the server"`.
 
+### Render staging deployment
+
+This repository includes a Render blueprint at `../render.yaml` that deploys this API from `backend/`.
+
+Configure these required environment variables in the Render dashboard for the staging service:
+- `MONGODB_URI` (staging Atlas URI)
+- `MNOTIFY_API_KEY` (mNotify API v2 key)
+- `MNOTIFY_SENDER_ID` (approved sender ID, max 11 chars)
+
+Recommended defaults for staging:
+- `NODE_ENV=production`
+- `SMS_PROVIDER=mnotify`
+- `PORT=4000`
+
+Verification checklist:
+1. Trigger a Render deploy from your staging branch.
+2. Open `https://<your-render-service>.onrender.com/health`.
+3. Confirm HTTP `200` and body `{ "ok": true, "service": "yencare-api" }`.
+4. Confirm secrets are only set in Render dashboard and not committed to Git.
+
 ### Postman
 
 1. Start the API (`npm run dev` in `backend`). Confirm `GET http://localhost:4000/health` returns **200**.

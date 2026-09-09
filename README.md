@@ -241,7 +241,40 @@ When running `npm run dev` at `http://localhost:5173/`:
 
 ---
 
-## 10. Development Workflow & Contributing
+## 10. Staging Deployment & PR CI
+
+### Render Staging (Backend API)
+- Render blueprint file: `render.yaml` (repo root).
+- Service root directory: `backend/`.
+- Health endpoint: `GET /health` (must return HTTP `200`).
+
+Set these environment variables in the Render dashboard (do not commit secrets):
+- `MONGODB_URI` (MongoDB Atlas staging connection string)
+- `MNOTIFY_API_KEY` (mNotify API v2 key)
+- `MNOTIFY_SENDER_ID` (approved sender, e.g. `YenCare`)
+
+Recommended additional values:
+- `NODE_ENV=production`
+- `SMS_PROVIDER=mnotify`
+- `PORT=4000`
+
+After first deploy, verify:
+1. Open `https://<your-render-service>.onrender.com/health`.
+2. Confirm a `200` response with `{ "ok": true, "service": "yencare-api" }`.
+
+### Pull Request CI (`main`)
+GitHub Actions workflow file: `.github/workflows/pr-ci.yml`.
+
+On every pull request targeting `main`, CI runs:
+1. Backend tests (`backend`: `npm ci`, `npm test`)
+2. Frontend build (`frontend`: `npm ci`, `npm run build`)
+3. Prototype build (`ui/prototype`: `npm ci`, `npm run build`)
+
+Merges should proceed only after all checks are green.
+
+---
+
+## 11. Development Workflow & Contributing
 
 The team follows a Git feature-branch workflow.
 
@@ -263,7 +296,7 @@ Before opening a pull request, confirm:
 
 ---
 
-## 11. Documentation Directory
+## 12. Documentation Directory
 
 For in-depth architectural, operational, and API specifications, consult our central documentation portal in [`docs/`](./docs/README.md):
 
