@@ -65,19 +65,91 @@ Responses include **both** `phone` and `phoneNumber` (same E.164 value) so Ableâ
 
 Error body: `{ "error": "Patient not found" }`.
 
-### Run locally
+### Run locally (Frontend & Backend Setup Guide)
 
+The frontend app expects the backend API to be running on `http://localhost:4000` with routes under `/api`. Follow these steps to get the backend and database running locally:
+
+#### 1. Configure backend environment
 ```bash
 cd backend
+# On Windows (cmd/PowerShell):
 copy .env.example .env
-# Set MONGODB_URI (Atlas or local). Optional local DB: docker compose up -d
-npm install
-npm run db:migrate
-npm test
-npm run dev
+# On macOS / Linux:
+cp .env.example .env
 ```
 
-API: [http://localhost:4000](http://localhost:4000). Frontend: `VITE_API_BASE_URL=http://localhost:4000/api` (see `frontend/.env.example`).
+In `backend/.env`, choose how MongoDB will run:
+- **Local Docker (recommended for offline dev)**:
+  ```env
+  MONGODB_URI=mongodb://127.0.0.1:27017/yencare
+  SMS_PROVIDER=mock
+  PORT=4000
+  ```
+- **MongoDB Atlas (cloud)**: paste your Atlas connection string as `MONGODB_URI`.
+
+> [!NOTE]
+> Setting `SMS_PROVIDER=mock` allows appointments to be booked without sending real SMS or requiring live mNotify credentials.
+
+#### 2. Start local MongoDB with Docker Compose
+`docker-compose.yml` is located inside the `backend/` directory.
+
+**If you are in the `backend/` directory:**
+```bash
+docker compose up -d
+```
+
+**If you are in the project root directory:**
+```bash
+docker compose -f backend/docker-compose.yml up -d
+```
+
+> [!WARNING]
+> Running `docker compose up` from the root directory without `-f backend/docker-compose.yml` will fail with:
+> `no configuration file provided: not found`.
+
+To check that MongoDB is healthy and running:
+```bash
+docker compose ps
+```
+*(To stop MongoDB later: `docker compose down` inside `backend/`)*
+
+#### 3. Install dependencies, migrate, and seed data
+Seeding is **essential** for the frontend booking flow so rooms, clinicians, and time slots exist in the database:
+```bash
+# Inside backend/
+npm install
+npm run db:migrate
+npm run db:seed
+```
+*(Or from the repository root: `npm run db:migrate && npm run db:seed`)*
+
+#### 4. Start the backend API server
+```bash
+# Inside backend/
+npm run dev
+
+# OR from repository root:
+npm run dev:api
+```
+
+Verify the server is running by visiting:
+- [http://localhost:4000/health](http://localhost:4000/health) â†’ returns `{ "ok": true, "service": "yencare-api" }`
+
+#### 5. Configure the Frontend
+In `frontend/`:
+1. Ensure `frontend/.env` exists (copy from `frontend/.env.example`):
+   ```env
+   VITE_API_BASE_URL=http://localhost:4000/api
+   ```
+2. Start the frontend dev server:
+   ```bash
+   cd frontend
+   npm run dev
+   # OR from repository root:
+   npm run dev:frontend
+   ```
+
+Now the frontend booking form can register patients and book appointments without getting `"Unable to connect to the server"`.
 
 ### Postman
 
@@ -332,6 +404,9 @@ Share keys with Able and Emmanuella privately. Do not put them in git. `backend/
 
 | Symptom | What to check |
 |---|---|
+| Frontend: `"Unable to connect to the server"` | Backend server is not running on port 4000. Run `npm run dev` in `backend/` and verify `frontend/.env` has `VITE_API_BASE_URL=http://localhost:4000/api`. |
+| Docker: `no configuration file provided: not found` | You are running `docker compose` from the project root instead of `backend/`. Run `cd backend && docker compose up -d` or `docker compose -f backend/docker-compose.yml up -d`. |
+| Frontend: Empty rooms, clinicians, or slots | The database has not been seeded. Run `npm run db:migrate && npm run db:seed` in `backend/`. |
 | API will not start / `[db] connection error` | `MONGODB_URI` in `backend/.env`. Atlas SRV needs network DNS; local: `docker compose up -d` |
 | Falls back to mock | `MNOTIFY_API_KEY` is empty |
 | mNotify 401 / invalid key | Generate the key under **API v2**, not an old v1 key |
