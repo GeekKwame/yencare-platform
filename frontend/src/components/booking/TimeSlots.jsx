@@ -1,22 +1,16 @@
 import { useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock } from "react-icons/fa";
-
-const availableDates = [
-  { id: 1, date: "15 Sep 2026", day: "Tuesday" },
-  { id: 2, date: "16 Sep 2026", day: "Wednesday" },
-  { id: 3, date: "17 Sep 2026", day: "Thursday" },
-  { id: 4, date: "18 Sep 2026", day: "Friday" },
-];
-
-const timeSlots = [
-  { id: 1, time: "9:00 AM - 10:00 AM" },
-  { id: 2, time: "10:00 AM - 11:00 AM" },
-  { id: 3, time: "11:00 AM - 12:00 PM" },
-  { id: 4, time: "1:00 PM - 2:00 PM" },
-];
+import {
+  AVAILABLE_DATES,
+  TIME_SLOTS,
+  formatDateLabel,
+  formatTimeLabel,
+  getArriveByLabel,
+} from "../../data/bookingOptions";
 
 const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
+  const arriveBy = getArriveByLabel(formData.appointmentTime);
 
   const handleContinue = () => {
     if (!formData.appointmentDate || !formData.appointmentTime) {
@@ -68,22 +62,22 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
           Available dates
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {availableDates.map((date) => (
+          {AVAILABLE_DATES.map((date) => (
             <button
-              key={date.id}
+              key={date.iso}
               type="button"
               onClick={() => {
-                updateFormData({ appointmentDate: date.date });
+                updateFormData({ appointmentDate: date.iso });
                 setError("");
               }}
               className={`rounded-xl border p-3 text-left transition ${
-                formData.appointmentDate === date.date
+                formData.appointmentDate === date.iso
                   ? "border-[#176b5f] bg-[#f5faf7] text-[#176b5f]"
                   : "border-gray-200 hover:border-[#9fc8bb]"
               }`}
             >
               <span className="block text-xs font-semibold text-gray-500">{date.day}</span>
-              <span className="mt-1 block text-sm font-bold">{date.date}</span>
+              <span className="mt-1 block text-sm font-bold">{date.label}</span>
             </button>
           ))}
         </div>
@@ -95,21 +89,21 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
           Available times
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {timeSlots.map((slot) => (
+          {TIME_SLOTS.map((slot) => (
             <button
-              key={slot.id}
+              key={slot.value}
               type="button"
               onClick={() => {
-                updateFormData({ appointmentTime: slot.time });
+                updateFormData({ appointmentTime: slot.value });
                 setError("");
               }}
               className={`rounded-xl border p-4 text-left text-sm font-semibold transition ${
-                formData.appointmentTime === slot.time
+                formData.appointmentTime === slot.value
                   ? "border-[#176b5f] bg-[#f5faf7] text-[#176b5f]"
                   : "border-gray-200 text-[#173b3a] hover:border-[#9fc8bb]"
               }`}
             >
-              {slot.time}
+              {slot.label}
             </button>
           ))}
         </div>
@@ -117,7 +111,11 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
 
       {formData.appointmentDate && formData.appointmentTime && (
         <div className="mt-6 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-sm text-[#76551f]">
-          <strong>Appointment:</strong> {formData.appointmentDate} at {formData.appointmentTime}. Please arrive 15 minutes before your appointment.
+          <strong>Appointment:</strong> {formatDateLabel(formData.appointmentDate)} at{" "}
+          {formatTimeLabel(formData.appointmentTime)}.
+          {arriveBy
+            ? ` Please arrive by ${arriveBy} (15 minutes before).`
+            : " Please arrive 15 minutes before your appointment."}
         </div>
       )}
 

@@ -1,36 +1,23 @@
 import { useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaCheck } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
+import { CLINICIANS } from "../../data/bookingOptions";
 
 const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
 
-  const doctors = [
-    {
-      id: 1,
-      name: "Dr. Kwame Boateng",
-      room: "General Clinic · Room 1",
-      position: "Senior Medical Officer",
-    },
-    {
-      id: 2,
-      name: "Dr. Ama Serwaa",
-      room: "General Clinic · Room 2",
-      position: "Medical Officer",
-    },
-  ];
-
   const handleSelect = (doctor) => {
     updateFormData({
+      clinicianId: doctor.id,
       clinician: doctor.name,
-      clinicianRoom: doctor.room,
+      clinicianRoom: doctor.roomLabel,
     });
 
     setError("");
   };
 
   const handleContinue = () => {
-    if (!formData.clinician) {
+    if (!formData.clinicianId) {
       setError("Please select a doctor");
       return;
     }
@@ -71,8 +58,8 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
 
       {/* Doctors */}
       <div className="mt-8 space-y-4">
-        {doctors.map((doctor) => {
-          const isSelected = formData.clinician === doctor.name;
+        {CLINICIANS.map((doctor) => {
+          const isSelected = formData.clinicianId === doctor.id;
 
           return (
             <button
@@ -96,7 +83,7 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
                 </p>
 
                 <p className="mt-1.5 text-xs font-medium text-gray-500 sm:text-sm">
-                  {doctor.room}
+                  {doctor.roomLabel}
                 </p>
 
                 <p className="mt-1.5 text-xs font-semibold text-[#176b5f] sm:text-sm">

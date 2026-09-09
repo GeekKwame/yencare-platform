@@ -13,8 +13,10 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/health` | Liveness. **200** `{ "ok": true, "service": "yencare-api" }` |
 | `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
 | `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
+| `GET` | `/api/appointments` | List appointments (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
 | `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
 | `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
+| `PATCH` | `/api/appointments/:id/status` | Transition status (e.g. `BOOKED` → `CHECKED_IN`) |
 | `GET` | `/api/rooms` | Seeded rooms (`id` → `roomId`) |
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |

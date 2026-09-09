@@ -1,20 +1,30 @@
 import api from "./api";
+import { DEFAULT_CLINIC_SITE, todayIsoDate } from "../data/mockAppointments";
 
 export async function createAppointment(data) {
   const response = await api.post("/appointments", data);
   return response.data;
 }
 
-export async function getTodaysAppointments(clinic) {
-  // Guessed contract — confirm with Able once this endpoint exists
+/**
+ * @param {string} [clinicSite]
+ * @param {string} [date] YYYY-MM-DD
+ */
+export async function getTodaysAppointments(
+  clinicSite = DEFAULT_CLINIC_SITE,
+  date = todayIsoDate(),
+) {
   const response = await api.get("/appointments", {
-    params: { date: new Date().toISOString().slice(0, 10), clinic },
+    params: { date, clinicSite },
   });
   return response.data;
 }
 
+/**
+ * @param {string} id
+ * @param {string} status
+ */
 export async function updateAppointmentStatus(id, status) {
-  // Guessed contract — confirm with Able once this endpoint exists
   const response = await api.patch(`/appointments/${id}/status`, { status });
   return response.data;
 }

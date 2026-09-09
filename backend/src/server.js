@@ -7,6 +7,7 @@ import { createMongoCatalog } from './http/mongoCatalog.js';
 import { Appointment } from './models/Appointment.js';
 import { createMongoPatientStore } from './patients/mongoStore.js';
 import { createPatientService } from './patients/service.js';
+import { listAppointments, updateAppointmentStatus } from './services/appointmentOps.js';
 import { createAppointment } from './services/bookAppointment.js';
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,6 +23,8 @@ const app = createApp({
   appointmentService: {
     createAppointment,
     findByReference: (ref) => Appointment.findByReference(ref),
+    listAppointments,
+    updateStatus: updateAppointmentStatus,
   },
 });
 

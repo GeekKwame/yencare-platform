@@ -12,8 +12,9 @@ const initialFormData = {
   studentIndex: "",
   phoneNumber: "",
   nhisNumber: "",
-  clinic: "",
-  service: "",
+  clinicSite: "",
+  visitType: "",
+  clinicianId: "",
   clinician: "",
   clinicianRoom: "",
   appointmentDate: "",
@@ -49,16 +50,10 @@ const BookingForm = () => {
   };
 
   const renderStep = () => {
-    // Step 1: Welcome
     if (step === 1) {
-      return (
-        <WelcomeForm
-          onStartBooking={handleStartBooking}
-        />
-      );
+      return <WelcomeForm onStartBooking={handleStartBooking} />;
     }
 
-    // Step 2: Personal Details
     if (step === 2) {
       return (
         <PersonalDetails
@@ -70,7 +65,6 @@ const BookingForm = () => {
       );
     }
 
-    // Step 3: Clinic Selection
     if (step === 3) {
       return (
         <ClinicSelection
@@ -82,7 +76,6 @@ const BookingForm = () => {
       );
     }
 
-    // Step 4: Service Selection
     if (step === 4) {
       return (
         <ServiceSelection
@@ -94,7 +87,6 @@ const BookingForm = () => {
       );
     }
 
-    // Step 5: Clinician Selection
     if (step === 5) {
       return (
         <ClinicianSelection
@@ -106,7 +98,6 @@ const BookingForm = () => {
       );
     }
 
-    // Step 6: Appointment Time
     if (step === 6) {
       return (
         <TimeSlots
@@ -118,7 +109,6 @@ const BookingForm = () => {
       );
     }
 
-    // Step 7: Review Booking
     if (step === 7) {
       return (
         <ReviewBooking

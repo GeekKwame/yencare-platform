@@ -12,18 +12,31 @@ import {
   FaStethoscope,
   FaUser,
 } from "react-icons/fa";
+import {
+  clinicSiteLabel,
+  formatDateLabel,
+  formatTimeLabel,
+  getArriveByLabel,
+  visitTypeLabel,
+} from "../../data/bookingOptions";
 
 const ReviewBooking = ({ formData, onBack, onReset }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
 
+  const clinicLabel = clinicSiteLabel(formData.clinicSite);
+  const serviceLabel = visitTypeLabel(formData.visitType);
+  const dateLabel = formatDateLabel(formData.appointmentDate);
+  const timeLabel = formatTimeLabel(formData.appointmentTime);
+  const arriveBy = getArriveByLabel(formData.appointmentTime);
+
   const handleConfirm = () => {
     setIsSubmitting(true);
 
-    // Simulate booking confirmation dispatch
+    // Local confirmation scaffold (same step as prototype P06→P07).
+    // Live createAppointment wiring stays for a later backend-connected pass.
     setTimeout(() => {
-      // Generate a speakable reference code matching YC-XXXX pattern
       const code = `YC-${Math.floor(1000 + Math.random() * 9000)}`;
       setBookingRef(code);
       setIsSubmitting(false);
@@ -35,7 +48,6 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
     return (
       <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
         <div className="text-center">
-          {/* Success Icon */}
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#99d5c8] bg-[#e7f5f1] text-[#087f6c]">
             <FaCheck className="text-2xl" />
           </div>
@@ -50,9 +62,9 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
 
           <p className="mt-2 text-sm text-gray-500">
             Your appointment has been booked. Present your reference code at the clinic reception.
+            You do not have a queue number yet — reception check-in assigns your live queue token.
           </p>
 
-          {/* Reference Code Card */}
           <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-[#176b5f]/40 bg-[#f5faf7] p-5 text-center">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c37d32]">
               Booking Reference
@@ -65,7 +77,6 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
             </p>
           </div>
 
-          {/* Summary Recap */}
           <div className="mx-auto mt-6 max-w-md divide-y divide-gray-100 rounded-2xl border border-[#dce8df] bg-white text-left text-sm">
             <div className="flex justify-between p-3.5">
               <span className="text-xs font-medium text-gray-500">Patient</span>
@@ -73,7 +84,11 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
             </div>
             <div className="flex justify-between p-3.5">
               <span className="text-xs font-medium text-gray-500">Clinic</span>
-              <span className="font-semibold text-[#173b3a]">{formData.clinic}</span>
+              <span className="font-semibold text-[#173b3a]">{clinicLabel}</span>
+            </div>
+            <div className="flex justify-between p-3.5">
+              <span className="text-xs font-medium text-gray-500">Service</span>
+              <span className="font-semibold text-[#173b3a]">{serviceLabel}</span>
             </div>
             <div className="flex justify-between p-3.5">
               <span className="text-xs font-medium text-gray-500">Clinician</span>
@@ -84,26 +99,25 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
             <div className="flex justify-between p-3.5">
               <span className="text-xs font-medium text-gray-500">Scheduled Time</span>
               <span className="font-bold text-[#176b5f]">
-                {formData.appointmentDate} · {formData.appointmentTime}
+                {dateLabel} · {timeLabel}
               </span>
             </div>
           </div>
 
-          {/* SMS Notice */}
           <div className="mx-auto mt-6 max-w-md rounded-xl border border-green-200 bg-green-50 p-4 text-left">
             <div className="flex items-start gap-3">
               <FaCheckCircle className="mt-0.5 shrink-0 text-green-600" />
               <div>
-                <p className="text-sm font-bold text-green-800">SMS Confirmation Sent</p>
+                <p className="text-sm font-bold text-green-800">SMS Confirmation</p>
                 <p className="mt-0.5 text-xs text-green-700">
-                  A text with your booking code has been dispatched to{" "}
-                  <strong>{formData.phoneNumber}</strong>.
+                  Keep your phone handy. Confirmation details for{" "}
+                  <strong>{formData.phoneNumber}</strong>
+                  {arriveBy ? ` include arrive-by ${arriveBy}` : ""}.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Next Steps Buttons */}
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <Link
               to="/queue"
@@ -128,7 +142,6 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
 
   return (
     <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
-      {/* Back Button */}
       <button
         type="button"
         onClick={onBack}
@@ -138,7 +151,6 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
         Back
       </button>
 
-      {/* Header */}
       <div className="mt-6 text-center">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
           Confirmation
@@ -157,9 +169,7 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
         </p>
       </div>
 
-      {/* Review Cards Grid */}
       <div className="mt-8 space-y-4">
-        {/* Patient Details */}
         <div className="rounded-2xl border border-[#dce8df] bg-[#fbfdfc] p-5">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#176b5f]">
             <FaUser />
@@ -193,7 +203,6 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
           </div>
         </div>
 
-        {/* Clinical Details */}
         <div className="rounded-2xl border border-[#dce8df] bg-[#fbfdfc] p-5">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#176b5f]">
             <FaHospital />
@@ -202,13 +211,13 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
           <div className="mt-3 grid gap-3 sm:grid-cols-2 text-sm">
             <div>
               <span className="text-xs text-gray-500">Selected Clinic</span>
-              <p className="font-semibold text-[#173b3a]">{formData.clinic || "—"}</p>
+              <p className="font-semibold text-[#173b3a]">{clinicLabel}</p>
             </div>
             <div>
               <span className="text-xs text-gray-500">Service</span>
               <p className="font-semibold text-[#173b3a] flex items-center gap-1.5">
                 <FaStethoscope size={11} className="text-[#176b5f]" />
-                {formData.service || "—"}
+                {serviceLabel}
               </p>
             </div>
             <div>
@@ -222,24 +231,23 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
               <span className="text-xs text-gray-500">Consultation Schedule</span>
               <p className="font-semibold text-[#176b5f] flex items-center gap-1.5">
                 <FaCalendarAlt size={11} />
-                {formData.appointmentDate || "—"}
+                {dateLabel}
               </p>
               <p className="font-semibold text-[#176b5f] flex items-center gap-1.5 mt-0.5">
                 <FaClock size={11} />
-                {formData.appointmentTime || "—"}
+                {timeLabel}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Reminder Banner */}
       <div className="mt-6 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-xs leading-relaxed text-[#76551f] sm:text-sm">
-        <strong>Important:</strong> Please arrive <strong>15 minutes prior</strong> to your scheduled time at{" "}
-        {formData.clinic || "the clinic"}. If you cannot make it, please cancel or reschedule via the portal so your slot can be released.
+        <strong>Important:</strong> Please arrive{" "}
+        <strong>{arriveBy ? `by ${arriveBy}` : "15 minutes prior"}</strong> to your scheduled time at{" "}
+        {clinicLabel || "the clinic"}. If you cannot make it, please cancel or reschedule via the portal so your slot can be released.
       </div>
 
-      {/* Confirm Button */}
       <button
         type="button"
         disabled={isSubmitting}

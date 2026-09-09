@@ -2,6 +2,11 @@ import { useState } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { registerPatient } from "../../services/patients";
 import { useApiRequest } from "../../hooks/useApiRequest";
+import {
+  isValidFullName,
+  isValidGhanaPhone,
+  isValidStudentIndex,
+} from "../../data/bookingOptions";
 
 const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
   const [errors, setErrors] = useState({});
@@ -10,9 +15,14 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let nextValue = value;
+
+    if (name === "studentIndex") {
+      nextValue = value.replace(/\D/g, "").slice(0, 8);
+    }
 
     updateFormData({
-      [name]: value,
+      [name]: nextValue,
     });
 
     if (apiError) {
@@ -30,16 +40,16 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Please enter your name";
+    if (!isValidFullName(formData.fullName)) {
+      newErrors.fullName = "Please enter your full name";
     }
 
-    if (!formData.studentIndex.trim()) {
-      newErrors.studentIndex = "Please enter your student index number";
+    if (!isValidStudentIndex(formData.studentIndex)) {
+      newErrors.studentIndex = "Enter your 8-digit KNUST student index (e.g. 20612345)";
     }
 
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = "Please enter your phone number";
+    if (!isValidGhanaPhone(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Please enter a valid Ghana phone number (e.g. 024 123 4567)";
     }
 
     setErrors(newErrors);
@@ -55,10 +65,10 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
 
     try {
       const patient = await run({
-        fullName: formData.fullName,
-        studentIndex: formData.studentIndex,
-        phoneNumber: formData.phoneNumber,
-        nhis: formData.nhisNumber,
+        fullName: formData.fullName.trim(),
+        studentIndex: formData.studentIndex.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        nhis: formData.nhisNumber.trim() || undefined,
       });
 
       updateFormData({ patientId: patient.id });
@@ -192,7 +202,7 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
               type="tel"
               value={formData.phoneNumber}
               onChange={handleChange}
-              placeholder="e.g. 0200000000"
+              placeholder="e.g. 024 123 4567"
               className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
                 errors.phoneNumber
                   ? "border-red-400"

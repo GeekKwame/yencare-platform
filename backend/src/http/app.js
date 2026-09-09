@@ -15,6 +15,8 @@ import { createPatientsRouter } from './patientsRoutes.js';
  *   appointmentService?: {
  *     createAppointment: Function,
  *     findByReference?: Function,
+ *     listAppointments?: Function,
+ *     updateStatus?: Function,
  *   },
  * }} deps
  */

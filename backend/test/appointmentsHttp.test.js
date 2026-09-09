@@ -146,4 +146,84 @@ describe('appointments HTTP', () => {
     const body = await res.json();
     assert.equal(body.error, 'Appointment not found');
   });
+
+  it('GET /api/appointments lists appointments filtered by date and clinicSite', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      listAppointments: async (filters) => {
+        assert.equal(filters.date, '2026-09-10');
+        assert.equal(filters.clinicSite, 'students-clinic');
+        return [
+          {
+            id: '68bf2c0e9c1a2b0012345678',
+            referenceCode: 'YC-4821',
+            status: 'BOOKED',
+            clinicSite: 'students-clinic',
+            appointmentDate: '2026-09-10',
+            appointmentTime: '10:00',
+            visitType: 'general-opd',
+            patientId: { fullName: 'Akosua Boateng' },
+          },
+        ];
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(
+      `${url}/api/appointments?date=2026-09-10&clinicSite=students-clinic`,
+    );
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.length, 1);
+    assert.equal(body[0].referenceCode, 'YC-4821');
+  });
+
+  it('PATCH /api/appointments/:id/status transitions BOOKED to CHECKED_IN', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      updateStatus: async (id, status) => {
+        assert.equal(id, '68bf2c0e9c1a2b0012345678');
+        assert.equal(status, 'CHECKED_IN');
+        return {
+          id,
+          referenceCode: 'YC-4821',
+          status: 'CHECKED_IN',
+        };
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(`${url}/api/appointments/68bf2c0e9c1a2b0012345678/status`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'CHECKED_IN' }),
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.status, 'CHECKED_IN');
+  });
+
+  it('PATCH /api/appointments/:id/status returns 400 on illegal transition', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      updateStatus: async () => {
+        const err = new Error('Illegal status transition: COMPLETED → CHECKED_IN');
+        err.name = 'ValidationError';
+        err.status = 400;
+        throw err;
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(`${url}/api/appointments/68bf2c0e9c1a2b0012345678/status`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'CHECKED_IN' }),
+    });
+
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.match(body.error, /Illegal status transition/);
+  });
 });

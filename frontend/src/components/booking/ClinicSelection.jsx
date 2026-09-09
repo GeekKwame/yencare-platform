@@ -5,6 +5,7 @@ import {
   FaCheck,
   FaClock,
 } from "react-icons/fa";
+import { CLINIC_SITES } from "../../data/bookingOptions";
 
 const ClinicSelection = ({
   formData,
@@ -14,33 +15,16 @@ const ClinicSelection = ({
 }) => {
   const [error, setError] = useState("");
 
-  const clinics = [
-    {
-      id: 1,
-      name: "Students' Clinic",
-      location: "KNUST University Health Services",
-      openTime: "8:00 AM",
-      closeTime: "4:00 PM",
-    },
-    {
-      id: 2,
-      name: "Social Science Block GF7",
-      location: "KNUST University Health Services",
-      openTime: "8:00 AM",
-      closeTime: "4:00 PM",
-    },
-  ];
-
   const handleSelect = (clinic) => {
     updateFormData({
-      clinic: clinic.name,
+      clinicSite: clinic.id,
     });
 
     setError("");
   };
 
   const handleContinue = () => {
-    if (!formData.clinic) {
+    if (!formData.clinicSite) {
       setError("Please select a clinic");
       return;
     }
@@ -82,8 +66,8 @@ const ClinicSelection = ({
 
       {/* Clinic Options */}
       <div className="mt-7 space-y-4">
-        {clinics.map((clinic) => {
-          const isSelected = formData.clinic === clinic.name;
+        {CLINIC_SITES.map((clinic) => {
+          const isSelected = formData.clinicSite === clinic.id;
 
           return (
             <button
@@ -132,7 +116,7 @@ const ClinicSelection = ({
                       </p>
 
                       <p className="mt-0.5 text-xs font-semibold text-gray-600 sm:text-sm">
-                        {clinic.openTime} – {clinic.closeTime}
+                        {clinic.hoursLabel}
                       </p>
                     </div>
                   </div>
@@ -181,5 +165,3 @@ const ClinicSelection = ({
 };
 
 export default ClinicSelection;
-
-

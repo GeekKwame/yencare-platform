@@ -5,28 +5,21 @@ import {
   FaStethoscope,
   FaExclamationTriangle,
 } from "react-icons/fa";
+import { VISIT_TYPES } from "../../data/bookingOptions";
 
 const ServiceSelection = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
 
-  const services = [
-    "General OPD",
-    "Follow-up/ Review",
-    "Dressing",
-
-    "Other Clinic Service",
-  ];
-
   const handleSelect = (service) => {
     updateFormData({
-      service: service,
+      visitType: service.id,
     });
 
     setError("");
   };
 
   const handleContinue = () => {
-    if (!formData.service) {
+    if (!formData.visitType) {
       setError("Please select a service");
       return;
     }
@@ -67,20 +60,20 @@ const ServiceSelection = ({ formData, updateFormData, onNext, onBack }) => {
 
       {/* Services */}
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {services.map((service) => (
+        {VISIT_TYPES.map((service) => (
           <button
-            key={service}
+            key={service.id}
             type="button"
             onClick={() => handleSelect(service)}
             className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
-              formData.service === service
+              formData.visitType === service.id
                 ? "border-[#176b5f] bg-[#f5faf7] text-[#176b5f]"
                 : "border-gray-200 text-[#173b3a] hover:border-[#176b5f]"
             }`}
           >
             <div
               className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                formData.service === service
+                formData.visitType === service.id
                   ? "bg-[#176b5f] text-white"
                   : "bg-[#dce8df] text-[#176b5f]"
               }`}
@@ -88,7 +81,7 @@ const ServiceSelection = ({ formData, updateFormData, onNext, onBack }) => {
               <FaStethoscope size={14} />
             </div>
 
-            <span className="text-sm font-semibold">{service}</span>
+            <span className="text-sm font-semibold">{service.label}</span>
           </button>
         ))}
       </div>
