@@ -56,6 +56,10 @@ const ServiceSelection = ({ formData, updateFormData, onNext, onBack }) => {
           What do you need?
         </h2>
 
+        <span className="mt-2 inline-block rounded-full bg-[#dce8df] px-3 py-1 text-xs font-semibold text-[#173b3a]">
+          Step 3 of 6
+        </span>
+
         <p className="mt-2 text-sm leading-6 text-gray-500">
           Select the service you need for your appointment.
         </p>
