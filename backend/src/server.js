@@ -4,8 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { connectDb, disconnectDb } from './db/connection.js';
 import { createApp } from './http/app.js';
 import { createMongoCatalog } from './http/mongoCatalog.js';
+import { Appointment } from './models/Appointment.js';
 import { createMongoPatientStore } from './patients/mongoStore.js';
 import { createPatientService } from './patients/service.js';
+import { createAppointment } from './services/bookAppointment.js';
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(backendRoot, '.env') });
@@ -17,6 +19,10 @@ await connectDb();
 const app = createApp({
   patientService: createPatientService(createMongoPatientStore()),
   catalog: createMongoCatalog(),
+  appointmentService: {
+    createAppointment,
+    findByReference: (ref) => Appointment.findByReference(ref),
+  },
 });
 
 const server = app.listen(port, () => {

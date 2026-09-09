@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import { createAppointmentsRouter } from './appointmentsRoutes.js';
 import { createCatalogRouter } from './catalogRoutes.js';
 import { createPatientsRouter } from './patientsRoutes.js';
 
@@ -11,9 +12,13 @@ import { createPatientsRouter } from './patientsRoutes.js';
  *     listClinicians: Function,
  *     listTimeSlots: Function,
  *   },
+ *   appointmentService?: {
+ *     createAppointment: Function,
+ *     findByReference?: Function,
+ *   },
  * }} deps
  */
-export function createApp({ patientService, catalog }) {
+export function createApp({ patientService, catalog, appointmentService }) {
   const app = express();
 
   app.use(cors());
@@ -24,6 +29,10 @@ export function createApp({ patientService, catalog }) {
   });
 
   app.use('/api/patients', createPatientsRouter(patientService));
+
+  if (appointmentService) {
+    app.use('/api/appointments', createAppointmentsRouter(appointmentService));
+  }
 
   if (catalog) {
     app.use('/api', createCatalogRouter(catalog));
@@ -39,6 +48,10 @@ export function createApp({ patientService, catalog }) {
         error: err.message,
         ...(err.details ? { details: err.details } : {}),
       });
+    }
+
+    if (err?.name === 'ValidationError' || err?.name === 'CastError') {
+      return res.status(400).json({ error: err.message });
     }
 
     if (err instanceof SyntaxError && 'body' in err) {

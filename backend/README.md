@@ -13,6 +13,8 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/health` | Liveness. **200** `{ "ok": true, "service": "yencare-api" }` |
 | `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
 | `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
+| `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
+| `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
 | `GET` | `/api/rooms` | Seeded rooms (`id` → `roomId`) |
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
@@ -113,6 +115,68 @@ Walk-in (no index): `{ "fullName": "Kwame Ofori Atta", "phoneNumber": "024 555 1
 | `GET http://localhost:4000/api/rooms` | Copy `id` → `roomId` |
 | `GET http://localhost:4000/api/clinicians` | Copy `id` → `clinicianId` (`roomId` is populated) |
 | `GET http://localhost:4000/api/time-slots?date=2026-09-15&available=true` | Copy `id` → `timeSlotId` |
+
+### Appointment Booking (`POST /api/appointments`)
+
+Create an appointment and automatically dispatch an SMS confirmation to the patient's phone number.
+
+**Request Body (`POST /api/appointments`)**:
+
+```json
+{
+  "patientId": "68bf2c0e9c1a2b0012345678",
+  "clinicianId": "68bf2c0e9c1a2b0012345671",
+  "roomId": "68bf2c0e9c1a2b0012345672",
+  "clinicSite": "students-clinic",
+  "visitType": "general-opd",
+  "appointmentDate": "2026-09-15",
+  "appointmentTime": "10:00",
+  "timeSlotId": "68bf2c0e9c1a2b0012345673"
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `patientId` | Yes | MongoDB ObjectId of the patient (`POST /api/patients`) |
+| `clinicianId` | Yes | MongoDB ObjectId of the clinician (`GET /api/clinicians`) |
+| `roomId` | Yes | MongoDB ObjectId of the consultation room (`GET /api/rooms`) |
+| `clinicSite` | Yes | `students-clinic` or `social-science-gf7` |
+| `visitType` | Yes | `general-opd`, `follow-up`, `dressing`, or `other` |
+| `appointmentDate` | Yes | Date string formatted as `YYYY-MM-DD` |
+| `appointmentTime` | Yes | 24-hour time string formatted as `HH:mm` (e.g. `10:00`) |
+| `timeSlotId` | Optional | ObjectId of the booked time slot (`GET /api/time-slots`) |
+
+**Response Body (`201 Created`)**:
+
+```json
+{
+  "id": "68bf2c0e9c1a2b0012345680",
+  "referenceCode": "YC-4821",
+  "status": "BOOKED",
+  "patientId": "68bf2c0e9c1a2b0012345678",
+  "clinicianId": "68bf2c0e9c1a2b0012345671",
+  "roomId": "68bf2c0e9c1a2b0012345672",
+  "clinicSite": "students-clinic",
+  "visitType": "general-opd",
+  "appointmentDate": "2026-09-15",
+  "appointmentTime": "10:00",
+  "timeSlotId": "68bf2c0e9c1a2b0012345673",
+  "createdAt": "2026-09-09T08:00:00.000Z",
+  "sms": {
+    "ok": true
+  }
+}
+```
+
+**Lookup Booking (`GET /api/appointments/:reference`)**:
+
+Retrieve an existing booking by its speakable reference code (e.g., `YC-4821`) or MongoDB ObjectId:
+
+```bash
+curl -s http://localhost:4000/api/appointments/YC-4821
+```
+
+Returns **200** with populated `patientId`, `clinicianId`, `roomId`, and `timeSlotId`, or **404** if not found.
 
 ### curl
 
