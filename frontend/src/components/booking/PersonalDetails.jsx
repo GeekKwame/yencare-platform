@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { registerPatient } from "../../services/patients";
+import { useApiRequest } from "../../hooks/useApiRequest";
 
 const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
+  const { run, status } = useApiRequest(registerPatient);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -11,7 +15,6 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
       [name]: value,
     });
 
-    // Remove error when user starts correcting the field
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -40,18 +43,38 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinue = (e) => {
+  const handleContinue = async (e) => {
     e.preventDefault();
+    setApiError("");
 
     if (!validateForm()) return;
 
-    onNext();
+    try {
+      const patient = await run({
+        fullName: formData.fullName,
+        studentIndex: formData.studentIndex,
+        phoneNumber: formData.phoneNumber,
+        nhis: formData.nhisNumber,
+      });
+
+      updateFormData({ patientId: patient.id });
+      onNext();
+    } catch (err) {
+      if (err.response?.status === 400) {
+        setApiError(err.response.data?.message || "Please check your details and try again.");
+      } else if (err.response?.status === 409) {
+        setApiError(
+          "This student index and phone number belong to different patients. Please double-check your details."
+        );
+      } else {
+        setApiError("Something went wrong. Please try again.");
+      }
+    }
   };
 
   return (
     <main>
       <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
-        {/*  Back Button */}
         <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
           <button
             type="button"
@@ -63,7 +86,6 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
           </button>
         </div>
 
-        {/* Header */}
         <div className="flex flex-col items-center justify-center text-center">
           <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
             Personal Details
@@ -83,9 +105,7 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleContinue} className="mt-6 space-y-4">
-          {/* Name */}
           <div>
             <label
               htmlFor="fullName"
@@ -113,7 +133,6 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
             )}
           </div>
 
-          {/* Index Number */}
           <div>
             <label
               htmlFor="studentIndex"
@@ -142,7 +161,6 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
             )}
           </div>
 
-          {/* Phone Number */}
           <div>
             <label
               htmlFor="phoneNumber"
@@ -170,7 +188,6 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
             )}
           </div>
 
-          {/* NHIS Number */}
           <div>
             <label
               htmlFor="nhisNumber"
@@ -191,12 +208,16 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
             />
           </div>
 
+          {apiError && (
+            <p className="text-sm text-red-500 text-center">{apiError}</p>
+          )}
+
           <button
             type="submit"
-            className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f] cursor-pointer"
+            disabled={status === "loading"}
+            className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f] cursor-pointer disabled:opacity-60"
           >
-            <span>Continue</span>
-
+            <span>{status === "loading" ? "Saving..." : "Continue"}</span>
             <FaArrowRight size={12} className="absolute right-6" />
           </button>
         </form>
