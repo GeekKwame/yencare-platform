@@ -1,5 +1,4 @@
-import { FaArrowRight, FaCheckCircle } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { FaCheckCircle } from "react-icons/fa";
 
 const CareFeature = () => {
   return (

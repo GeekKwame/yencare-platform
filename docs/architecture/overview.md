@@ -59,9 +59,11 @@ graph TB
 - **Technology**: React 19, React Router v7/v8, Axios, TailwindCSS v4, Vite.
 - **Role**: Clean, lightweight web application providing student landing, appointment booking UI, queue checking, and staff portal access.
 - **API Integration**: Talks to `backend` through centralized Axios instance configured via `VITE_API_BASE_URL` (default: `http://localhost:4000/api`).
-- **Services**:
-  - `src/services/patients.js`: Handles `registerPatient()` and `lookupPatient()`.
+- **Services & Hooks**:
+  - `src/services/patients.js`: Handles `registerPatient()` (`POST /api/patients`) and `lookupPatient()` (`GET /api/patients/:identifier`).
   - `src/services/appointments.js`: Client abstraction for booking creation and management.
+  - `src/hooks/useApiRequest.js`: Reusable hook managing async `idle` / `loading` / `success` / `error` lifecycle.
+  - `src/components/booking/`: 4-step interactive booking flow (`BookingForm`, `WelcomeForm`, `PersonalDetails`, `ClinicSelection`, `ServiceSelection`) with patient registration.
 
 ### 3.2 Interactive Clinical Prototype & Simulator (`ui/prototype/`)
 - **Technology**: React 19, TypeScript, Vite, TailwindCSS v4, Custom Design Tokens.

@@ -1,4 +1,4 @@
-import { FaArrowRight, FaUsers } from "react-icons/fa";
+import { FaUsers } from "react-icons/fa";
 
 const Queue = () => {
   return (

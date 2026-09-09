@@ -1,5 +1,4 @@
 import {
-  FaArrowRight,
   FaCalendarAlt,
   FaMapMarkerAlt,
   FaSearch,

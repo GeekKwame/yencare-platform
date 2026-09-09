@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -110,8 +110,9 @@ const ServiceSelection = ({ formData, updateFormData, onNext, onBack }) => {
       {/* Buttons */}
       <div className="mt-6 flex justify-between gap-3">
         <button
-          type="submit"
-          className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f]"
+          type="button"
+          onClick={handleContinue}
+          className="relative flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f]"
         >
           <span>Continue</span>
 

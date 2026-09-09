@@ -1,10 +1,6 @@
 import {
-  FaClock,
   FaCalendarAlt,
   FaCheckCircle,
-  FaSearch,
-  FaArrowRight,
-  FaFacebookMessenger,
 } from "react-icons/fa";
 import BookingForm from "../components/booking/BookingForm";
 

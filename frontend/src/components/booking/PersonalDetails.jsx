@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { registerPatient } from "../../services/patients";
 import { useApiRequest } from "../../hooks/useApiRequest";
@@ -14,6 +14,10 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
     updateFormData({
       [name]: value,
     });
+
+    if (apiError) {
+      setApiError("");
+    }
 
     if (errors[name]) {
       setErrors((prev) => ({
@@ -60,14 +64,27 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
       updateFormData({ patientId: patient.id });
       onNext();
     } catch (err) {
-      if (err.response?.status === 400) {
-        setApiError(err.response.data?.message || "Please check your details and try again.");
-      } else if (err.response?.status === 409) {
+      if (!err.response) {
         setApiError(
-          "This student index and phone number belong to different patients. Please double-check your details."
+          "Unable to connect to the server. Please check your network connection and try again."
+        );
+      } else if (err.response.status === 400) {
+        setApiError(
+          err.response.data?.error ||
+            err.response.data?.message ||
+            "Please check your details and try again."
+        );
+      } else if (err.response.status === 409) {
+        setApiError(
+          err.response.data?.error ||
+            "This student index and phone number belong to different patients. Please double-check your details."
         );
       } else {
-        setApiError("Something went wrong. Please try again.");
+        setApiError(
+          err.response.data?.error ||
+            err.response.data?.message ||
+            "Something went wrong. Please try again."
+        );
       }
     }
   };
@@ -215,7 +232,7 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f] cursor-pointer disabled:opacity-60"
+            className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <span>{status === "loading" ? "Saving..." : "Continue"}</span>
             <FaArrowRight size={12} className="absolute right-6" />

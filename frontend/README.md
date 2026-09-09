@@ -35,6 +35,12 @@ frontend/
 ├── src/
 │   ├── assets/             # Brand logos (Yencare Logo.png)
 │   ├── components/         # Reusable UI sections & primitives
+│   │   ├── booking/        # Multi-step booking flow wizard
+│   │   │   ├── BookingForm.jsx      # Wizard coordinator & multi-step state container
+│   │   │   ├── WelcomeForm.jsx      # Step 1: Introduction & booking start trigger
+│   │   │   ├── PersonalDetails.jsx  # Step 2: Student details & POST /api/patients registration
+│   │   │   ├── ClinicSelection.jsx  # Step 3: Campus clinic post selection (Main vs GF7)
+│   │   │   └── ServiceSelection.jsx # Step 4: OPD / follow-up / dressing service selector
 │   │   ├── Nav.jsx         # Main site navigation bar with active route highlighting
 │   │   ├── Hero.jsx        # Value proposition header and quick CTA buttons
 │   │   ├── CareFeature.jsx # Key feature spotlight cards
@@ -54,14 +60,14 @@ frontend/
 │   │   └── NotFound.jsx    # 404 error catch-all page (*)
 │   │
 │   ├── services/           # Backend API integration layer
-│   │   ├── api.js          # Configured Axios instance (VITE_API_BASE_URL)
+│   │   ├── api.js          # Configured Axios instance (VITE_API_BASE_URL with localhost fallback)
 │   │   ├── patients.js     # Patient registration & lookup API calls
 │   │   └── appointments.js # Appointment creation client stub
 │   │
 │   ├── App.jsx             # Top-level shell router & layout container
-│   ├── index.css           # TailwindCSS v4 imports & theme styles
-│   └── main.jsx            # Application root mount
-│
+│   │   ├── index.css       # TailwindCSS v4 imports & theme styles
+│   │   └── main.jsx        # Application root mount
+│   │
 ├── .env.example            # Environment configuration template
 ├── package.json            # Dependencies and scripts
 └── vite.config.js          # Vite + React + Tailwind v4 plugin configuration
@@ -83,7 +89,7 @@ cp .env.example .env        # macOS / Linux
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `VITE_API_BASE_URL` | Yes | `http://localhost:4000/api` | Base URL of the backend API. Must include `/api` suffix. |
+| `VITE_API_BASE_URL` | Optional | `http://localhost:4000/api` | Base URL of the backend API. Must include `/api` suffix. Defaults to `http://localhost:4000/api` if omitted. |
 
 ---
 
@@ -100,9 +106,9 @@ All commands can be run from within `frontend/` or from the repository root:
 
 ---
 
-## 6. API Services Integration
+## 6. API Services Integration & Booking Flow
 
-The application integrates with the backend Express API via `src/services/`:
+The application integrates with the backend Express API via `src/services/` and `src/hooks/`:
 
 ### 6.1 `patients.js`
 - `registerPatient(data)`: Posts `{ fullName, studentIndex, phoneNumber, nhis }` to `POST /api/patients`. The JSON response includes **`phone` and `phoneNumber`** (same E.164 value). Use `phone` when talking to Mongo/SMS.
@@ -110,6 +116,14 @@ The application integrates with the backend Express API via `src/services/`:
 
 ### 6.2 `appointments.js`
 - `createAppointment(data)`: Client wrapper for `POST /api/appointments` (links patient, time slot, clinician, and room).
+
+### 6.3 Booking Wizard & Registration Flow
+- **`BookingForm.jsx`**: Coordinates 4-step wizard state (`WelcomeForm` → `PersonalDetails` → `ClinicSelection` → `ServiceSelection`).
+- **`PersonalDetails.jsx`**:
+  - Validates full name, 8-digit student index, and Ghana phone number.
+  - Submits to `POST /api/patients` via the `useApiRequest(registerPatient)` hook.
+  - Captures `patientId: patient.id` into centralized `formData` on successful registration/find-or-create.
+  - Gracefully displays backend error responses (`400` validation failures, `409` index/phone conflict, or network drops) and disables submission during loading.
 
 ---
 
