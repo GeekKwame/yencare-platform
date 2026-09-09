@@ -113,7 +113,7 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
           </h2>
 
           <span className="mt-2 rounded-full bg-[#dce8df] px-3 py-1 text-xs font-semibold text-[#173b3a]">
-            Step 2 of 3
+            Step 1 of 6
           </span>
 
           <p className="mt-3 max-w-xl text-center text-sm leading-6 text-gray-500">

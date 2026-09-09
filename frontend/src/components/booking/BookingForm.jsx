@@ -2,7 +2,10 @@ import { useState } from "react";
 import WelcomeForm from "./WelcomeForm";
 import PersonalDetails from "./PersonalDetails";
 import ClinicSelection from "./ClinicSelection";
+import ClinicianSelection from "./ClinicianSelection";
 import ServiceSelection from "./ServiceSelection";
+import TimeSlots from "./TimeSlots";
+import ReviewBooking from "./ReviewBooking";
 
 const initialFormData = {
   fullName: "",
@@ -11,6 +14,10 @@ const initialFormData = {
   nhisNumber: "",
   clinic: "",
   service: "",
+  clinician: "",
+  clinicianRoom: "",
+  appointmentDate: "",
+  appointmentTime: "",
 };
 
 const BookingForm = () => {
@@ -25,7 +32,7 @@ const BookingForm = () => {
   };
 
   const goToNextStep = () => {
-    setStep((prev) => Math.min(prev + 1, 4));
+    setStep((prev) => Math.min(prev + 1, 7));
   };
 
   const goToPreviousStep = () => {
@@ -36,11 +43,22 @@ const BookingForm = () => {
     setStep(2);
   };
 
+  const handleReset = () => {
+    setFormData(initialFormData);
+    setStep(1);
+  };
+
   const renderStep = () => {
+    // Step 1: Welcome
     if (step === 1) {
-      return <WelcomeForm onStartBooking={handleStartBooking} />;
+      return (
+        <WelcomeForm
+          onStartBooking={handleStartBooking}
+        />
+      );
     }
 
+    // Step 2: Personal Details
     if (step === 2) {
       return (
         <PersonalDetails
@@ -52,6 +70,7 @@ const BookingForm = () => {
       );
     }
 
+    // Step 3: Clinic Selection
     if (step === 3) {
       return (
         <ClinicSelection
@@ -63,14 +82,54 @@ const BookingForm = () => {
       );
     }
 
-    return (
-      <ServiceSelection
-        formData={formData}
-        updateFormData={updateFormData}
-        onNext={goToNextStep}
-        onBack={goToPreviousStep}
-      />
-    );
+    // Step 4: Service Selection
+    if (step === 4) {
+      return (
+        <ServiceSelection
+          formData={formData}
+          updateFormData={updateFormData}
+          onNext={goToNextStep}
+          onBack={goToPreviousStep}
+        />
+      );
+    }
+
+    // Step 5: Clinician Selection
+    if (step === 5) {
+      return (
+        <ClinicianSelection
+          formData={formData}
+          updateFormData={updateFormData}
+          onNext={goToNextStep}
+          onBack={goToPreviousStep}
+        />
+      );
+    }
+
+    // Step 6: Appointment Time
+    if (step === 6) {
+      return (
+        <TimeSlots
+          formData={formData}
+          updateFormData={updateFormData}
+          onNext={goToNextStep}
+          onBack={goToPreviousStep}
+        />
+      );
+    }
+
+    // Step 7: Review Booking
+    if (step === 7) {
+      return (
+        <ReviewBooking
+          formData={formData}
+          onBack={goToPreviousStep}
+          onReset={handleReset}
+        />
+      );
+    }
+
+    return null;
   };
 
   return <>{renderStep()}</>;
