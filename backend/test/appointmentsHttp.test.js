@@ -226,4 +226,33 @@ describe('appointments HTTP', () => {
     const body = await res.json();
     assert.match(body.error, /Illegal status transition/);
   });
+
+  it('POST /api/appointments rejects double-booking conflict with 409', async () => {
+    const mockService = {
+      createAppointment: async () => {
+        const err = new Error('This time slot is already booked for this clinician');
+        err.status = 409;
+        throw err;
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(`${url}/api/appointments`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        patientId: '68bf2c0e9c1a2b0012345670',
+        clinicianId: '68bf2c0e9c1a2b0012345671',
+        roomId: '68bf2c0e9c1a2b0012345672',
+        clinicSite: 'students-clinic',
+        visitType: 'general-opd',
+        appointmentDate: '2026-09-15',
+        appointmentTime: '11:00',
+      }),
+    });
+
+    assert.equal(res.status, 409);
+    const body = await res.json();
+    assert.match(body.error, /already booked/i);
+  });
 });

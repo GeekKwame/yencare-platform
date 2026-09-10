@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   FaClock,
   FaCalendarAlt,
@@ -77,8 +78,8 @@ const WelcomeForm = ({ onStartBooking }) => {
           />
         </button>
 
-        <button
-          type="button"
+        <Link
+          to="/queue"
           className="group flex w-full cursor-pointer items-center gap-3 rounded-full border border-[#d5dfda] bg-white px-5 py-3.5 text-sm font-bold text-[#173b3a] transition duration-300 hover:border-[#176b5f] hover:bg-[#f5faf7] hover:text-[#176b5f]"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#edf5ed] text-[#176b5f]">
@@ -91,7 +92,7 @@ const WelcomeForm = ({ onStartBooking }) => {
             size={12}
             className="ml-auto opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100"
           />
-        </button>
+        </Link>
 
         <div className="flex items-center gap-4 py-2">
           <div className="h-px flex-1 bg-[#e6eee9]" />
@@ -115,13 +116,13 @@ const WelcomeForm = ({ onStartBooking }) => {
               </p>
             </div>
 
-            <button
-              type="button"
+            <Link
+              to="/queue"
               className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-[#176b5f] px-4 py-2.5 text-[10px] font-bold text-[#176b5f] transition duration-300 hover:bg-[#176b5f] hover:text-white"
             >
               View
               <FaArrowRight size={9} />
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -143,13 +144,13 @@ const WelcomeForm = ({ onStartBooking }) => {
               </p>
             </div>
 
-            <button
-              type="button"
+            <Link
+              to="/queue"
               className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-[#173b3a] px-4 py-2.5 text-[10px] font-bold text-white transition duration-300 hover:bg-[#176b5f]"
             >
               Check
               <FaArrowRight size={9} />
-            </button>
+            </Link>
           </div>
         </div>
 

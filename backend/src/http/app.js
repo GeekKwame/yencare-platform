@@ -56,6 +56,10 @@ export function createApp({ patientService, catalog, appointmentService }) {
       return res.status(400).json({ error: err.message });
     }
 
+    if (err?.code === 11000) {
+      return res.status(409).json({ error: 'This time slot is already booked' });
+    }
+
     if (err instanceof SyntaxError && 'body' in err) {
       return res.status(400).json({ error: 'Invalid JSON body' });
     }

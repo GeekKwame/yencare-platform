@@ -7,6 +7,7 @@
 
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
+import { TimeSlot } from '../models/TimeSlot.js';
 import { resolvePatientPhone } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 
@@ -17,9 +18,63 @@ import { sendSms } from '../sms/sendSms.js';
  * @returns {Promise<{ appointment: object, sms: { ok: boolean, error?: string } }>}
  */
 export async function createAppointment(data) {
+  const payload = { ...data };
+
+  // Double-booking check: prevent booking a clinician who already has an active appointment
+  if (payload.clinicianId && payload.appointmentDate && payload.appointmentTime) {
+    const existing = await Appointment.findOne({
+      clinicianId: payload.clinicianId,
+      appointmentDate: payload.appointmentDate,
+      appointmentTime: payload.appointmentTime,
+      status: { $nin: ['CANCELLED', 'NO_SHOW'] },
+    });
+
+    if (existing) {
+      const err = new Error('This time slot is already booked for this clinician');
+      err.status = 409;
+      throw err;
+    }
+  }
+
+  // Resolve and verify TimeSlot if available
+  if (!payload.timeSlotId && payload.clinicianId && payload.appointmentDate && payload.appointmentTime) {
+    const matchingSlot = await TimeSlot.findOne({
+      clinicianId: payload.clinicianId,
+      date: payload.appointmentDate,
+      startTime: payload.appointmentTime,
+    });
+    if (matchingSlot) {
+      if (matchingSlot.isBooked && matchingSlot.appointmentId) {
+        const linkedActive = await Appointment.findOne({
+          _id: matchingSlot.appointmentId,
+          status: { $nin: ['CANCELLED', 'NO_SHOW'] },
+        });
+        if (linkedActive) {
+          const err = new Error('This time slot is already booked');
+          err.status = 409;
+          throw err;
+        }
+      }
+      payload.timeSlotId = matchingSlot._id;
+    }
+  } else if (payload.timeSlotId) {
+    const matchingSlot = await TimeSlot.findById(payload.timeSlotId);
+    if (matchingSlot?.isBooked && matchingSlot.appointmentId) {
+      const linkedActive = await Appointment.findOne({
+        _id: matchingSlot.appointmentId,
+        status: { $nin: ['CANCELLED', 'NO_SHOW'] },
+      });
+      if (linkedActive) {
+        const err = new Error('This time slot is already booked');
+        err.status = 409;
+        throw err;
+      }
+    }
+  }
+
   // 1. Create the appointment. If this throws (validation, duplicate
   //    referenceCode, illegal slot, etc.), no SMS is sent — nothing to confirm.
-  const appointment = await Appointment.create(data);
+  const appointment = await Appointment.create(payload);
 
   // 2. Look up the patient's phone number for the confirmation text.
   const patient = await Patient.findById(appointment.patientId);
