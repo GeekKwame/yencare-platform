@@ -41,6 +41,17 @@ export async function sendSms(to, message) {
     throw new Error('SMS message is required');
   }
 
+  if (String(to).includes(',') || String(to).includes(';')) {
+    const error = 'SMS must be sent to a single Ghana phone number';
+    console.error('[sms]', error);
+    return {
+      ok: false,
+      provider: resolveProvider(),
+      to: String(to),
+      error,
+    };
+  }
+
   const phone = normalizeGhanaPhone(to);
   const body = String(message);
   const provider = resolveProvider();

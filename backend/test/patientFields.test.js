@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { Appointment } from '../src/models/Appointment.js';
 import { Patient } from '../src/models/Patient.js';
-import { resolveNhis, resolvePatientPhone } from '../src/patients/fields.js';
+import { resolveNhis, resolvePatientPhone, resolveSmsDestination } from '../src/patients/fields.js';
 import { serializePatient } from '../src/patients/serialize.js';
 
 describe('resolvePatientPhone', () => {
@@ -14,6 +14,26 @@ describe('resolvePatientPhone', () => {
       '+233241234567',
     );
     assert.equal(resolvePatientPhone({}), null);
+  });
+});
+
+describe('resolveSmsDestination', () => {
+  it('sends only to the phone entered for this booking', () => {
+    assert.equal(
+      resolveSmsDestination({ phone: '+233241234567' }, '024 700 1122'),
+      '+233247001122',
+    );
+  });
+
+  it('falls back to the number on file when none is submitted', () => {
+    assert.equal(resolveSmsDestination({ phoneNumber: '+233208113344' }), '+233208113344');
+  });
+
+  it('ignores an invalid submitted number and uses the patient record', () => {
+    assert.equal(
+      resolveSmsDestination({ phone: '+233241234567' }, 'not-a-phone'),
+      '+233241234567',
+    );
   });
 });
 

@@ -63,6 +63,28 @@ export function createMemoryStore(seed = []) {
       rows.set(row.id, row);
       return clone(row);
     },
+
+    /**
+     * @param {string} id
+     * @param {{ fullName?: string, phoneNumber?: string | null, nhis?: string | null }} fields
+     */
+    async update(id, fields) {
+      const row = rows.get(id);
+      if (!row) return null;
+
+      if (fields.phoneNumber && fields.phoneNumber !== row.phoneNumber) {
+        const taken = [...rows.values()].some(
+          (other) => other.id !== id && other.phoneNumber === fields.phoneNumber,
+        );
+        if (taken) throw duplicateError('phone_number');
+      }
+
+      if (fields.fullName != null) row.fullName = fields.fullName;
+      if (fields.phoneNumber !== undefined) row.phoneNumber = fields.phoneNumber;
+      if (fields.nhis !== undefined) row.nhis = fields.nhis;
+      row.updatedAt = new Date().toISOString();
+      return clone(row);
+    },
   };
 }
 

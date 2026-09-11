@@ -2,6 +2,18 @@ import { toLocalGhanaPhone } from '../normalizePhone.js';
 
 const QUICK_SMS_URL = 'https://api.mnotify.com/api/sms/quick';
 
+function resolveQuickSmsUrl() {
+  const configured = process.env.MNOTIFY_API_URL?.trim();
+  if (!configured) return QUICK_SMS_URL;
+  if (/\/sms\/group/i.test(configured)) {
+    console.warn(
+      '[sms] MNOTIFY_API_URL points at group SMS; using quick SMS so only the patient is messaged',
+    );
+    return QUICK_SMS_URL;
+  }
+  return configured;
+}
+
 function describeMnotifyError(status, data) {
   const detail =
     typeof data === 'string' ? data : data?.message || data?.status || JSON.stringify(data ?? {});
@@ -21,7 +33,7 @@ export async function sendViaMnotify(to, message, { fetchImpl = fetch } = {}) {
   }
 
   const recipient = toLocalGhanaPhone(to);
-  const endpoint = process.env.MNOTIFY_API_URL?.trim() || QUICK_SMS_URL;
+  const endpoint = resolveQuickSmsUrl();
   const url = `${endpoint}?key=${encodeURIComponent(apiKey)}`;
 
   const response = await fetchImpl(url, {
@@ -35,6 +47,7 @@ export async function sendViaMnotify(to, message, { fetchImpl = fetch } = {}) {
       sender,
       message,
       is_schedule: false,
+      schedule_date: '',
     }),
   });
 

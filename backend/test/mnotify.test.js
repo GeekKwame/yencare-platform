@@ -43,6 +43,32 @@ describe('sendViaMnotify', () => {
       sender: 'YenCare',
       message: 'YɛnCare test',
       is_schedule: false,
+      schedule_date: '',
     });
+    assert.equal(JSON.parse(calls[0].options.body).recipient.length, 1);
+  });
+
+  it('does not use the group SMS endpoint even if MNOTIFY_API_URL is misconfigured', async () => {
+    const previousUrl = process.env.MNOTIFY_API_URL;
+    process.env.MNOTIFY_API_URL = 'https://api.mnotify.com/api/sms/group';
+    const calls = [];
+    try {
+      await sendViaMnotify('+233241234567', 'YɛnCare test', {
+        fetchImpl: async (url, options) => {
+          calls.push({ url, options });
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ status: 'success', code: '2000', summary: { _id: 'campaign-2' } }),
+          };
+        },
+      });
+    } finally {
+      if (previousUrl === undefined) delete process.env.MNOTIFY_API_URL;
+      else process.env.MNOTIFY_API_URL = previousUrl;
+    }
+
+    assert.match(calls[0].url, /\/api\/sms\/quick\?/);
+    assert.equal(JSON.parse(calls[0].options.body).recipient.length, 1);
   });
 });

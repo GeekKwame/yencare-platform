@@ -71,7 +71,10 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
         nhis: formData.nhisNumber.trim() || undefined,
       });
 
-      updateFormData({ patientId: patient.id });
+      updateFormData({
+        patientId: patient.id || patient._id,
+        phoneNumber: patient.phoneNumber || patient.phone || formData.phoneNumber.trim(),
+      });
       onNext();
     } catch (err) {
       if (!err.response) {

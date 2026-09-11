@@ -41,6 +41,25 @@ export function createMongoPatientStore() {
       });
       return toRecord(doc);
     },
+
+    /**
+     * @param {string} id
+     * @param {{ fullName?: string, phoneNumber?: string | null, nhis?: string | null }} fields
+     */
+    async update(id, fields) {
+      if (!id) return null;
+      const $set = {};
+      if (fields.fullName != null) $set.fullName = fields.fullName;
+      if (fields.phoneNumber !== undefined) $set.phone = fields.phoneNumber;
+      if (fields.nhis !== undefined) $set.nhisNumber = fields.nhis || undefined;
+      if (Object.keys($set).length === 0) {
+        const doc = await Patient.findById(id).exec();
+        return toRecord(doc);
+      }
+
+      const doc = await Patient.findByIdAndUpdate(id, { $set }, { new: true, runValidators: true }).exec();
+      return toRecord(doc);
+    },
   };
 }
 

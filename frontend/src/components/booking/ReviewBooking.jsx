@@ -34,6 +34,7 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
   const [confirmError, setConfirmError] = useState("");
+  const [smsResult, setSmsResult] = useState(null);
 
   const clinicLabel = clinicSiteLabel(formData.clinicSite);
   const serviceLabel = visitTypeLabel(formData.visitType);
@@ -71,6 +72,7 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
 
       const created = await createAppointment({
         patientId: formData.patientId,
+        phoneNumber: formData.phoneNumber,
         clinicianId: match.id,
         roomId,
         clinicSite: formData.clinicSite,
@@ -80,6 +82,7 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
       });
 
       setBookingRef(created.referenceCode || created.id);
+      setSmsResult(created.sms ?? null);
       setIsConfirmed(true);
     } catch (err) {
       const apiMessage = err.response?.data?.error || err.response?.data?.message;
@@ -153,20 +156,37 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
             </div>
           </div>
 
-          <div className="mx-auto mt-6 max-w-md rounded-xl border border-green-200 bg-green-50 p-4 text-left">
-            <div className="flex items-start gap-3">
-              <FaCheckCircle className="mt-0.5 shrink-0 text-green-600" />
-              <div>
-                <p className="text-sm font-bold text-green-800">SMS Confirmation</p>
-                <p className="mt-0.5 text-xs text-green-700">
-                  {formData.phoneNumber
-                    ? `Confirmation SMS will be sent to ${formData.phoneNumber} when the booking is saved.`
-                    : "Confirmation SMS is sent when the booking is saved."}
-                  {arriveBy ? ` Arrive by ${arriveBy}.` : ""}
-                </p>
+          {smsResult?.ok === false ? (
+            <div className="mx-auto mt-6 max-w-md rounded-xl border border-amber-200 bg-amber-50 p-4 text-left">
+              <div className="flex items-start gap-3">
+                <FaCheckCircle className="mt-0.5 shrink-0 text-amber-600" />
+                <div>
+                  <p className="text-sm font-bold text-amber-800">SMS not delivered</p>
+                  <p className="mt-0.5 text-xs text-amber-700">
+                    Your booking is confirmed. We could not send the confirmation SMS
+                    {formData.phoneNumber ? ` to ${formData.phoneNumber}` : ""}.
+                    Present your reference code at reception.
+                    {arriveBy ? ` Arrive by ${arriveBy}.` : ""}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="mx-auto mt-6 max-w-md rounded-xl border border-green-200 bg-green-50 p-4 text-left">
+              <div className="flex items-start gap-3">
+                <FaCheckCircle className="mt-0.5 shrink-0 text-green-600" />
+                <div>
+                  <p className="text-sm font-bold text-green-800">SMS Confirmation</p>
+                  <p className="mt-0.5 text-xs text-green-700">
+                    {formData.phoneNumber
+                      ? `A confirmation SMS was sent only to ${formData.phoneNumber}.`
+                      : "A confirmation SMS was sent to the patient who booked."}
+                    {arriveBy ? ` Arrive by ${arriveBy}.` : ""}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <Link

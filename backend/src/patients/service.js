@@ -33,7 +33,10 @@ export function createPatientService(store) {
         );
       }
       if (existing.patient) {
-        return { patient: existing.patient, created: false };
+        return {
+          patient: await syncExistingPatient(store, existing.patient, input),
+          created: false,
+        };
       }
 
       if (!input.fullName) {
@@ -103,6 +106,39 @@ async function findExisting(store, input) {
   }
 
   return { conflict: false, patient: byIndex || byPhone || null };
+}
+
+/**
+ * Keep the on-file phone in sync with the number entered for this visit so
+ * confirmation SMS goes to that patient, not a stale test/admin number.
+ *
+ * @param {PatientStore & { update?: Function }} store
+ * @param {object} patient
+ * @param {{ fullName: string | null, phoneNumber: string | null, nhis: string | null }} input
+ */
+async function syncExistingPatient(store, patient, input) {
+  if (typeof store.update !== 'function') return patient;
+
+  const storedPhone = patient.phoneNumber || patient.phone || null;
+  const updates = {};
+  if (input.phoneNumber && input.phoneNumber !== storedPhone) {
+    updates.phoneNumber = input.phoneNumber;
+  }
+  if (input.nhis && input.nhis !== (patient.nhis ?? null)) {
+    updates.nhis = input.nhis;
+  }
+  if (Object.keys(updates).length === 0) return patient;
+
+  try {
+    return (await store.update(patient.id, updates)) || patient;
+  } catch (error) {
+    if (isDuplicateKey(error)) {
+      throw new ConflictError(
+        'This student index and phone number belong to different patients',
+      );
+    }
+    throw error;
+  }
 }
 
 function isDuplicateKey(error) {

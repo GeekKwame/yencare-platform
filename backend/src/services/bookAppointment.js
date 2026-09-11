@@ -8,17 +8,21 @@
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
-import { resolvePatientPhone } from '../patients/fields.js';
+import { resolvePatientPhone, resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 
 /**
  * @param {object} data - fields matching the Appointment schema
  *   (patientId, clinicianId, roomId, clinicSite, visitType,
  *    appointmentDate "YYYY-MM-DD", appointmentTime "HH:mm", timeSlotId?)
+ *   Optional `phone` / `phoneNumber` is the SMS destination for this booking.
  * @returns {Promise<{ appointment: object, sms: { ok: boolean, error?: string } }>}
  */
 export async function createAppointment(data) {
   const payload = { ...data };
+  const requestedPhone = payload.phone ?? payload.phoneNumber ?? null;
+  delete payload.phone;
+  delete payload.phoneNumber;
 
   // Double-booking check: prevent booking a clinician who already has an active appointment
   if (payload.clinicianId && payload.appointmentDate && payload.appointmentTime) {
@@ -83,8 +87,9 @@ export async function createAppointment(data) {
     return { appointment, sms: { ok: false, error: 'Patient not found for SMS' } };
   }
 
-  // Mongo stores `phone`. HTTP JSON also exposes `phoneNumber`.
-  const phone = resolvePatientPhone(patient);
+  // Prefer the number entered for this booking so SMS never goes to a
+  // stale admin/test number left on a reused student-index record.
+  const phone = resolveSmsDestination(patient, requestedPhone);
   if (!phone) {
     console.error(
       '[booking] Appointment created but patient has no phone field (checked "phone" and "phoneNumber"):',
@@ -93,8 +98,21 @@ export async function createAppointment(data) {
     return { appointment, sms: { ok: false, error: 'Patient has no phone number on record' } };
   }
 
-  // 3. Dispatch the confirmation SMS. A failure here never undoes the
-  //    booking — the web confirmation is the source of truth.
+  const storedPhone = resolvePatientPhone(patient);
+  if (phone && storedPhone !== phone) {
+    try {
+      patient.phone = phone;
+      await patient.save();
+    } catch (err) {
+      console.warn(
+        '[booking] Could not update stored patient phone before SMS:',
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+
+  // 3. Dispatch the confirmation SMS to this patient only. A failure here
+  //    never undoes the booking — the web confirmation is the source of truth.
   const message = [
     'YenCare Health',
     '',
@@ -104,10 +122,22 @@ export async function createAppointment(data) {
     `Arrive by ${appointment.appointmentTime}`,
   ].join('\n');
 
+  console.info(
+    '[booking] Sending confirmation SMS to patient',
+    maskPhone(phone),
+    'for',
+    appointment.referenceCode,
+  );
   const sms = await sendSms(phone, message);
   if (!sms.ok) {
     console.error('[booking] SMS not delivered for', appointment.referenceCode, ':', sms.error);
   }
 
   return { appointment, sms };
+}
+
+function maskPhone(phone) {
+  const value = String(phone);
+  if (value.length <= 4) return value;
+  return `${value.slice(0, -4).replace(/\d/g, '*')}${value.slice(-4)}`;
 }

@@ -49,4 +49,10 @@ describe('sendSms mock fallback', () => {
   it('throws when the message is empty', async () => {
     await assert.rejects(() => sendSms('+233241234567', '   '), /SMS message is required/);
   });
+
+  it('refuses to send to more than one number', async () => {
+    const result = await sendSms('+233241234567,+233247001122', 'Too many');
+    assert.equal(result.ok, false);
+    assert.match(result.error, /single Ghana phone number/);
+  });
 });
