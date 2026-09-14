@@ -27,7 +27,7 @@ export const STUDENT_INDEX_PATTERN = /^\d{8}$/;
 /** Allowed status changes after an appointment already exists. */
 export const STATUS_TRANSITIONS = Object.freeze({
   BOOKED: Object.freeze(['CHECKED_IN', 'CANCELLED', 'NO_SHOW']),
-  CHECKED_IN: Object.freeze(['WAITING', 'CANCELLED']),
+  CHECKED_IN: Object.freeze(['WAITING', 'CANCELLED', 'NO_SHOW']),
   WAITING: Object.freeze(['CALLED', 'NO_SHOW', 'CANCELLED']),
   CALLED: Object.freeze(['COMPLETED', 'WAITING', 'NO_SHOW']),
   COMPLETED: Object.freeze([]),

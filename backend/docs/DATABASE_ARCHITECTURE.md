@@ -73,7 +73,8 @@ erDiagram
 | `rooms` | `Room` | Room 1 / Room 2 / GF7, partitioned by `clinicSite` |
 | `clinicians` | `Clinician` | Dr. Kwame Boateng, Dr. Ama Serwaa; `roomId` → `Room` |
 | `time_slots` | `TimeSlot` | 30-minute offer of a clinician + room on a date |
-| `appointments` | `Appointment` | Speakable `YC-XXXX`, status machine, queue fields |
+| `appointments` | `Appointment` | Speakable `YC-XXXX`, status machine, queue fields (`queueToken`, `queueDate`, `queueSequence`) |
+| `queue_counters` | `QueueCounter` | Room daily sequence counter (`nextSequence`, `activeAppointmentId`), reset at 00:00 UTC |
 
 ---
 
@@ -102,6 +103,8 @@ const queue = await Appointment.populateQueue({
 | `Appointment.clinicianId` | `Clinician` | Yes | |
 | `Appointment.roomId` | `Room` | Yes | |
 | `Appointment.timeSlotId` | `TimeSlot` | No | `null` for emergency walk-ins |
+| `QueueCounter.roomId` | `Room` | Yes | Counter scope |
+| `QueueCounter.activeAppointmentId` | `Appointment` | No | Currently `CALLED` patient in room |
 
 When Mongo is connected, `Appointment` pre-save verifies that those ids exist. Document `deleteOne` and `findOneAndDelete` release the linked time slot.
 
@@ -177,6 +180,9 @@ Lookup is by `referenceCode`, not by `_id`, so reception can confirm a code read
 | appointments | `appointmentDate + clinicSite + status` | No | Daily queue board |
 | appointments | `patientId + appointmentDate` | No | “Find my appointment” |
 | appointments | `clinicianId + appointmentDate` | No | Clinician day list |
+| appointments | `roomId + queueDate + queueSequence` | Yes, sparse | Non-colliding daily tokens per room |
+| appointments | `roomId + appointmentDate + status` | No | Fast FIFO queue board per room |
+| queue_counters | `roomId + queueDate` | Yes | Atomic daily room sequence reset at 00:00 UTC |
 
 ---
 

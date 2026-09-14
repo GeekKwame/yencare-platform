@@ -60,6 +60,18 @@ export function createAppointmentsRouter(appointmentService) {
   );
 
   router.get(
+    '/:reference/queue-status',
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.getQueueStatus) {
+        return res.status(501).json({ error: 'Queue status is not available' });
+      }
+
+      const queueStatus = await appointmentService.getQueueStatus(req.params.reference);
+      res.status(200).json(queueStatus);
+    }),
+  );
+
+  router.get(
     '/:reference',
     asyncHandler(async (req, res) => {
       const ref = req.params.reference;

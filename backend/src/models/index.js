@@ -3,3 +3,4 @@ export { Room } from './Room.js';
 export { Clinician } from './Clinician.js';
 export { TimeSlot } from './TimeSlot.js';
 export { Appointment } from './Appointment.js';
+export { QueueCounter } from './QueueCounter.js';

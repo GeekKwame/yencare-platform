@@ -6,6 +6,7 @@ import {
 } from '../db/constants.js';
 import { Appointment } from '../models/Appointment.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
+import { assignDailyQueueToken } from './queueEngine.js';
 
 /**
  * @param {{ date?: string, clinicSite?: string, clinic?: string }} filters
@@ -65,6 +66,10 @@ export async function updateAppointmentStatus(idOrReference, status) {
   }
 
   appointment.status = status;
+
+  if (status === 'CHECKED_IN') {
+    await assignDailyQueueToken(appointment);
+  }
 
   try {
     await appointment.save();
