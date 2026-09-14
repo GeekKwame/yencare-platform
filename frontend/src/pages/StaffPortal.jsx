@@ -71,8 +71,9 @@ function matchesDeskQuery(appt, rawQuery) {
 
 const StaffPortal = () => {
   const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
+  const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [appointments, setAppointments] = useState(() =>
-    getMockTodaysAppointments(DEFAULT_CLINIC_SITE),
+    getMockTodaysAppointments(DEFAULT_CLINIC_SITE, todayIsoDate()),
   );
   const [usingMock, setUsingMock] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -90,17 +91,17 @@ const StaffPortal = () => {
       setLoading(true);
       setMessage("");
       try {
-        const data = await getTodaysAppointments(clinicSite, todayIsoDate());
+        const data = await getTodaysAppointments(clinicSite, selectedDate);
         if (cancelled) return;
         const list = Array.isArray(data) ? data.map(mapAppointmentToCard) : [];
 
-        // Scaffold: if live roster is empty for today, show mock cards so
+        // Scaffold: if live roster is empty for selected date, show mock cards so
         // reception UI (Check In + badges) can still be verified.
         if (list.length === 0) {
-          setAppointments(getMockTodaysAppointments(clinicSite));
+          setAppointments(getMockTodaysAppointments(clinicSite, selectedDate));
           setUsingMock(true);
           setMessage(
-            "No live appointments for today — showing mock roster for check-in practice.",
+            `No live appointments for ${selectedDate} — showing mock roster for check-in practice.`,
           );
         } else {
           setAppointments(list);
@@ -108,7 +109,7 @@ const StaffPortal = () => {
         }
       } catch {
         if (cancelled) return;
-        setAppointments(getMockTodaysAppointments(clinicSite));
+        setAppointments(getMockTodaysAppointments(clinicSite, selectedDate));
         setUsingMock(true);
         setMessage("Backend unavailable — showing mock roster for today.");
       } finally {
@@ -120,7 +121,7 @@ const StaffPortal = () => {
     return () => {
       cancelled = true;
     };
-  }, [clinicSite]);
+  }, [clinicSite, selectedDate]);
 
   async function applyStatus(id, nextStatus, successLabel) {
     setUpdatingId(id);
@@ -196,11 +197,25 @@ const StaffPortal = () => {
   }
 
   const clinicLabel = CLINIC_SITE_LABELS[clinicSite] || clinicSite;
-  const todayLabel = new Date().toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const isSelectedToday = selectedDate === todayIsoDate();
+  const selectedDateLabel = useMemo(() => {
+    if (!selectedDate) return "";
+    try {
+      const [year, month, day] = selectedDate.split("-").map(Number);
+      if (year && month && day) {
+        const dateObj = new Date(year, month - 1, day);
+        return dateObj.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+    } catch {
+      // ignore
+    }
+    return selectedDate;
+  }, [selectedDate]);
 
   const metrics = useMemo(() => {
     const total = appointments.length;
@@ -285,33 +300,70 @@ const StaffPortal = () => {
 
   return (
     <main className="mx-auto max-w-6xl px-5 pt-22 pb-16 sm:px-8 lg:px-10">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
             Clinic Operations Dashboard
           </p>
           <h1 className="mb-1 text-3xl font-bold text-[#173b3a]">
-            Today&apos;s Clinical Operations
+            {isSelectedToday ? "Today's Clinical Operations" : "Clinical Operations Roster"}
           </h1>
           <p className="text-sm text-gray-500">
-            {clinicLabel} · {todayLabel}
+            {clinicLabel} · {selectedDateLabel}
           </p>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
-          <span className="font-semibold">Clinic site</span>
-          <select
-            value={clinicSite}
-            onChange={(event) => setClinicSite(event.target.value)}
-            className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm"
-          >
-            {Object.entries(CLINIC_SITE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+            <span className="font-semibold">Clinic site</span>
+            <select
+              value={clinicSite}
+              onChange={(event) => setClinicSite(event.target.value)}
+              className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm text-[#173b3a] outline-none transition focus:border-[#176b5f]"
+            >
+              {Object.entries(CLINIC_SITE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+            <span className="font-semibold">Roster date</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+              className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm text-[#173b3a] outline-none transition focus:border-[#176b5f]"
+            />
+          </label>
+
+          <div className="flex items-center gap-1.5 pb-0.5">
+            <button
+              type="button"
+              onClick={() => setSelectedDate(todayIsoDate())}
+              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                isSelectedToday
+                  ? "border-[#176b5f] bg-[#176b5f] text-white"
+                  : "border-[#dce8df] bg-white text-[#173b3a] hover:bg-[#f5faf7]"
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedDate("2026-09-15")}
+              className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                selectedDate === "2026-09-15"
+                  ? "border-[#176b5f] bg-[#176b5f] text-white"
+                  : "border-[#dce8df] bg-white text-[#173b3a] hover:bg-[#f5faf7]"
+              }`}
+            >
+              15 Sep (Demo)
+            </button>
+          </div>
+        </div>
       </div>
 
       {message && (

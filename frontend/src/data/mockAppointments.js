@@ -147,16 +147,19 @@ export function formatAppointmentTime(hhmm) {
 }
 
 /**
- * Offline fallback roster for the selected clinic site (presented as today).
- * @param {string} clinicSite
+ * Offline fallback roster for the selected clinic site (presented as the requested date).
+ * @param {string} [clinicSite]
+ * @param {string} [date]
  */
-export function getMockTodaysAppointments(clinicSite = DEFAULT_CLINIC_SITE) {
-  const today = todayIsoDate();
+export function getMockTodaysAppointments(
+  clinicSite = DEFAULT_CLINIC_SITE,
+  date = todayIsoDate(),
+) {
   return mockAppointments
     .filter((appt) => appt.clinicSite === clinicSite)
     .map((appt) => ({
       ...appt,
-      date: today,
+      date,
       clinic: CLINIC_SITE_LABELS[clinicSite] || clinicSite,
     }));
 }
