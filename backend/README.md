@@ -16,7 +16,11 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/api/appointments` | List appointments (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
 | `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
 | `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
+| `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, and room token |
 | `PATCH` | `/api/appointments/:id/status` | Transition status (e.g. `BOOKED` → `CHECKED_IN`) |
+| `POST` | `/api/queue/call-next` | Call next FIFO waiting patient into room (`WAITING` → `CALLED`) |
+| `POST` | `/api/queue/advance` | Advance state machine progression or complete active consultation |
+| `POST` | `/api/queue/no-show` | Mark appointment as `NO_SHOW` and release linked slot |
 | `GET` | `/api/rooms` | Seeded rooms (`id` → `roomId`) |
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
@@ -272,11 +276,78 @@ curl -s http://localhost:4000/api/appointments/YC-4821
 
 Returns **200** with populated `patientId`, `clinicianId`, `roomId`, and `timeSlotId`, or **404** if not found.
 
+---
+
+## Virtual Queue Engine & Token Progression
+
+State machine managing patient flow through consultation rooms with non-colliding daily sequence tokens and strict FIFO room ordering.
+
+### Token Progression Lifecycle
+
+```
+BOOKED ──(reception check-in)──> CHECKED_IN ──(enter queue)──> WAITING ──(call next)──> CALLED ──(advance)──> COMPLETED
+  │                                   │                           │                        │
+  └───(no-show/cancel)────────────────┴───────(no-show)───────────┴───────(no-show)────────┴───────(no-show)──> NO_SHOW
+```
+
+- **Daily Non-Colliding Tokens**: When an appointment transitions to `CHECKED_IN`, an incremental daily token is assigned (e.g. `A-01` for Room 1, `B-04` for Room 2). Sequence numbers reset at 00:00 UTC daily via atomic MongoDB `$inc` on `QueueCounter`.
+- **Dynamic Estimated Wait Time**: Calculated dynamically as:
+  $$\text{Estimated Wait (min)} = (\text{Remaining patients ahead in room}) \times 15\text{ min}$$
+- **Automated Call SMS Alert**: When a patient is called (`call-next`), a notification SMS is immediately dispatched alerting them to proceed to their consultation room.
+
+### Queue Endpoints
+
+#### 1. Real-Time Queue Status (`GET /api/appointments/:reference/queue-status`)
+Returns real-time queue position, dynamic wait time, and room token for Screen P18:
+```json
+{
+  "referenceCode": "YC-4821",
+  "status": "WAITING",
+  "queueToken": "A-02",
+  "position": 2,
+  "patientsAhead": 1,
+  "estimatedWaitMinutes": 15,
+  "roomToken": "A-01",
+  "nowServingToken": "A-01",
+  "room": { "id": "68bf2c0e9c1a2b0012345672", "name": "Room 1", "clinicSite": "students-clinic" },
+  "clinician": { "id": "68bf2c0e9c1a2b0012345671", "name": "Dr. Kwame Boateng", "title": "Senior Medical Officer" }
+}
+```
+
+#### 2. Call Next Patient (`POST /api/queue/call-next`)
+Calls the next waiting patient in strict FIFO order (`queueSequence: 1, checkInTime: 1, createdAt: 1`):
+```json
+// POST /api/queue/call-next
+{
+  "roomId": "68bf2c0e9c1a2b0012345672"
+}
+```
+
+#### 3. Advance Queue (`POST /api/queue/advance`)
+Advances an individual appointment through the state machine, or completes a room's active consultation:
+```json
+// Advance specific appointment:
+{ "referenceCode": "YC-4821" }
+
+// OR complete room's active consultation:
+{ "roomId": "68bf2c0e9c1a2b0012345672", "callNext": true }
+```
+
+#### 4. Mark No-Show (`POST /api/queue/no-show`)
+Transitions appointment to `NO_SHOW`, releases linked time slot, and clears active counter:
+```json
+{
+  "referenceCode": "YC-4821",
+  "reason": "Did not appear after 3 calls"
+}
+```
+
 ### curl
 
 ```bash
 curl -s -X POST http://localhost:4000/api/patients -H "content-type: application/json" -d "{\"fullName\":\"Efua Darko\",\"studentIndex\":\"20620111\",\"phoneNumber\":\"024 700 1122\"}"
 curl -s http://localhost:4000/api/patients/20620111
+curl -s http://localhost:4000/api/appointments/YC-4821/queue-status
 ```
 
 ---
@@ -451,9 +522,10 @@ backend/
 ├── scripts/seed.js
 ├── scripts/send-test-sms.js
 ├── src/server.js               # Express entry (connect Mongo + listen)
-├── src/http/                   # app, /api/patients, /api/rooms, /api/clinicians, /api/time-slots
+├── src/http/                   # app, /api/patients, /api/appointments, /api/queue, catalog
+├── src/services/               # queueEngine (FIFO & tokens), bookAppointment, appointmentOps
 ├── src/db/                     # mongoose connection + collection specs
-├── src/models/                 # Patient, Appointment, Clinician, Room, TimeSlot
+├── src/models/                 # Patient, Appointment, Clinician, Room, TimeSlot, QueueCounter
 ├── src/patients/               # validate + find-or-create + phone/NHIS field aliases
 ├── src/sms/sendSms.js
 ├── src/sms/normalizePhone.js

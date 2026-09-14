@@ -73,6 +73,14 @@ const appointmentSchema = new mongoose.Schema(
       trim: true,
       default: undefined,
     },
+    queueDate: {
+      type: String,
+      match: [DATE_PATTERN, 'queueDate must be YYYY-MM-DD'],
+    },
+    queueSequence: {
+      type: Number,
+      min: 1,
+    },
     estimatedWaitMinutes: {
       type: Number,
       default: 0,
@@ -98,6 +106,18 @@ appointmentSchema.index(
 appointmentSchema.index({ patientId: 1, appointmentDate: -1 }, { name: 'appointments_patient_date' });
 appointmentSchema.index({ clinicianId: 1, appointmentDate: 1 }, { name: 'appointments_clinician_date' });
 appointmentSchema.index({ timeSlotId: 1 }, { sparse: true, name: 'appointments_timeslot' });
+appointmentSchema.index(
+  { roomId: 1, queueDate: 1, queueSequence: 1 },
+  {
+    unique: true,
+    sparse: true,
+    name: 'appointments_room_day_queue_sequence_unique',
+  },
+);
+appointmentSchema.index(
+  { roomId: 1, appointmentDate: 1, status: 1 },
+  { name: 'appointments_room_date_status' },
+);
 
 function stampStatusTimes(doc) {
   const now = new Date();

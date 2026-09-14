@@ -10,9 +10,9 @@ dotenv.config({ path: path.join(backendRoot, '.env') });
 const DEMO_DATE = '2026-09-15';
 
 const ROOMS = [
-  { name: 'Room 1', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active' },
-  { name: 'Room 2', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active' },
-  { name: 'Consultation Room GF7', clinicSite: 'social-science-gf7', floor: 'Ground Floor', status: 'active' },
+  { name: 'Room 1', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active', tokenPrefix: 'A' },
+  { name: 'Room 2', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active', tokenPrefix: 'B' },
+  { name: 'Consultation Room GF7', clinicSite: 'social-science-gf7', floor: 'Ground Floor', status: 'active', tokenPrefix: 'C' },
 ];
 
 const CLINICIANS = [

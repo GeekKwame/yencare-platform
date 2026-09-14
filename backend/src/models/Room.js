@@ -23,6 +23,12 @@ const roomSchema = new mongoose.Schema(
       enum: ROOM_STATUSES,
       default: 'active',
     },
+    tokenPrefix: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: undefined,
+    },
   },
   { timestamps: true, collection: 'rooms' },
 );

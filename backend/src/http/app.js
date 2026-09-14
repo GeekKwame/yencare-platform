@@ -3,6 +3,7 @@ import express from 'express';
 import { createAppointmentsRouter } from './appointmentsRoutes.js';
 import { createCatalogRouter } from './catalogRoutes.js';
 import { createPatientsRouter } from './patientsRoutes.js';
+import { createQueueRouter } from './queueRoutes.js';
 
 /**
  * @param {{
@@ -17,10 +18,17 @@ import { createPatientsRouter } from './patientsRoutes.js';
  *     findByReference?: Function,
  *     listAppointments?: Function,
  *     updateStatus?: Function,
+ *     getQueueStatus?: Function,
+ *   },
+ *   queueService?: {
+ *     callNextPatient: Function,
+ *     advanceQueue: Function,
+ *     markNoShow: Function,
+ *     getQueueStatus?: Function,
  *   },
  * }} deps
  */
-export function createApp({ patientService, catalog, appointmentService }) {
+export function createApp({ patientService, catalog, appointmentService, queueService }) {
   const app = express();
 
   app.use(cors());
@@ -34,6 +42,10 @@ export function createApp({ patientService, catalog, appointmentService }) {
 
   if (appointmentService) {
     app.use('/api/appointments', createAppointmentsRouter(appointmentService));
+  }
+
+  if (queueService) {
+    app.use('/api/queue', createQueueRouter(queueService));
   }
 
   if (catalog) {

@@ -9,6 +9,12 @@ import { createMongoPatientStore } from './patients/mongoStore.js';
 import { createPatientService } from './patients/service.js';
 import { listAppointments, updateAppointmentStatus } from './services/appointmentOps.js';
 import { createAppointment } from './services/bookAppointment.js';
+import {
+  advanceQueue,
+  callNextPatient,
+  getQueueStatus,
+  markNoShow,
+} from './services/queueEngine.js';
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(backendRoot, '.env') });
@@ -25,6 +31,13 @@ const app = createApp({
     findByReference: (ref) => Appointment.findByReference(ref),
     listAppointments,
     updateStatus: updateAppointmentStatus,
+    getQueueStatus,
+  },
+  queueService: {
+    callNextPatient,
+    advanceQueue,
+    markNoShow,
+    getQueueStatus,
   },
 });
 
