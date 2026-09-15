@@ -1,0 +1,31 @@
+{
+  "name": "yencare-platform",
+  "version": "1.0.0",
+  "description": "YɛnCare — Outpatient Clinic Appointment Booking and Live Virtual Queue Platform for Ghana",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix ui/prototype run dev",
+    "build": "npm --prefix ui/prototype run build",
+    "preview": "npm --prefix ui/prototype run preview",
+    "format": "npm --prefix ui/prototype run format",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "dev:api": "npm --prefix backend run dev",
+    "start:api": "npm --prefix backend start",
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "db:seed": "npm --prefix backend run db:seed",
+    "sms:test": "npm --prefix backend run sms:test",
+    "test:sms": "npm --prefix backend test",
+    "test:backend": "npm --prefix backend test"
+  },
+  "keywords": [
+    "yencare",
+    "healthcare",
+    "ghana",
+    "clinic-queue",
+    "appointment-booking",
+    "clinical-brutalism"
+  ],
+  "author": "YɛnCare Platform Team",
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YɛnCare - Staff Live Queue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "surface-border": "#000000",
+                        "outline-variant": "#cfc4c5",
+                        "surface-container-high": "#e8e8e8",
+                        "surface-container": "#eeeeee",
+                        "inverse-on-surface": "#f1f1f1",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "inverse-surface": "#303030",
+                        "on-secondary-container": "#626262",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "secondary-container": "#e1dfdf",
+                        "on-surface-variant": "#4c4546",
+                        "secondary": "#5e5e5e",
+                        "primary-fixed": "#e2e2e2",
+                        "outline": "#7e7576",
+                        "surface-bright": "#f9f9f9",
+                        "surface-high": "#FFFFFF",
+                        "surface-variant": "#e2e2e2",
+                        "error-container": "#ffdad6",
+                        "primary": "#000000",
+                        "secondary-fixed": "#e4e2e2",
+                        "on-tertiary": "#ffffff",
+                        "error-text": "#000000",
+                        "on-background": "#1b1b1b",
+                        "on-secondary": "#ffffff",
+                        "surface-low": "#F2F2F2",
+                        "on-tertiary-container": "#848484",
+                        "background": "#f9f9f9",
+                        "on-error": "#ffffff",
+                        "placeholder": "#999999",
+                        "tertiary": "#000000",
+                        "on-surface": "#1b1b1b",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-secondary-fixed-variant": "#464747",
+                        "primary-container": "#1b1b1b",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "surface-tint": "#5e5e5e",
+                        "surface": "#f9f9f9",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "tertiary-container": "#1b1b1b",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#c6c6c6",
+                        "tertiary-fixed": "#e2e2e2",
+                        "surface-dim": "#dadada",
+                        "surface-container-low": "#f3f3f3",
+                        "on-primary-fixed-variant": "#474747",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#848484",
+                        "on-primary-fixed": "#1b1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "max-width-form": "560px",
+                        "base": "8px",
+                        "margin-mobile": "20px",
+                        "gutter-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "gutter-desktop": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Hanken Grotesk"],
+                        "queue-hero": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "reference-code": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "queue-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "reference-code": ["24px", { "lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen antialiased flex">
+<!-- NavigationDrawer (JSON Component) -->
+<nav class="h-screen w-[240px] fixed left-0 top-0 hidden md:flex flex-col py-gutter-desktop bg-surface-low dark:bg-surface-container border-r border-surface-border text-primary dark:text-on-background z-40">
+<div class="px-6 mb-8 flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full border border-surface-border overflow-hidden bg-surface-high flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-background">Staff User</span>
+<span class="font-label-sm text-label-sm text-secondary">Clinical Admin</span>
+<span class="font-label-sm text-label-sm text-secondary">Clinic Staff</span>
+</div>
+</div>
+<ul class="flex flex-col space-y-2 flex-grow">
+<li>
+<a class="flex items-center space-x-3 text-on-surface-variant dark:text-secondary px-4 py-3 mx-2 hover:bg-surface-container-highest transition-colors cursor-pointer rounded-DEFAULT font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="today">today</span>
+<span>Today</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 text-on-surface-variant dark:text-secondary px-4 py-3 mx-2 hover:bg-surface-container-highest transition-colors cursor-pointer rounded-DEFAULT font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span>Appointments</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 bg-primary text-on-primary font-bold px-4 py-3 mx-2 rounded-DEFAULT cursor-pointer transition-all font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+<span>Queue</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-0 md:ml-[240px] flex flex-col min-h-screen">
+<!-- TopAppBar (JSON Component - Medium) -->
+<header class="hidden md:flex items-center justify-between px-gutter-desktop h-20 w-full bg-surface-high dark:bg-background border-b-2 border-surface-border sticky top-0 z-30">
+<div class="flex items-center space-x-4">
+<div class="w-12 h-12 rounded-DEFAULT border border-surface-border flex items-center justify-center bg-surface-low font-headline-md text-headline-md text-primary">
+                    CL
+                </div>
+<h1 class="font-headline-lg text-headline-lg text-primary dark:text-on-background">Staff Portal</h1>
+</div>
+<div>
+<button class="font-label-md text-label-md text-secondary hover:underline cursor-pointer">Sign Out</button>
+</div>
+</header>
+<!-- Main Workspace -->
+<main class="flex-1 p-gutter-mobile md:p-gutter-desktop max-w-7xl mx-auto w-full">
+<div class="mb-8 flex justify-between items-end border-b border-surface-border pb-4">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary mb-1">Live Queue Management</h2>
+<p class="font-body-md text-body-md text-secondary">General Practice • Wed, Oct 25</p>
+</div>
+<div class="flex space-x-2">
+<span class="inline-flex items-center px-3 py-1 border border-surface-border bg-surface-high text-primary font-label-md text-label-md rounded-DEFAULT">
+<span class="material-symbols-outlined mr-2 text-[18px]">group</span>
+                        12 Waiting
+                     </span>
+</div>
+</div>
+<!-- Active / Called Section -->
+<section class="mb-10">
+<h3 class="font-label-md text-label-md text-secondary mb-4 uppercase tracking-wider">Currently Called</h3>
+<div class="border-2 border-surface-border bg-surface-high p-6 rounded-lg flex flex-col md:flex-row items-center justify-between shadow-sm relative overflow-hidden">
+<!-- Accent block indicating active state -->
+<div class="absolute left-0 top-0 bottom-0 w-2 bg-primary"></div>
+<div class="flex items-center space-x-6 w-full md:w-auto mb-4 md:mb-0 pl-2">
+<div class="flex flex-col items-center justify-center w-20 h-20 bg-surface-low border border-surface-border rounded-DEFAULT">
+<span class="font-label-sm text-label-sm text-secondary">Token</span>
+<span class="font-reference-code text-reference-code text-primary">A04</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-primary">Kwame Osei</h4>
+<p class="font-body-md text-body-md text-secondary flex items-center mt-1">
+<span class="material-symbols-outlined mr-1 text-[16px]">stethoscope</span>
+                                 Dr. Mensah (Room 2)
+                             </p>
+</div>
+</div>
+<div class="flex flex-col items-end w-full md:w-auto space-y-2">
+<div class="inline-flex items-center px-3 py-1 border border-surface-border bg-surface-low text-primary font-label-sm text-label-sm rounded-DEFAULT">
+<span class="material-symbols-outlined mr-1 text-[16px]">timer</span>
+                            In progress for 14m
+                         </div>
+<button class="bg-primary text-on-primary border border-surface-border font-label-md text-label-md px-6 py-3 rounded-DEFAULT hover:opacity-90 transition-opacity w-full md:w-auto text-center flex items-center justify-center">
+<span class="material-symbols-outlined mr-2">check_circle</span>
+                             Complete Visit
+                         </button>
+</div>
+</div>
+</section>
+<!-- Waiting List Section -->
+<section>
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider">Waiting List</h3>
+<div class="flex items-center space-x-2">
+<span class="font-label-sm text-label-sm text-secondary">Sort by:</span>
+<select class="border border-surface-border bg-surface-high text-primary font-label-sm text-label-sm rounded-DEFAULT px-2 py-1 focus:ring-2 focus:ring-primary focus:outline-none">
+<option>Queue Position</option>
+<option>Arrival Time</option>
+</select>
+</div>
+</div>
+<div class="bg-surface-high border border-surface-border rounded-lg overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-low border-b border-surface-border">
+<th class="font-label-md text-label-md text-secondary py-3 px-4 w-24">Token</th>
+<th class="font-label-md text-label-md text-secondary py-3 px-4">Patient</th>
+<th class="font-label-md text-label-md text-secondary py-3 px-4 hidden sm:table-cell">Provider</th>
+<th class="font-label-md text-label-md text-secondary py-3 px-4 hidden md:table-cell">Wait Time</th>
+<th class="font-label-md text-label-md text-secondary py-3 px-4 text-right w-32">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-border">
+<!-- Waiting Item 1 -->
+<tr class="hover:bg-surface-low transition-colors">
+<td class="py-4 px-4">
+<div class="inline-flex items-center justify-center w-12 h-12 bg-surface-high border border-surface-border rounded-DEFAULT font-reference-code text-reference-code text-primary">
+                                        A05
+                                    </div>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-md text-label-md text-primary">Ama Asantewaa</div>
+<div class="font-body-md text-body-md text-secondary text-sm">Follow-up</div>
+</td>
+<td class="py-4 px-4 hidden sm:table-cell font-body-md text-body-md text-primary">Dr. Mensah</td>
+<td class="py-4 px-4 hidden md:table-cell">
+<span class="font-body-md text-body-md text-secondary">22m</span>
+</td>
+<td class="py-4 px-4 text-right">
+<button class="bg-surface-high text-primary border border-surface-border font-label-md text-label-md px-4 py-2 rounded-DEFAULT hover:bg-surface-container transition-colors w-full sm:w-auto flex items-center justify-center sm:justify-end">
+<span class="material-symbols-outlined mr-2">campaign</span>
+                                        Call
+                                    </button>
+</td>
+</tr>
+<!-- Waiting Item 2 -->
+<tr class="hover:bg-surface-low transition-colors">
+<td class="py-4 px-4">
+<div class="inline-flex items-center justify-center w-12 h-12 bg-surface-high border border-surface-border rounded-DEFAULT font-reference-code text-reference-code text-primary">
+                                        A06
+                                    </div>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-md text-label-md text-primary">Kojo Yeboah</div>
+<div class="font-body-md text-body-md text-secondary text-sm">Consultation</div>
+</td>
+<td class="py-4 px-4 hidden sm:table-cell font-body-md text-body-md text-primary">Dr. Mensah</td>
+<td class="py-4 px-4 hidden md:table-cell">
+<span class="font-body-md text-body-md text-secondary">15m</span>
+</td>
+<td class="py-4 px-4 text-right">
+<button class="bg-surface-high text-primary border border-surface-border font-label-md text-label-md px-4 py-2 rounded-DEFAULT hover:bg-surface-container transition-colors w-full sm:w-auto flex items-center justify-center sm:justify-end">
+<span class="material-symbols-outlined mr-2">campaign</span>
+                                        Call
+                                    </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</div>
+</body></html>

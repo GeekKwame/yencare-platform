@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reschedule Date - YɛnCare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "background": "#f9f9f9",
+                    "outline-variant": "#cfc4c5",
+                    "surface-container-highest": "#e2e2e2",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#e1dfdf",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "on-secondary-container": "#626262",
+                    "surface-variant": "#e2e2e2",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#c7c6c6",
+                    "on-surface": "#1b1b1b",
+                    "primary": "#000000",
+                    "primary-fixed": "#e2e2e2",
+                    "outline": "#7e7576",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#848484",
+                    "error-text": "#000000",
+                    "primary-container": "#1b1b1b",
+                    "surface-border": "#000000",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "on-primary-fixed": "#1b1b1b",
+                    "on-surface-variant": "#4c4546",
+                    "tertiary-fixed": "#e2e2e2",
+                    "surface-container": "#eeeeee",
+                    "tertiary-container": "#1b1b1b",
+                    "inverse-surface": "#303030",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "surface-container-low": "#f3f3f3",
+                    "surface-container-high": "#e8e8e8",
+                    "secondary-fixed": "#e4e2e2",
+                    "on-error-container": "#93000a",
+                    "secondary": "#5e5e5e",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "surface-bright": "#f9f9f9",
+                    "surface-low": "#F2F2F2",
+                    "on-background": "#1b1b1b",
+                    "inverse-primary": "#c6c6c6",
+                    "on-primary-fixed-variant": "#474747",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "tertiary": "#000000",
+                    "surface-tint": "#5e5e5e",
+                    "surface-high": "#FFFFFF",
+                    "surface-dim": "#dadada",
+                    "placeholder": "#999999",
+                    "inverse-on-surface": "#f1f1f1",
+                    "on-primary-container": "#848484",
+                    "on-secondary-fixed-variant": "#464747",
+                    "surface": "#f9f9f9",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "gutter-desktop": "24px",
+                    "base": "8px",
+                    "max-width-form": "560px",
+                    "margin-desktop": "64px",
+                    "gutter-mobile": "16px"
+            },
+            "fontFamily": {
+                    "queue-hero": ["Hanken Grotesk"],
+                    "reference-code": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "queue-hero": ["72px", {"lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "reference-code": ["24px", {"lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+          font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col md:hidden">
+<!-- Top Navigation (Transactional/Task-focused, suppressing global shell) -->
+<header class="bg-surface-container-lowest text-primary px-margin-mobile py-4 border-b-2 border-surface-border flex items-center sticky top-0 z-40">
+<a aria-label="Go back" class="mr-4 active:scale-95 transition-transform p-2 -ml-2" href="../p11_appointment_details_mobile_web_hi_fi/code.html">
+<span class="material-symbols-outlined text-headline-md">arrow_back</span>
+</a>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold flex-1">Reschedule Date</h1>
+<a class="text-secondary hover:text-primary font-label-sm text-label-sm" href="../p01_home_mobile_web_hi_fi/code.html">Home</a>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin-mobile py-6 flex flex-col gap-6 max-w-max-width-form mx-auto w-full pb-28">
+<!-- Header Text -->
+<section>
+<h2 class="font-headline-md text-headline-md mb-2">Select a new date</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Choose an available date for your appointment with Dr. Kwame Boateng.</p>
+</section>
+<!-- Calendar Component (Bento/Card Style) -->
+<section class="bg-surface-container-lowest border border-surface-border p-4 rounded-xl shadow-sm">
+<!-- Calendar Header -->
+<div class="flex justify-between items-center mb-6">
+<button aria-label="Previous month" class="p-2 border border-surface-border rounded active:scale-95 transition-transform">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<h3 class="font-label-md text-label-md uppercase tracking-widest font-bold">September 2026</h3>
+<button aria-label="Next month" class="p-2 border border-surface-border rounded active:scale-95 transition-transform">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Days of Week -->
+<div class="grid grid-cols-7 gap-1 mb-2">
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1">Mo</div>
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1">Tu</div>
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1">We</div>
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1">Th</div>
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1">Fr</div>
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1 opacity-50">Sa</div>
+<div class="text-center font-label-sm text-label-sm text-on-surface-variant py-1 opacity-50">Su</div>
+</div>
+<!-- Calendar Grid -->
+<div class="grid grid-cols-7 gap-1 md:gap-2">
+<div class="aspect-square"></div>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">1</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">2</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">3</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">4</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">5</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">6</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">7</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">8</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">9</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">10</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">11</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">12</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">13</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">14</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">15</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">16</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">17</button>
+<!-- Selected New Day: 18 Sep 2026 -->
+<button class="aspect-square flex items-center justify-center bg-primary text-on-primary border-2 border-primary rounded font-body-md text-body-md font-bold shadow-md ring-2 ring-offset-2 ring-primary">18</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">19</button>
+<button class="aspect-square flex items-center justify-center font-body-md text-body-md text-on-surface-variant opacity-30 cursor-not-allowed bg-surface-container-low rounded" disabled="">20</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">21</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">22</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">23</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">24</button>
+<button class="aspect-square flex items-center justify-center border border-surface-border rounded hover:bg-surface-container-high active:bg-surface-variant transition-colors font-body-md text-body-md">25</button>
+</div>
+<!-- Legend -->
+<div class="mt-6 flex flex-wrap gap-4 justify-center">
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 border border-surface-border rounded"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Available</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 bg-primary rounded"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Selected (Fri, Sep 18)</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action -->
+<div class="fixed bottom-0 left-0 w-full p-margin-mobile bg-surface-container-lowest border-t-2 border-surface-border z-50">
+<div class="max-w-max-width-form mx-auto">
+<a class="w-full bg-primary text-on-primary py-4 px-6 rounded-lg font-label-md text-label-md min-h-[56px] active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-sm" href="../p15_reschedule_time_mobile_web_hi_fi/code.html">
+            Continue to Select Time
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Spacer to prevent content from hiding behind fixed bottom bar -->
+<div class="h-28"></div>
+</body></html>

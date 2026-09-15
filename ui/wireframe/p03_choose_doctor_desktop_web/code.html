@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Choose Doctor - YɛnCare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-border": "#000000",
+                    "inverse-on-surface": "#f1f1f1",
+                    "surface": "#f9f9f9",
+                    "tertiary-fixed": "#e2e2e2",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#1b1b1b",
+                    "primary-fixed": "#e2e2e2",
+                    "tertiary": "#000000",
+                    "placeholder": "#999999",
+                    "secondary-container": "#e1dfdf",
+                    "on-secondary-fixed-variant": "#464747",
+                    "surface-low": "#F2F2F2",
+                    "inverse-surface": "#303030",
+                    "surface-high": "#FFFFFF",
+                    "error-text": "#000000",
+                    "on-tertiary-container": "#848484",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#1b1b1b",
+                    "surface-container": "#eeeeee",
+                    "inverse-primary": "#c6c6c6",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#000000",
+                    "surface-container-high": "#e8e8e8",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#5e5e5e",
+                    "surface-container-low": "#f3f3f3",
+                    "surface-variant": "#e2e2e2",
+                    "on-background": "#1b1b1b",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#cfc4c5",
+                    "tertiary-container": "#1b1b1b",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "secondary-fixed": "#e4e2e2",
+                    "on-primary-fixed-variant": "#474747",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "on-error-container": "#93000a",
+                    "on-secondary-container": "#626262",
+                    "background": "#f9f9f9",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "on-surface-variant": "#4c4546",
+                    "secondary": "#5e5e5e",
+                    "on-primary-container": "#848484",
+                    "outline": "#7e7576",
+                    "secondary-fixed-dim": "#c7c6c6",
+                    "surface-dim": "#dadada",
+                    "surface-container-highest": "#e2e2e2",
+                    "primary-container": "#1b1b1b",
+                    "surface-bright": "#f9f9f9",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter-mobile": "16px",
+                    "margin-mobile": "20px",
+                    "gutter-desktop": "24px",
+                    "margin-desktop": "64px",
+                    "max-width-form": "560px"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-sm": [
+                            "Hanken Grotesk"
+                    ],
+                    "label-md": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-lg": [
+                            "Hanken Grotesk"
+                    ],
+                    "queue-hero": [
+                            "Hanken Grotesk"
+                    ],
+                    "headline-lg-mobile": [
+                            "Hanken Grotesk"
+                    ],
+                    "reference-code": [
+                            "Hanken Grotesk"
+                    ],
+                    "body-md": [
+                            "Hanken Grotesk"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "queue-hero": [
+                            "72px",
+                            {
+                                    "lineHeight": "80px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "reference-code": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f9f9f9;
+            color: #1b1b1b;
+        }
+        .wireframe-border {
+            border: 1px solid #000000;
+        }
+        .wireframe-border-thick {
+            border: 2px solid #000000;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-surface-border flat no shadows fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 hidden md:flex items-center justify-between px-gutter-desktop h-20 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary font-headline-md text-headline-md" data-icon="medical_services">medical_services</span>
+<span class="font-headline-md text-headline-md text-primary">YɛnCare</span>
+</div>
+<nav class="flex gap-8">
+<a class="text-primary font-label-md text-label-md flex flex-col items-center justify-center hover:bg-surface-container-low transition-colors active:scale-95 duration-100 rounded-lg px-4 py-2 border-b-2 border-primary" href="#">
+                Book
+            </a>
+<a class="text-secondary font-label-md text-label-md flex flex-col items-center justify-center hover:bg-surface-container-low transition-colors active:scale-95 duration-100 rounded-lg px-4 py-2" href="#">
+                Find
+            </a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="font-label-md text-label-md text-primary wireframe-border px-4 py-2 rounded-DEFAULT hover:bg-surface-container-low transition-colors">Sign In</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[120px] pb-[80px] px-gutter-desktop md:px-margin-desktop flex flex-col items-center">
+<!-- Booking Progress Indicator (Simulated) -->
+<div class="w-full max-w-max-width-form flex justify-between items-center mb-8 relative">
+<div class="absolute top-1/2 left-0 w-full h-[1px] bg-surface-border -z-10"></div>
+<div class="flex flex-col items-center bg-background px-2">
+<div class="w-8 h-8 rounded-full wireframe-border bg-surface-high flex items-center justify-center font-label-sm text-label-sm">1</div>
+<span class="font-label-sm text-label-sm mt-1 text-secondary">Clinic</span>
+</div>
+<div class="flex flex-col items-center bg-background px-2">
+<div class="w-8 h-8 rounded-full wireframe-border-thick bg-primary text-on-primary flex items-center justify-center font-label-sm text-label-sm">2</div>
+<span class="font-label-sm text-label-sm mt-1 text-primary">Doctor</span>
+</div>
+<div class="flex flex-col items-center bg-background px-2">
+<div class="w-8 h-8 rounded-full wireframe-border bg-surface-high flex items-center justify-center font-label-sm text-label-sm text-placeholder">3</div>
+<span class="font-label-sm text-label-sm mt-1 text-placeholder">Time</span>
+</div>
+<div class="flex flex-col items-center bg-background px-2">
+<div class="w-8 h-8 rounded-full wireframe-border bg-surface-high flex items-center justify-center font-label-sm text-label-sm text-placeholder">4</div>
+<span class="font-label-sm text-label-sm mt-1 text-placeholder">Confirm</span>
+</div>
+</div>
+<div class="w-full max-w-max-width-form">
+<h1 class="font-headline-lg text-headline-lg mb-2">Choose Doctor</h1>
+<p class="font-body-md text-body-md text-secondary mb-8">Select a preferred doctor or choose the first available for a faster appointment.</p>
+<div class="space-y-4">
+<!-- Doctor Card: First Available -->
+<button class="w-full text-left bg-surface-high wireframe-border rounded-DEFAULT p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between group focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full wireframe-border bg-surface-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="schedule">schedule</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md">First Available</h2>
+<p class="font-body-md text-body-md text-secondary">Any available doctor</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- Doctor Card: Dr. Kwame Boateng -->
+<button class="w-full text-left bg-surface-high wireframe-border rounded-DEFAULT p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between group focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full wireframe-border bg-surface-low overflow-hidden">
+<img class="w-full h-full object-cover grayscale mix-blend-multiply" data-alt="A minimalist grayscale portrait of an African male doctor in a clinical setting, flat lighting, high contrast white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcPh-ksBqUQFUD_JKbo_Swg3QrnH28ZK0yFUUjd9jjtcVpcS1gyeLGDavijKbo0gY449TZueVVlFtZO7HZfHK-1FzyQe9pfztqgYrDxpRU1yAlyJftu6j1_DjqoL-gk2ycu1XCI-yylk6W_UCoeGBS6m8XdQDeIcXMJEVbVEsDPccb3ytJWxl7J312LhGQ-YwmP0IjfN7h3PLi4CxBaQYImAnn1DO-WfzqfOF5SOy6xn4RZh31_O2C"/>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md">Dr. Kwame Boateng</h2>
+<p class="font-body-md text-body-md text-secondary">General Practitioner</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</button>
+<!-- Doctor Card: Dr. Ama Osei -->
+<button class="w-full text-left bg-surface-high wireframe-border rounded-DEFAULT p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between group focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full wireframe-border bg-surface-low overflow-hidden">
+<img class="w-full h-full object-cover grayscale mix-blend-multiply" data-alt="A minimalist grayscale portrait of an African female doctor in a clinical setting, flat lighting, high contrast white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGYYEE9hc9rnHXy3HCjsnn1w3Np56h8Sg_6d8siKJc7_VD7IMdBIK5Ncd8MJ6lKQ5r2R6cF4ANDT02311GxF0luWVl9bFvWXhdrNsQEPDZepGQoxMBAQG1Cp5gX8YtOI025wXcYrgWCchiKs-x8phgvP5NZ3H_gC38_Hh28sz1XFD14Ow2vL5SazrjLSSz8PVWhcr5gsJpSj-9I2_7BXI4UPi6pRqo5w_zHh4kvkVDzvhTe3iXcHzV"/>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md">Dr. Ama Osei</h2>
+<p class="font-body-md text-body-md text-secondary">Pediatrician</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="mt-8 flex justify-start">
+<button class="font-label-md text-label-md text-primary bg-surface-high wireframe-border px-6 py-3 rounded-DEFAULT hover:bg-surface-container-low transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+                    Back to Clinics
+                </button>
+</div>
+</div>
+</main>
+</body></html>

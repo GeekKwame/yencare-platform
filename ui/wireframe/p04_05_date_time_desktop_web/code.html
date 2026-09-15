@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YɛnCare - Choose Date and Time</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-border": "#000000",
+                        "inverse-on-surface": "#f1f1f1",
+                        "surface": "#f9f9f9",
+                        "tertiary-fixed": "#e2e2e2",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#1b1b1b",
+                        "primary-fixed": "#e2e2e2",
+                        "tertiary": "#000000",
+                        "placeholder": "#999999",
+                        "secondary-container": "#e1dfdf",
+                        "on-secondary-fixed-variant": "#464747",
+                        "surface-low": "#F2F2F2",
+                        "inverse-surface": "#303030",
+                        "surface-high": "#FFFFFF",
+                        "error-text": "#000000",
+                        "on-tertiary-container": "#848484",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#1b1b1b",
+                        "surface-container": "#eeeeee",
+                        "inverse-primary": "#c6c6c6",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#000000",
+                        "surface-container-high": "#e8e8e8",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#5e5e5e",
+                        "surface-container-low": "#f3f3f3",
+                        "surface-variant": "#e2e2e2",
+                        "on-background": "#1b1b1b",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#cfc4c5",
+                        "tertiary-container": "#1b1b1b",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "secondary-fixed": "#e4e2e2",
+                        "on-primary-fixed-variant": "#474747",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#626262",
+                        "background": "#f9f9f9",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-surface-variant": "#4c4546",
+                        "secondary": "#5e5e5e",
+                        "on-primary-container": "#848484",
+                        "outline": "#7e7576",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "surface-dim": "#dadada",
+                        "surface-container-highest": "#e2e2e2",
+                        "primary-container": "#1b1b1b",
+                        "surface-bright": "#f9f9f9",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter-mobile": "16px",
+                        "margin-mobile": "20px",
+                        "gutter-desktop": "24px",
+                        "margin-desktop": "64px",
+                        "max-width-form": "560px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "queue-hero": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "reference-code": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "queue-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "reference-code": ["24px", { "lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col">
+<!-- Top Navigation (Desktop Patient) -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-20 bg-surface border-b border-surface-border">
+<!-- Brand -->
+<div class="flex items-center gap-2 text-primary font-headline-md text-headline-md">
+<span class="material-symbols-outlined icon-filled">medical_services</span>
+<span>YɛnCare</span>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-label-md text-label-md text-primary border-b-2 border-primary pb-1 flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                Book appointment
+            </a>
+<a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[18px]">search</span>
+                Find appointment
+            </a>
+</nav>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow pt-32 pb-24 px-gutter-desktop md:px-margin-desktop flex flex-col items-center">
+<!-- Page Header -->
+<div class="w-full max-w-[880px] mb-8">
+<button class="mb-6 flex items-center gap-2 font-label-md text-label-md text-secondary hover:text-primary transition-colors group">
+<span class="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                Back to Specialty Selection
+            </button>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Select Date &amp; Time</h1>
+<p class="font-body-md text-body-md text-secondary">Choose an available slot for your consultation.</p>
+</div>
+<!-- Interactive Core: Structural Brutalism Bento Layout -->
+<div class="w-full max-w-[880px] bg-surface-high border-2 border-surface-border flex flex-col md:flex-row">
+<!-- Left Panel: Calendar Component -->
+<section class="flex-1 border-b md:border-b-0 md:border-r border-surface-border p-6 md:p-8">
+<!-- Calendar Header -->
+<div class="flex justify-between items-center mb-8">
+<h2 class="font-headline-md text-headline-md text-primary">October 2023</h2>
+<div class="flex gap-0 border border-surface-border">
+<button aria-label="Previous Month" class="w-10 h-10 flex items-center justify-center border-r border-surface-border bg-surface-high hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button aria-label="Next Month" class="w-10 h-10 flex items-center justify-center bg-surface-high hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Days of Week -->
+<div class="grid grid-cols-7 gap-1 mb-4 text-center font-label-sm text-label-sm text-secondary uppercase tracking-wider">
+<div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+</div>
+<!-- Calendar Grid (Grayscale Wireframe Style) -->
+<div class="grid grid-cols-7 gap-1 text-center font-body-md text-body-md">
+<!-- Week 1 -->
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">1</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">2</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">3</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">4</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">5</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">6</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">7</div>
+<!-- Week 2 -->
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">8</div>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">9</div>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">10</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">11</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">12</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">13</button>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">14</div>
+<!-- Week 3 -->
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">15</div>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">16</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">17</button>
+<!-- Selected Date -->
+<button class="p-2 bg-primary text-on-primary font-bold border-2 border-primary">18</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">19</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">20</button>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">21</div>
+<!-- Week 4 -->
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">22</div>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">23</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">24</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">25</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">26</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">27</button>
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">28</div>
+<!-- Week 5 -->
+<div class="p-2 text-on-tertiary-container cursor-not-allowed">29</div>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">30</button>
+<button class="p-2 border border-transparent hover:border-surface-border hover:bg-surface-low text-primary transition-all">31</button>
+<div class="p-2"></div>
+<div class="p-2"></div>
+<div class="p-2"></div>
+<div class="p-2"></div>
+</div>
+</section>
+<!-- Right Panel: Time Slots Component -->
+<section class="flex-1 p-6 md:p-8 bg-surface-low flex flex-col h-full">
+<div class="mb-8 border-b border-surface-border pb-4">
+<h2 class="font-headline-md text-headline-md text-primary">Wednesday, Oct 18</h2>
+<p class="font-body-md text-body-md text-secondary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                        Accra Central Clinic
+                    </p>
+</div>
+<div class="flex-grow">
+<h3 class="font-label-md text-label-md text-secondary mb-4">Morning</h3>
+<div class="grid grid-cols-2 gap-3 mb-8">
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            09:00 AM
+                        </button>
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            09:30 AM
+                        </button>
+<!-- Selected Time Slot -->
+<button class="border-2 border-primary bg-primary text-on-primary p-[15px] font-body-md text-body-md font-bold flex justify-center items-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] transition-all">
+                            10:00 AM
+                        </button>
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            10:30 AM
+                        </button>
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            11:00 AM
+                        </button>
+</div>
+<h3 class="font-label-md text-label-md text-secondary mb-4">Afternoon</h3>
+<div class="grid grid-cols-2 gap-3">
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            01:00 PM
+                        </button>
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            02:30 PM
+                        </button>
+<button class="border border-surface-border bg-surface-high p-4 font-body-md text-body-md text-primary hover:border-2 hover:p-[15px] transition-all flex justify-center items-center">
+                            03:00 PM
+                        </button>
+<button class="border border-surface-border bg-surface-container-high p-4 font-body-md text-body-md text-on-tertiary-container cursor-not-allowed flex justify-center items-center line-through decoration-1">
+                            04:30 PM
+                        </button>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Bottom Action (Fixed-Fluid Hybrid approach for forms) -->
+<div class="w-full max-w-[880px] mt-8 flex justify-end">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-8 py-4 border border-primary hover:bg-inverse-surface active:scale-95 transition-all flex items-center gap-2">
+                Continue to Details
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</main>
+</body></html>

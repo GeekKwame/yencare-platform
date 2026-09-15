@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YɛnCare - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#1b1b1b",
+                      "primary-container": "#1b1b1b",
+                      "surface-tint": "#5e5e5e",
+                      "surface-container": "#eeeeee",
+                      "tertiary-fixed-dim": "#c6c6c6",
+                      "primary": "#000000",
+                      "primary-fixed": "#e2e2e2",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed": "#e2e2e2",
+                      "primary-fixed-dim": "#c6c6c6",
+                      "error-text": "#000000",
+                      "tertiary": "#000000",
+                      "inverse-primary": "#c6c6c6",
+                      "on-tertiary": "#ffffff",
+                      "surface": "#f9f9f9",
+                      "surface-dim": "#dadada",
+                      "surface-container-low": "#f3f3f3",
+                      "on-tertiary-fixed-variant": "#474747",
+                      "on-background": "#1b1b1b",
+                      "surface-border": "#000000",
+                      "on-primary": "#ffffff",
+                      "on-primary-fixed": "#1b1b1b",
+                      "on-surface-variant": "#4c4546",
+                      "placeholder": "#999999",
+                      "on-secondary-fixed-variant": "#464747",
+                      "on-primary-fixed-variant": "#474747",
+                      "error": "#ba1a1a",
+                      "surface-high": "#FFFFFF",
+                      "secondary": "#5e5e5e",
+                      "on-tertiary-container": "#848484",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "outline": "#7e7576",
+                      "inverse-surface": "#303030",
+                      "error-container": "#ffdad6",
+                      "on-surface": "#1b1b1b",
+                      "secondary-container": "#e1dfdf",
+                      "on-primary-container": "#848484",
+                      "secondary-fixed": "#e4e2e2",
+                      "surface-container-high": "#e8e8e8",
+                      "on-secondary": "#ffffff",
+                      "surface-bright": "#f9f9f9",
+                      "tertiary-container": "#1b1b1b",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-low": "#F2F2F2",
+                      "inverse-on-surface": "#f1f1f1",
+                      "secondary-fixed-dim": "#c7c6c6",
+                      "surface-container-highest": "#e2e2e2",
+                      "outline-variant": "#cfc4c5",
+                      "surface-variant": "#e2e2e2",
+                      "on-secondary-container": "#626262",
+                      "background": "#f9f9f9"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter-mobile": "16px",
+                      "base": "8px",
+                      "gutter-desktop": "24px",
+                      "max-width-form": "560px",
+                      "margin-desktop": "64px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-lg-mobile": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "reference-code": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "queue-hero": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "reference-code": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "queue-hero": [
+                              "72px",
+                              {
+                                      "lineHeight": "80px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        .brutal-border {
+            border: 2px solid theme('colors.primary');
+        }
+        .brutal-border-thin {
+            border: 1px solid theme('colors.primary');
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center bg-surface relative overflow-hidden">
+<!-- Top Navigation from Shared Components -->
+<nav class="absolute top-0 w-full flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-surface dark:bg-surface border-b-2 border-primary dark:border-surface-variant transition-colors duration-200 z-10">
+<a href="../p01_home_desktop_web_hi_fi/code.html" class="text-headline-md font-headline-md font-bold text-primary dark:text-on-surface hover:opacity-80">YɛnCare</a>
+<div class="hidden md:flex space-x-6">
+<a class="text-primary dark:text-on-surface font-bold border-b-2 border-primary hover:bg-surface-container dark:hover:bg-surface-container-high px-2 py-1" href="../p02_your_details_desktop_web_hi_fi/code.html">Book appointment</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high px-2 py-1" href="../p09_find_appointment_mobile_web_hi_fi/code.html">Find appointment</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high px-2 py-1" href="../p18_queue_status_desktop_web_hi_fi/code.html">Queue Status</a>
+</div>
+<div class="hidden md:block">
+<a class="text-on-surface-variant dark:text-on-surface-variant font-label-md text-label-md hover:text-primary border border-outline-variant px-3 py-1.5 rounded" href="../s01_sign_in_desktop_staff/code.html">Staff Portal</a>
+</div>
+</nav>
+<!-- Main Content Area (Fixed Width Form Container style) -->
+<main class="w-full max-w-max-width-form px-gutter-mobile md:px-0 flex flex-col items-center text-center mt-20 md:mt-0 z-10 bg-surface-high p-8 brutal-border rounded">
+<div class="mb-8">
+<span aria-hidden="true" class="material-symbols-outlined text-6xl text-primary mb-4" data-icon="health_and_safety">health_and_safety</span>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Welcome to YɛnCare</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Book a new appointment or find your existing one.</p>
+</div>
+<div class="w-full space-y-4 mb-8">
+<a href="../p02_your_details_desktop_web_hi_fi/code.html" class="w-full py-4 bg-primary text-on-primary font-label-md text-label-md rounded-none hover:bg-surface-tint transition-colors brutal-border flex items-center justify-center gap-2">
+<span aria-hidden="true" class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                Book appointment
+</a>
+<a href="../p09_find_appointment_mobile_web_hi_fi/code.html" class="w-full py-4 bg-surface text-primary font-label-md text-label-md rounded-none hover:bg-surface-container transition-colors brutal-border flex items-center justify-center gap-2">
+<span aria-hidden="true" class="material-symbols-outlined" data-icon="search">search</span>
+                Find appointment
+</a>
+</div>
+<div class="w-full border-t border-outline-variant pt-6 mb-6">
+<a class="flex items-center justify-center gap-2 text-primary hover:text-surface-tint transition-colors font-label-md text-label-md group" href="../p18_queue_status_desktop_web_hi_fi/code.html">
+                Check my queue
+                <span aria-hidden="true" class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<div class="w-full bg-surface-container-low p-4 brutal-border-thin flex items-start gap-3 text-left">
+<span aria-hidden="true" class="material-symbols-outlined text-primary mt-1" data-icon="sms">sms</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant">We send a confirmation text after you book. Standard rates may apply depending on your carrier in Ghana.</p>
+</div>
+</main>
+<!-- Footer from Shared Components -->
+<footer class="absolute bottom-0 w-full py-8 px-margin-mobile md:px-margin-desktop bg-surface-container-low dark:bg-surface-dim border-t border-outline-variant text-center z-10">
+<div class="flex flex-col md:flex-row justify-between items-center max-w-max-width-form mx-auto w-full gap-4">
+<div class="font-bold text-primary font-label-sm text-label-sm">YɛnCare</div>
+<div class="flex space-x-4">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Help Center</a>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">
+                 © 2024 YɛnCare Ghana. All rights reserved.
+             </div>
+</div>
+</footer>
+</body></html>

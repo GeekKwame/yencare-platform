@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: yencare-api-staging
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: SMS_PROVIDER
+        value: mnotify
+      - key: MNOTIFY_SENDER_ID
+        value: YenCare
+      - key: MONGODB_URI
+        sync: false
+      - key: MNOTIFY_API_KEY
+        sync: false

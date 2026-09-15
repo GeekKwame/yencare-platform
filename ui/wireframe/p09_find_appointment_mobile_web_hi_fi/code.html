@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>YɛnCare - Find Appointment</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#464747",
+                        "secondary-container": "#e1dfdf",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "on-surface-variant": "#4c4546",
+                        "inverse-on-surface": "#f1f1f1",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface-high": "#FFFFFF",
+                        "surface-low": "#F2F2F2",
+                        "secondary-fixed": "#e4e2e2",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#474747",
+                        "surface-container-high": "#e8e8e8",
+                        "on-background": "#1b1b1b",
+                        "placeholder": "#999999",
+                        "surface-variant": "#e2e2e2",
+                        "primary-container": "#1b1b1b",
+                        "surface-container-low": "#f3f3f3",
+                        "inverse-surface": "#303030",
+                        "on-surface": "#1b1b1b",
+                        "error-text": "#000000",
+                        "primary-fixed": "#e2e2e2",
+                        "on-secondary-container": "#626262",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-primary-container": "#848484",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "primary": "#000000",
+                        "secondary": "#5e5e5e",
+                        "inverse-primary": "#c6c6c6",
+                        "outline": "#7e7576",
+                        "surface": "#f9f9f9",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "tertiary-fixed": "#e2e2e2",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#1b1b1b",
+                        "tertiary": "#000000",
+                        "surface-border": "#000000",
+                        "background": "#f9f9f9",
+                        "surface-bright": "#f9f9f9",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#dadada",
+                        "tertiary-container": "#1b1b1b",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-tertiary-container": "#848484",
+                        "outline-variant": "#cfc4c5",
+                        "surface-tint": "#5e5e5e",
+                        "surface-container": "#eeeeee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "gutter-mobile": "16px",
+                        "gutter-desktop": "24px",
+                        "base": "8px",
+                        "max-width-form": "560px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "queue-hero": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "reference-code": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "queue-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "reference-code": ["24px", { "lineHeight": "32px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface dark:bg-background text-on-surface dark:text-on-background font-body-md min-h-screen flex flex-col pt-16 pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface dark:bg-background border-b border-surface-border transition-colors duration-200">
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="flex items-center gap-2 text-primary dark:text-on-background active:scale-95 duration-100 cursor-pointer hover:bg-surface-container-low p-2 rounded-DEFAULT transition-colors">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+<span class="font-headline-md text-headline-md font-bold tracking-tight">YɛnCare</span>
+</a>
+<a href="../p01_home_mobile_web_hi_fi/code.html" class="text-secondary hover:text-primary font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">home</span>
+Home
+</a>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center px-gutter-mobile pt-8">
+<div class="w-full max-w-max-width-form flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex flex-col gap-2">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Find your appointment</h1>
+<p class="font-body-md text-body-md text-secondary">Enter your details below to check your queue status or update your booking.</p>
+</div>
+<!-- Form Container -->
+<form action="../p11_appointment_details_mobile_web_hi_fi/code.html" class="flex flex-col gap-6" onsubmit="event.preventDefault(); window.location.href='../p11_appointment_details_mobile_web_hi_fi/code.html';">
+<!-- Phone Number Input -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="phone">Phone Number</label>
+<div class="relative flex items-center border border-surface-border bg-surface-high rounded-DEFAULT focus-within:border-2 overflow-hidden h-12">
+<div class="flex items-center justify-center bg-surface-low border-r border-surface-border px-3 h-full font-body-md text-body-md text-secondary">
+                            +233
+                        </div>
+<input class="w-full h-full bg-transparent border-none focus:ring-0 px-3 font-body-md text-body-md text-primary placeholder:text-placeholder" id="phone" name="phone" pattern="[0-9]{9,10}" placeholder="Phone Number" required="" type="tel" value="241234567"/>
+</div>
+</div>
+<!-- Appointment Reference Input -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface" for="reference">Appointment Reference</label>
+<div class="relative flex items-center border border-surface-border bg-surface-high rounded-DEFAULT focus-within:border-2 h-12">
+<span class="material-symbols-outlined absolute left-3 text-secondary">tag</span>
+<input class="w-full h-full bg-transparent border-none focus:ring-0 pl-10 pr-3 font-reference-code text-reference-code text-primary placeholder:text-placeholder uppercase" id="reference" name="reference" placeholder="E.G. YC-4821" required="" type="text" value="YC-4821"/>
+</div>
+<p class="font-label-sm text-label-sm text-secondary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">info</span>
+                        Your reference is on the confirmation screen and in the text message.
+                    </p>
+</div>
+<!-- Submit Action -->
+<button class="w-full h-12 bg-primary text-on-primary rounded-DEFAULT flex items-center justify-center gap-2 hover:bg-inverse-surface transition-colors active:scale-95 duration-100 border border-surface-border mt-4" type="submit">
+<span class="font-label-md text-label-md btn-text">Find appointment</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</form>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-high dark:bg-surface-container-lowest border-t border-surface-border">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-on-surface-variant px-6 py-1 hover:bg-surface-container-high active:opacity-80 transition-opacity rounded-lg" href="../p02_your_details_mobile_web_hi_fi/code.html">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-label-md text-label-md mt-1">Book</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-lg px-6 py-1 hover:bg-surface-container-high active:opacity-80 transition-opacity" href="../p09_find_appointment_mobile_web_hi_fi/code.html">
+<span class="material-symbols-outlined" data-icon="search" data-weight="fill">search</span>
+<span class="font-label-md text-label-md mt-1">Find</span>
+</a>
+</nav>
+</body></html>
