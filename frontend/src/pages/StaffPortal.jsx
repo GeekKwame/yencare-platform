@@ -594,12 +594,17 @@ const StaffPortal = () => {
       placeholder="Phone Number"
       className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
       />
-      <input name="visitType" 
+      <select name="visitType" 
       value={walkInData.visitType} 
       onChange={(e) => setWalkInData((prev) => ({...prev, visitType: e.target.value}))}
       placeholder="Visit Type"
       className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
-      />
+      >
+        <option value="General OPD">General OPD</option>
+        <option value="Follow-up/Review">Follow-up/Review</option>
+        <option value="Dressing">Dressing</option>
+        <option value="Other clinic service">Other clinic service</option>
+      </select>
       <select name="priority" 
       value={walkInData.priority} 
       onChange={(e) => setWalkInData((prev) => ({...prev, priority: e.target.value}) )}
