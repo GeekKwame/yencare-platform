@@ -18,6 +18,8 @@ import { createQueueRouter } from './queueRoutes.js';
  *     findByReference?: Function,
  *     listAppointments?: Function,
  *     updateStatus?: Function,
+ *     cancelAppointment?: Function,
+ *     rescheduleAppointment?: Function,
  *     getQueueStatus?: Function,
  *   },
  *   queueService?: {
@@ -28,7 +30,12 @@ import { createQueueRouter } from './queueRoutes.js';
  *   },
  * }} deps
  */
-export function createApp({ patientService, catalog, appointmentService, queueService }) {
+export function createApp({
+  patientService,
+  catalog,
+  appointmentService,
+  queueService,
+}) {
   const app = express();
 
   app.use(cors());
@@ -41,7 +48,10 @@ export function createApp({ patientService, catalog, appointmentService, queueSe
   app.use('/api/patients', createPatientsRouter(patientService));
 
   if (appointmentService) {
-    app.use('/api/appointments', createAppointmentsRouter(appointmentService));
+    app.use(
+      '/api/appointments',
+      createAppointmentsRouter(appointmentService),
+    );
   }
 
   if (queueService) {
@@ -64,20 +74,30 @@ export function createApp({ patientService, catalog, appointmentService, queueSe
       });
     }
 
-    if (err?.name === 'ValidationError' || err?.name === 'CastError') {
+    if (
+      err?.name === 'ValidationError' ||
+      err?.name === 'CastError'
+    ) {
       return res.status(400).json({ error: err.message });
     }
 
     if (err?.code === 11000) {
-      return res.status(409).json({ error: 'This time slot is already booked' });
+      return res.status(409).json({
+        error: 'This time slot is already booked',
+      });
     }
 
     if (err instanceof SyntaxError && 'body' in err) {
-      return res.status(400).json({ error: 'Invalid JSON body' });
+      return res.status(400).json({
+        error: 'Invalid JSON body',
+      });
     }
 
     console.error('[api]', err);
-    return res.status(500).json({ error: 'Internal server error' });
+
+    return res.status(500).json({
+      error: 'Internal server error',
+    });
   });
 
   return app;
