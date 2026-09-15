@@ -10,6 +10,7 @@ import {
   getTodaysAppointments,
   updateAppointmentStatus,
 } from "../services/appointments";
+import { registerPatient } from "../services/patients";
 
 const STATUS_RANK = {
   CHECKED_IN: 0,
@@ -71,6 +72,14 @@ function matchesDeskQuery(appt, rawQuery) {
 
 const StaffPortal = () => {
   const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
+  const [isWalkInOpen, setIsWalkInOpen] = useState(false);
+  const [walkInData, setWalkInData] = useState({
+  fullName: "",
+  studentIndex: "",
+  phoneNumber: "",
+  visitType: "",
+  priority: "Standard",
+});
   const [appointments, setAppointments] = useState(() =>
     getMockTodaysAppointments(DEFAULT_CLINIC_SITE),
   );
@@ -157,6 +166,39 @@ const StaffPortal = () => {
   function handleCheckIn(id) {
     return applyStatus(id, "CHECKED_IN", "Checked in");
   }
+
+  async function handleWalkInSubmit(e) {
+  e.preventDefault();
+  console.log("form submitted");
+
+  const patient = await registerPatient({
+    fullName: walkInData.fullName,
+    studentIndex: walkInData.studentIndex,
+    phoneNumber: walkInData.phoneNumber,
+  });
+
+  const newCard = {
+      id: crypto.randomUUID(),
+    patientId: patient.id, 
+    patientName: patient.fullName,
+    reference: "W-" + Math.floor(Math.random() * 1000),
+    service: walkInData.visitType,
+    time: "Now",
+    status: "CHECKED_IN",
+    bookingType: "WALK_IN",
+  };
+
+  setAppointments((prev) => [...prev, newCard]);
+
+  setIsWalkInOpen(false);
+  setWalkInData({
+    fullName: "",
+    studentIndex: "",
+    phoneNumber: "",
+    visitType: "",
+    priority: "Standard",
+  });
+}
 
   function handleCheckInToQueue(id) {
     return applyStatus(id, "WAITING", "Checked into queue");
@@ -312,6 +354,14 @@ const StaffPortal = () => {
             ))}
           </select>
         </label>
+        <button
+          type="button"
+          onClick={() => setIsWalkInOpen(true)}
+          className="shrink-0 rounded-xl bg-[#176b5f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#14594f]"
+        >
+          Add Walk-in
+        </button>
+
       </div>
 
       {message && (
@@ -521,6 +571,51 @@ const StaffPortal = () => {
           ))}
         </div>
       )}
+
+      {isWalkInOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+    <div className="bg-white p-6 rounded-xl">
+      <form onSubmit={handleWalkInSubmit}>
+      <input name="fullName"
+      value={walkInData.fullName}
+      onChange={(e) => setWalkInData((prev) => ({...prev, fullName: e.target.value}))}
+      placeholder="Full Name"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+       />
+      <input name="studentIndex" 
+      value={walkInData.studentIndex} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, studentIndex: e.target.value}))}
+      placeholder="Student Index"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      />
+      <input name="phoneNumber" 
+      value={walkInData.phoneNumber} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, phoneNumber: e.target.value}))}
+      placeholder="Phone Number"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      />
+      <input name="visitType" 
+      value={walkInData.visitType} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, visitType: e.target.value}))}
+      placeholder="Visit Type"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      />
+      <select name="priority" 
+      value={walkInData.priority} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, priority: e.target.value}) )}
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      >
+        <option value="Standard">Standard</option>
+        <option value="Urgent">Urgent</option>
+      </select>
+    <div className="flex gap-2 mt-3">
+      <button type="submit" className="rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white">Add to Queue</button>
+      <button type="button" onClick={() => setIsWalkInOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm">Close</button>
+    </div>  
+    </form>
+    </div>
+  </div>
+)}
     </main>
   );
 };
