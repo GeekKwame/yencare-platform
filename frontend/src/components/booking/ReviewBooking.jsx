@@ -52,6 +52,7 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
       const created = await createAppointment({
         patientId: formData.patientId,
         phoneNumber: formData.phoneNumber,
+        phone: formData.phoneNumber,
         clinicianId: formData.clinicianId,
         roomId: formData.roomId,
         timeSlotId: formData.timeSlotId,

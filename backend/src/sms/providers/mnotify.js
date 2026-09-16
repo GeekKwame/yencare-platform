@@ -1,4 +1,4 @@
-import { toLocalGhanaPhone } from '../normalizePhone.js';
+import { toLocalGhanaPhone, toMsisdnGhanaPhone } from '../normalizePhone.js';
 
 const QUICK_SMS_URL = 'https://api.mnotify.com/api/sms/quick';
 
@@ -32,46 +32,58 @@ export async function sendViaMnotify(to, message, { fetchImpl = fetch } = {}) {
     throw new Error('MNOTIFY_API_KEY is not set');
   }
 
-  const recipient = toLocalGhanaPhone(to);
+  const local = toLocalGhanaPhone(to);
+  const msisdn = toMsisdnGhanaPhone(to);
   const endpoint = resolveQuickSmsUrl();
   const url = `${endpoint}?key=${encodeURIComponent(apiKey)}`;
 
-  const response = await fetchImpl(url, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      recipient: [recipient],
-      sender,
-      message,
-      is_schedule: false,
-      schedule_date: '',
-    }),
+  const payload = (recipient) => ({
+    recipient: [recipient],
+    sender,
+    message,
+    is_schedule: false,
+    schedule_date: '',
   });
 
-  let data = null;
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
+  const post = async (recipient) => {
+    const response = await fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload(recipient)),
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    const ok =
+      response.ok &&
+      (data?.status === 'success' || data?.code === '2000' || data?.code === 2000);
+
+    return { ok, status: response.status, data };
+  };
+
+  let result = await post(local);
+  if (!result.ok && local !== msisdn) {
+    result = await post(msisdn);
   }
 
-  const ok =
-    response.ok &&
-    (data?.status === 'success' || data?.code === '2000' || data?.code === 2000);
-
-  if (!ok) {
-    throw new Error(describeMnotifyError(response.status, data));
+  if (!result.ok) {
+    throw new Error(describeMnotifyError(result.status, result.data));
   }
 
   return {
     ok: true,
     provider: 'mnotify',
     to,
-    messageId: data?.summary?._id ?? null,
-    status: data.status ?? 'success',
-    raw: data,
+    messageId: result.data?.summary?._id ?? null,
+    status: result.data.status ?? 'success',
+    raw: result.data,
   };
 }

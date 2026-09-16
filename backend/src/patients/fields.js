@@ -29,16 +29,41 @@ export function resolvePatientPhone(patient) {
  * @returns {string | null}
  */
 export function resolveSmsDestination(patient, requestedPhone) {
-  const stored = resolvePatientPhone(patient);
-  if (requestedPhone == null || String(requestedPhone).trim() === '') {
-    return stored;
+  const candidates = [requestedPhone, resolvePatientPhone(patient)];
+  for (const candidate of candidates) {
+    if (candidate == null || String(candidate).trim() === '') continue;
+    try {
+      return normalizeGhanaPhone(candidate);
+    } catch {
+      // try the next known number
+    }
   }
+  return null;
+}
 
-  try {
-    return normalizeGhanaPhone(requestedPhone);
-  } catch {
-    return stored;
+/**
+ * Unique E.164 destinations to try for a booking confirmation.
+ *
+ * @param {object | null | undefined} patient
+ * @param {unknown} [requestedPhone]
+ * @returns {string[]}
+ */
+export function bookingSmsDestinations(patient, requestedPhone) {
+  const destinations = [];
+  const seen = new Set();
+  for (const candidate of [requestedPhone, resolvePatientPhone(patient)]) {
+    if (candidate == null || String(candidate).trim() === '') continue;
+    try {
+      const phone = normalizeGhanaPhone(candidate);
+      if (!seen.has(phone)) {
+        seen.add(phone);
+        destinations.push(phone);
+      }
+    } catch {
+      // skip unusable values
+    }
   }
+  return destinations;
 }
 
 /**

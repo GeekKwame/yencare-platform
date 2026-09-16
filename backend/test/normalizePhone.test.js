@@ -21,6 +21,22 @@ describe('normalizeGhanaPhone', () => {
     assert.equal(normalizeGhanaPhone('233241234567'), '+233241234567');
   });
 
+  it('strips an extra 0 after the country code', () => {
+    assert.equal(normalizeGhanaPhone('+2330241234567'), '+233241234567');
+    assert.equal(normalizeGhanaPhone('2330541234567'), '+233541234567');
+  });
+
+  it('strips a leading 00 international prefix', () => {
+    assert.equal(normalizeGhanaPhone('00233241234567'), '+233241234567');
+  });
+
+  it('accepts Telecel and AirtelTigo prefixes', () => {
+    assert.equal(normalizeGhanaPhone('0201234567'), '+233201234567');
+    assert.equal(normalizeGhanaPhone('0501234567'), '+233501234567');
+    assert.equal(normalizeGhanaPhone('0271234567'), '+233271234567');
+    assert.equal(normalizeGhanaPhone('0571234567'), '+233571234567');
+  });
+
   it('rejects empty and invalid values', () => {
     assert.throws(() => normalizeGhanaPhone(''), /required/);
     assert.throws(() => normalizeGhanaPhone('123'), /Invalid Ghana phone/);

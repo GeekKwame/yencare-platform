@@ -176,10 +176,17 @@ export function isValidStudentIndex(value) {
 
 /** Accept common Ghana mobile forms used by the prototype / backend. */
 export function isValidGhanaPhone(value) {
-  const digits = String(value || "").replace(/\D/g, "");
-  if (/^0[235]\d{8}$/.test(digits)) return true;
-  if (/^[235]\d{8}$/.test(digits)) return true;
-  if (/^233[235]\d{8}$/.test(digits)) return true;
+  let digits = String(value || "").replace(/\D/g, "");
+  while (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("2330") && digits.length === 13) {
+    digits = `233${digits.slice(4)}`;
+  }
+  if (digits.startsWith("0233") && digits.length === 13) {
+    digits = digits.slice(1);
+  }
+  if (/^0[25]\d{8}$/.test(digits)) return true;
+  if (/^[25]\d{8}$/.test(digits)) return true;
+  if (/^233[25]\d{8}$/.test(digits)) return true;
   return false;
 }
 

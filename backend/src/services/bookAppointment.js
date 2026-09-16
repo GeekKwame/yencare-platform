@@ -8,7 +8,7 @@
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
-import { resolvePatientPhone, resolveSmsDestination } from '../patients/fields.js';
+import { resolvePatientPhone, resolveSmsDestination, bookingSmsDestinations } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 
 /**
@@ -89,17 +89,18 @@ export async function createAppointment(data) {
 
   // Prefer the number entered for this booking so SMS never goes to a
   // stale admin/test number left on a reused student-index record.
-  const phone = resolveSmsDestination(patient, requestedPhone);
+  const destinations = bookingSmsDestinations(patient, requestedPhone);
+  const phone = destinations[0] || resolveSmsDestination(patient, requestedPhone);
   if (!phone) {
     console.error(
-      '[booking] Appointment created but patient has no phone field (checked "phone" and "phoneNumber"):',
+      '[booking] Appointment created but patient has no usable Ghana phone for SMS:',
       appointment.patientId,
     );
     return { appointment, sms: { ok: false, error: 'Patient has no phone number on record' } };
   }
 
   const storedPhone = resolvePatientPhone(patient);
-  if (phone && storedPhone !== phone) {
+  if (storedPhone !== phone) {
     try {
       patient.phone = phone;
       await patient.save();
@@ -111,25 +112,25 @@ export async function createAppointment(data) {
     }
   }
 
-  // 3. Dispatch the confirmation SMS to this patient only. A failure here
-  //    never undoes the booking — the web confirmation is the source of truth.
   const message = [
     'YenCare Health',
     '',
     'Appointment Confirmed',
     `${appointment.appointmentDate}, ${appointment.appointmentTime}`,
     `Booking ID: ${appointment.referenceCode}`,
-    `Arrive by ${appointment.appointmentTime}`,
+    'Please arrive 15 minutes early.',
   ].join('\n');
 
-  console.info(
-    '[booking] Sending confirmation SMS to patient',
-    maskPhone(phone),
-    'for',
-    appointment.referenceCode,
-  );
-  const sms = await sendSms(phone, message);
-  if (!sms.ok) {
+  let sms = { ok: false, error: 'SMS was not sent' };
+  for (const destination of destinations.length > 0 ? destinations : [phone]) {
+    console.info(
+      '[booking] Sending confirmation SMS to patient',
+      maskPhone(destination),
+      'for',
+      appointment.referenceCode,
+    );
+    sms = await sendSms(destination, message);
+    if (sms.ok) break;
     console.error('[booking] SMS not delivered for', appointment.referenceCode, ':', sms.error);
   }
 

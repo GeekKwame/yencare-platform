@@ -29,7 +29,7 @@ function resolveProvider() {
  * Default is mock (offline). Set SMS_PROVIDER=mnotify and MNOTIFY_API_KEY
  * to deliver to a real Ghana number (uses mNotify credits / signup bonus).
  *
- * Invalid numbers throw. Provider failures return `{ ok: false }` so a
+ * Invalid numbers and provider failures return `{ ok: false }` so a
  * booking can still succeed if SMS delivery fails.
  *
  * @param {string} to Ghana phone (024…, 241234567, or +233…)
@@ -52,11 +52,24 @@ export async function sendSms(to, message) {
     };
   }
 
-  const phone = normalizeGhanaPhone(to);
+  let phone;
+  try {
+    phone = normalizeGhanaPhone(to);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    console.error('[sms] invalid destination:', error);
+    return {
+      ok: false,
+      provider: resolveProvider(),
+      to: String(to),
+      error,
+    };
+  }
+
   const body = String(message);
   const provider = resolveProvider();
 
-  try {
+  const attempt = async () => {
     if (provider === 'mnotify') {
       return await sendViaMnotify(phone, body);
     }
@@ -64,16 +77,32 @@ export async function sendSms(to, message) {
       return await sendViaAfricasTalking(phone, body);
     }
     return await sendViaMock(phone, body);
+  };
+
+  try {
+    let result = await attempt();
+    if (!result?.ok) {
+      result = await attempt();
+    }
+    return result;
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    console.error(`[sms] ${provider} send failed:`, error);
-    return {
-      ok: false,
-      provider,
-      to: phone,
-      error,
-    };
+    try {
+      return await attempt();
+    } catch (retryErr) {
+      const error = retryErr instanceof Error ? retryErr.message : String(retryErr);
+      console.error(`[sms] ${provider} send failed:`, error);
+      return {
+        ok: false,
+        provider,
+        to: phone,
+        error,
+      };
+    }
   }
 }
 
-export { normalizeGhanaPhone, toLocalGhanaPhone } from './normalizePhone.js';
+export {
+  normalizeGhanaPhone,
+  toLocalGhanaPhone,
+  ghanaNationalNumber,
+} from './normalizePhone.js';
