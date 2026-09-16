@@ -6,17 +6,21 @@ import ClinicianSelection from "./ClinicianSelection";
 import ServiceSelection from "./ServiceSelection";
 import TimeSlots from "./TimeSlots";
 import ReviewBooking from "./ReviewBooking";
+import SlotTaken from "./SlotTaken";
 
 const initialFormData = {
   fullName: "",
   studentIndex: "",
   phoneNumber: "",
   nhisNumber: "",
+  patientId: "",
   clinicSite: "",
   visitType: "",
   clinicianId: "",
   clinician: "",
   clinicianRoom: "",
+  roomId: "",
+  timeSlotId: "",
   appointmentDate: "",
   appointmentTime: "",
 };
@@ -24,6 +28,7 @@ const initialFormData = {
 const BookingForm = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
+  const [slotTaken, setSlotTaken] = useState(false);
 
   const updateFormData = (changes) => {
     setFormData((prev) => ({
@@ -33,21 +38,43 @@ const BookingForm = () => {
   };
 
   const goToNextStep = () => {
+    setSlotTaken(false);
     setStep((prev) => Math.min(prev + 1, 7));
   };
 
   const goToPreviousStep = () => {
+    setSlotTaken(false);
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleStartBooking = () => {
+    setSlotTaken(false);
     setStep(2);
   };
 
   const handleReset = () => {
     setFormData(initialFormData);
+    setSlotTaken(false);
     setStep(1);
   };
+
+  if (slotTaken) {
+    return (
+      <SlotTaken
+        formData={formData}
+        onChooseAnother={() => {
+          setSlotTaken(false);
+          updateFormData({
+            appointmentDate: "",
+            appointmentTime: "",
+            timeSlotId: "",
+          });
+          setStep(6);
+        }}
+        onHome={handleReset}
+      />
+    );
+  }
 
   const renderStep = () => {
     if (step === 1) {
@@ -115,6 +142,7 @@ const BookingForm = () => {
           formData={formData}
           onBack={goToPreviousStep}
           onReset={handleReset}
+          onSlotTaken={() => setSlotTaken(true)}
         />
       );
     }

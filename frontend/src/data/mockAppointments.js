@@ -187,7 +187,7 @@ export function mapAppointmentToCard(appt) {
     date: appt.appointmentDate || appt.date || todayIsoDate(),
     studentIndex: patient?.studentIndex || appt.studentIndex || "",
     phone: patient?.phone || patient?.phoneNumber || appt.phone || "",
-    bookingType: appt.bookingType || "SCHEDULED",
+    bookingType: appt.bookingType || "BOOKED",
     queueToken: appt.queueToken || "",
     roomName: appt.roomId?.name || appt.assignedRoom || appt.roomName || "",
     roomId: appt.roomId?.id || appt.roomId?._id || (typeof appt.roomId === "string" ? appt.roomId : ""),

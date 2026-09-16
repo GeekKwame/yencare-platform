@@ -15,12 +15,13 @@ export function createMongoCatalog() {
     },
 
     /**
-     * @param {{ date?: string, clinicSite?: string, available?: string }} filters
+     * @param {{ date?: string, clinicSite?: string, clinicianId?: string, available?: string }} filters
      */
     async listTimeSlots(filters = {}) {
       const query = {};
       if (filters.date) query.date = filters.date;
       if (filters.clinicSite) query.clinicSite = filters.clinicSite;
+      if (filters.clinicianId) query.clinicianId = filters.clinicianId;
       if (filters.available === 'true') query.isBooked = false;
       if (filters.available === 'false') query.isBooked = true;
 

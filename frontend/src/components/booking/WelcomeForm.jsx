@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaClock,
@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import Logo from "../../assets/Yencare Logo.png";
 import FindAppointment from "../appointment/FindAppointment";
+import { getClinicActivity } from "../../services/queue";
 
 const WelcomeForm = ({ onStartBooking }) => {
   const time = new Date().toLocaleTimeString([], {
@@ -17,6 +18,42 @@ const WelcomeForm = ({ onStartBooking }) => {
   });
 
   const [findAppointment, setFindAppointment] = useState(false);
+  const [activity, setActivity] = useState({
+    nowServingToken: "—",
+    waitingCount: "—",
+    estimatedWaitMinutes: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const data = await getClinicActivity("students-clinic");
+        if (cancelled) return;
+        setActivity({
+          nowServingToken: data.nowServingToken || "—",
+          waitingCount: data.waitingCount ?? 0,
+          estimatedWaitMinutes: data.estimatedWaitMinutes ?? 0,
+        });
+      } catch {
+        if (!cancelled) {
+          setActivity({
+            nowServingToken: "—",
+            waitingCount: "—",
+            estimatedWaitMinutes: null,
+          });
+        }
+      }
+    }
+
+    load();
+    const id = window.setInterval(load, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
 
   if (findAppointment) {
     return <FindAppointment setAppointment={setFindAppointment} />;
@@ -51,21 +88,31 @@ const WelcomeForm = ({ onStartBooking }) => {
             <p className="text-center text-[10px] font-medium uppercase tracking-wider text-gray-400 sm:text-xs">
               Now serving
             </p>
-            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">#6</p>
+            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">
+              {activity.nowServingToken}
+            </p>
           </div>
 
           <div className="flex min-w-[100px] flex-1 flex-col items-center justify-center rounded-lg bg-gray-100 px-3 py-3 sm:min-w-[120px] sm:px-4 sm:py-4">
             <p className="text-center text-[10px] font-medium uppercase tracking-wider text-gray-400 sm:text-xs">
               Waiting
             </p>
-            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">6</p>
+            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">
+              {activity.waitingCount}
+            </p>
           </div>
 
           <div className="flex min-w-[100px] flex-1 flex-col items-center justify-center rounded-lg bg-gray-100 px-3 py-3 sm:min-w-[120px] sm:px-4 sm:py-4">
             <p className="text-center text-[10px] font-medium uppercase tracking-wider text-gray-400 sm:text-xs">
               Estimated wait
             </p>
-            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">15 min</p>
+            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">
+              {activity.estimatedWaitMinutes == null
+                ? "—"
+                : activity.estimatedWaitMinutes === 0
+                  ? "—"
+                  : `~${activity.estimatedWaitMinutes}m`}
+            </p>
           </div>
         </div>
 

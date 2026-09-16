@@ -6,47 +6,41 @@ import {
   FaPhone,
   FaSearch,
 } from "react-icons/fa";
+import { isValidGhanaPhone, isValidStudentIndex } from "../../data/bookingOptions";
 import {
-  isValidGhanaPhone,
-  isValidStudentIndex,
-} from "../../data/bookingOptions";
+  normalizeReference,
+  patientPhone,
+  REFERENCE_PATTERN,
+} from "../../lib/appointmentView";
+import { phonesMatch } from "../../lib/phones";
 import { lookupAppointment } from "../../services/appointments";
+import AppointmentCancelled from "./AppointmentCancelled";
 import FoundAppointment from "./FoundAppointment";
+import RescheduleFlow from "./RescheduleFlow";
 
-const REFERENCE_PATTERN = /^YC-\d{4}$/;
-
-function normalizeReference(value) {
-  const compact = String(value || "")
-    .replace(/\s+/g, "")
-    .toUpperCase();
-  if (/^YC\d{4}$/.test(compact)) {
-    return `YC-${compact.slice(2)}`;
-  }
-  return compact;
-}
-
-function validateSearch(method, raw) {
-  const value = String(raw || "").trim();
-  if (!value) {
-    return { error: "Please enter a value to search." };
-  }
-
+function validateSearch(method, searchInput, phoneInput) {
   if (method === "reference") {
-    const reference = normalizeReference(value);
+    const reference = normalizeReference(searchInput);
     if (!REFERENCE_PATTERN.test(reference)) {
+      return { error: "Enter a valid reference code (e.g. YC-4821)." };
+    }
+    if (!isValidGhanaPhone(phoneInput)) {
       return {
-        error: "Enter a valid reference code (e.g. YC-4821).",
+        error: "Enter the Ghana phone number used for this booking.",
       };
     }
-    return { query: { reference } };
+    return { query: { reference }, phone: phoneInput.trim() };
+  }
+
+  const value = String(searchInput || "").trim();
+  if (!value) {
+    return { error: "Please enter a value to search." };
   }
 
   if (method === "studentId") {
     const studentIndex = value.replace(/\s+/g, "");
     if (!isValidStudentIndex(studentIndex)) {
-      return {
-        error: "Enter a valid 8-digit student index number.",
-      };
+      return { error: "Enter a valid 8-digit student index number." };
     }
     return { query: { studentIndex } };
   }
@@ -62,58 +56,26 @@ function validateSearch(method, raw) {
 const FindAppointment = ({ setAppointment }) => {
   const [searchMethod, setSearchMethod] = useState("reference");
   const [searchInput, setSearchInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [appointment, setFoundAppointment] = useState(null);
+  const [flow, setFlow] = useState("detail");
 
   const methods = [
-    {
-      id: "reference",
-      label: "YC Reference",
-      icon: FaHashtag,
-    },
-    {
-      id: "studentId",
-      label: "Student Index",
-      icon: FaIdCard,
-    },
-    {
-      id: "phone",
-      label: "Phone Number",
-      icon: FaPhone,
-    },
+    { id: "reference", label: "YC Reference", icon: FaHashtag },
+    { id: "studentId", label: "Student Index", icon: FaIdCard },
+    { id: "phone", label: "Phone Number", icon: FaPhone },
   ];
-
-  const searchDetails = {
-    reference: {
-      label: "Appointment Reference Code",
-      placeholder: "e.g. YC-4821",
-      hint: "Your reference code was sent via SMS.",
-      inputMode: "text",
-      autoCapitalize: "characters",
-    },
-    studentId: {
-      label: "Student Index Number",
-      placeholder: "e.g. 20612345",
-      hint: "Use your KNUST student identification number.",
-      inputMode: "numeric",
-      autoCapitalize: "off",
-    },
-    phone: {
-      label: "Ghana Phone Number",
-      placeholder: "e.g. 024 123 4567",
-      hint: "We will use this number to find your appointment.",
-      inputMode: "tel",
-      autoCapitalize: "off",
-    },
-  };
-
-  const activeSearch = searchDetails[searchMethod];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { error, query } = validateSearch(searchMethod, searchInput);
+    const { error, query, phone } = validateSearch(
+      searchMethod,
+      searchInput,
+      phoneInput,
+    );
     if (error) {
       setErrorMessage(error);
       return;
@@ -124,7 +86,14 @@ const FindAppointment = ({ setAppointment }) => {
 
     try {
       const found = await lookupAppointment(query);
+      if (phone && !phonesMatch(phone, patientPhone(found))) {
+        setErrorMessage(
+          "Appointment not found. Please check your details and try again.",
+        );
+        return;
+      }
       setFoundAppointment(found);
+      setFlow("detail");
     } catch (err) {
       const status = err.response?.status;
       const apiMessage = err.response?.data?.error;
@@ -143,6 +112,35 @@ const FindAppointment = ({ setAppointment }) => {
     }
   };
 
+  if (appointment && flow === "reschedule") {
+    return (
+      <RescheduleFlow
+        appointment={appointment}
+        onBack={() => setFlow("detail")}
+        onSuccess={async (updated) => {
+          const ref =
+            updated?.referenceCode || appointment.referenceCode;
+          try {
+            const fresh = await lookupAppointment({ reference: ref });
+            setFoundAppointment(fresh);
+          } catch {
+            setFoundAppointment(updated);
+          }
+          setFlow("detail");
+        }}
+      />
+    );
+  }
+
+  if (appointment && flow === "cancelled") {
+    return (
+      <AppointmentCancelled
+        appointment={appointment}
+        onHome={() => setAppointment(false)}
+      />
+    );
+  }
+
   if (appointment) {
     return (
       <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
@@ -150,6 +148,8 @@ const FindAppointment = ({ setAppointment }) => {
           appointment={appointment}
           onBack={() => setFoundAppointment(null)}
           onHome={() => setAppointment(false)}
+          onReschedule={() => setFlow("reschedule")}
+          onCancelled={() => setFlow("cancelled")}
         />
       </section>
     );
@@ -170,14 +170,14 @@ const FindAppointment = ({ setAppointment }) => {
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
           Appointment lookup
         </p>
-
         <h2 className="display-font mt-2 text-2xl font-bold text-[#173b3a] sm:text-3xl">
           Find your appointment
         </h2>
       </div>
 
       <p className="mt-3 max-w-xl text-sm leading-6 text-[#607672]">
-        Search using your YC reference, student index number, or phone number.
+        Search with your YC reference and the phone number on the booking, or
+        use your student index.
       </p>
 
       <div
@@ -186,7 +186,6 @@ const FindAppointment = ({ setAppointment }) => {
       >
         {methods.map(({ id, label, icon: Icon }) => {
           const isActive = searchMethod === id;
-
           return (
             <button
               key={id}
@@ -210,44 +209,83 @@ const FindAppointment = ({ setAppointment }) => {
         })}
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="mt-7">
-          <label
-            htmlFor="appointment-search"
-            className="text-sm font-bold text-[#173b3a]"
-          >
-            {activeSearch.label}
-          </label>
+      <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+        {searchMethod === "reference" ? (
+          <>
+            <div>
+              <label htmlFor="appointment-search" className="text-sm font-bold text-[#173b3a]">
+                Appointment Reference Code
+              </label>
+              <input
+                id="appointment-search"
+                type="text"
+                autoCapitalize="characters"
+                autoComplete="off"
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value.toUpperCase());
+                  if (errorMessage) setErrorMessage("");
+                }}
+                className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm tracking-wide text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+                placeholder="e.g. YC-4821"
+              />
+              <p className="mt-2 text-xs text-[#78908a]">
+                Your 4-digit YC code was sent via SMS (e.g. YC-4821).
+              </p>
+            </div>
+            <div>
+              <label htmlFor="appointment-phone" className="text-sm font-bold text-[#173b3a]">
+                Phone number on the booking
+              </label>
+              <input
+                id="appointment-phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phoneInput}
+                onChange={(e) => {
+                  setPhoneInput(e.target.value);
+                  if (errorMessage) setErrorMessage("");
+                }}
+                className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+                placeholder="e.g. 024 123 4567"
+              />
+            </div>
+          </>
+        ) : (
+          <div>
+            <label htmlFor="appointment-search" className="text-sm font-bold text-[#173b3a]">
+              {searchMethod === "studentId"
+                ? "Student Index Number"
+                : "Ghana Phone Number"}
+            </label>
+            <input
+              id="appointment-search"
+              type="text"
+              inputMode={searchMethod === "studentId" ? "numeric" : "tel"}
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                if (errorMessage) setErrorMessage("");
+              }}
+              className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+              placeholder={
+                searchMethod === "studentId" ? "e.g. 20612345" : "e.g. 024 123 4567"
+              }
+            />
+          </div>
+        )}
 
-          <input
-            id="appointment-search"
-            type="text"
-            inputMode={activeSearch.inputMode}
-            autoCapitalize={activeSearch.autoCapitalize}
-            autoComplete="off"
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value);
-              if (errorMessage) setErrorMessage("");
-            }}
-            aria-invalid={Boolean(errorMessage)}
-            className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
-            placeholder={activeSearch.placeholder}
-          />
-
-          {errorMessage && (
-            <p className="mt-2 text-xs text-red-500" role="alert">
-              {errorMessage}
-            </p>
-          )}
-
-          <p className="mt-2 text-xs text-[#78908a]">{activeSearch.hint}</p>
-        </div>
+        {errorMessage && (
+          <p className="text-xs text-red-500" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
         <button
           type="submit"
           disabled={isSearching}
-          className="mt-7 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#176b5f] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:cursor-wait disabled:opacity-70"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#176b5f] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:cursor-wait disabled:opacity-70"
         >
           <FaSearch size={13} />
           {isSearching ? "Searching…" : "Find Appointment"}

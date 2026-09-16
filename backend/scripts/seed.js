@@ -10,6 +10,18 @@ const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'
 dotenv.config({ path: path.join(backendRoot, '.env') });
 
 const DEMO_DATE = '2026-09-15';
+const BOOKABLE_DATES = ['2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18'];
+const OPEN_TIMES = [
+  { startTime: '08:30', endTime: '09:00' },
+  { startTime: '09:00', endTime: '09:30' },
+  { startTime: '09:30', endTime: '10:00' },
+  { startTime: '10:00', endTime: '10:30' },
+  { startTime: '10:30', endTime: '11:00' },
+  { startTime: '11:00', endTime: '11:30' },
+  { startTime: '11:30', endTime: '12:00' },
+  { startTime: '14:00', endTime: '14:30' },
+  { startTime: '14:30', endTime: '15:00' },
+];
 
 const ROOMS = [
   { name: 'Room 1', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active', tokenPrefix: 'A' },
@@ -61,16 +73,18 @@ const PATIENTS = [
   { fullName: 'Kojo Asante', phone: '+233501112233', studentIndex: '20618800' },
 ];
 
-const OPEN_SLOTS = [
-  { clinician: 'Dr. Kwame Boateng', startTime: '11:00', endTime: '11:30' },
-  { clinician: 'Dr. Kwame Boateng', startTime: '11:30', endTime: '12:00' },
-  { clinician: 'Dr. Ama Serwaa', startTime: '11:00', endTime: '11:30' },
-  { clinician: 'Dr. Ama Serwaa', startTime: '11:30', endTime: '12:00' },
-  { clinician: 'Dr. Kofi Adjei', startTime: '11:00', endTime: '11:30' },
-  { clinician: 'Dr. Kofi Adjei', startTime: '11:30', endTime: '12:00' },
-  { clinician: 'Dr. Akua Mensah', startTime: '11:00', endTime: '11:30' },
-  { clinician: 'Dr. Akua Mensah', startTime: '11:30', endTime: '12:00' },
-];
+function roomForClinician(clinician, roomsByKey) {
+  const roomName =
+    clinician.roomName ||
+    (clinician.name === 'Dr. Akua Mensah'
+      ? 'OPD Room 2'
+      : clinician.name === 'Dr. Kofi Adjei'
+        ? 'OPD Room 1'
+        : clinician.name === 'Dr. Ama Serwaa'
+          ? 'Room 2'
+          : 'Room 1');
+  return roomsByKey.get(`${clinician.clinicSite}:${roomName}`);
+}
 
 async function upsertRoom(data) {
   return Room.findOneAndUpdate(
@@ -262,28 +276,30 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] appointment ${appointment.referenceCode}`);
   }
 
-  const opd1 = roomsByKey.get('knust-hospital:OPD Room 1');
-  const opd2 = roomsByKey.get('knust-hospital:OPD Room 2');
+  for (const clinician of cliniciansByName.values()) {
+    const room = roomForClinician(clinician, roomsByKey);
+    if (!room) continue;
 
-  for (const open of OPEN_SLOTS) {
-    const clinician = cliniciansByName.get(open.clinician);
-    const room =
-      clinician.clinicSite === 'knust-hospital'
-        ? clinician.name === 'Dr. Akua Mensah'
-          ? opd2
-          : opd1
-        : clinician.name === 'Dr. Ama Serwaa'
-          ? room2
-          : room1;
-    await upsertSlot({
-      clinician,
-      room,
-      clinicSite: clinician.clinicSite,
-      date: DEMO_DATE,
-      startTime: open.startTime,
-      endTime: open.endTime,
-    });
-    console.log(`[seed] open slot ${clinician.name} ${open.startTime}`);
+    for (const date of BOOKABLE_DATES) {
+      for (const time of OPEN_TIMES) {
+        const existing = await TimeSlot.findOne({
+          clinicianId: clinician._id,
+          date,
+          startTime: time.startTime,
+        });
+        if (existing?.isBooked) continue;
+
+        await upsertSlot({
+          clinician,
+          room,
+          clinicSite: clinician.clinicSite,
+          date,
+          startTime: time.startTime,
+          endTime: time.endTime,
+        });
+      }
+      console.log(`[seed] open slots ${clinician.name} ${date}`);
+    }
   }
 
   const passwordHash = bcrypt.hashSync(DEMO_STAFF_PASSWORD, 8);

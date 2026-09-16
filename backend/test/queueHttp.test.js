@@ -210,4 +210,25 @@ describe('queue HTTP endpoints', () => {
     const res = await fetch(`${url}/api/appointments/YC-9999/queue-status`);
     assert.equal(res.status, 404);
   });
+
+  it('GET /api/queue/activity returns public now-serving token and waiting count', async () => {
+    const mockQueue = {
+      getClinicActivity: async (clinicSite) => ({
+        clinicSite: clinicSite || 'students-clinic',
+        nowServingToken: '#2',
+        waitingCount: 3,
+        estimatedWaitMinutes: 25,
+        rooms: [{ name: 'Room 1', nowServingToken: '#2' }],
+      }),
+    };
+
+    const { url } = await client({ mockQueueService: mockQueue });
+    const res = await fetch(`${url}/api/queue/activity?clinicSite=students-clinic`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.nowServingToken, '#2');
+    assert.equal(body.waitingCount, 3);
+    assert.equal(body.estimatedWaitMinutes, 25);
+    assert.equal(body.rooms[0].name, 'Room 1');
+  });
 });

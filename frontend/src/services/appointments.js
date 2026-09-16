@@ -57,3 +57,26 @@ export async function cancelAppointment(idOrReference, options = {}) {
   );
   return response.data;
 }
+
+/**
+ * @param {string} idOrReference
+ * @param {string} newSlotId
+ */
+export async function rescheduleAppointment(idOrReference, newSlotId) {
+  const response = await api.patch(
+    `/appointments/${encodeURIComponent(idOrReference)}/reschedule`,
+    { newSlotId },
+  );
+  return response.data;
+}
+
+/**
+ * Live queue position for a YC reference.
+ * @param {string} reference
+ */
+export async function getQueueStatus(reference) {
+  const response = await api.get(
+    `/appointments/${encodeURIComponent(reference)}/queue-status`,
+  );
+  return response.data;
+}

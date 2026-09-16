@@ -32,6 +32,7 @@ export function createCatalogRouter(catalog) {
     const filters = {};
     if (typeof req.query.date === 'string') filters.date = req.query.date;
     if (typeof req.query.clinicSite === 'string') filters.clinicSite = req.query.clinicSite;
+    if (typeof req.query.clinicianId === 'string') filters.clinicianId = req.query.clinicianId;
     if (typeof req.query.available === 'string') filters.available = req.query.available;
     const slots = await catalog.listTimeSlots(filters);
     res.json(slots.map(toJson));

@@ -20,16 +20,8 @@ import {
   visitTypeLabel,
 } from "../../data/bookingOptions";
 import { createAppointment } from "../../services/appointments";
-import { listClinicians } from "../../services/catalog";
 
-function resolveRoomId(clinician) {
-  const room = clinician?.roomId;
-  if (!room) return null;
-  if (typeof room === "string") return room;
-  return room.id || room._id || null;
-}
-
-const ReviewBooking = ({ formData, onBack, onReset }) => {
+const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
@@ -50,31 +42,19 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
       if (!formData.patientId) {
         throw new Error("Patient record is missing. Go back to Your Details and continue again.");
       }
-
-      const clinicians = await listClinicians();
-      const match =
-        clinicians.find(
-          (clinician) =>
-            clinician.name === formData.clinician &&
-            clinician.clinicSite === formData.clinicSite,
-        ) || clinicians.find((clinician) => clinician.name === formData.clinician);
-
-      if (!match) {
-        throw new Error(
-          "Could not find that clinician in the clinic catalog. Run `npm run db:seed` in backend, then try again.",
-        );
+      if (!formData.clinicianId || !formData.roomId) {
+        throw new Error("Clinician or room is missing. Go back and choose a clinician again.");
       }
-
-      const roomId = resolveRoomId(match);
-      if (!roomId) {
-        throw new Error("Clinician has no room assigned. Re-seed the clinic catalog and try again.");
+      if (!formData.timeSlotId) {
+        throw new Error("Time slot is missing. Go back and choose an available time.");
       }
 
       const created = await createAppointment({
         patientId: formData.patientId,
         phoneNumber: formData.phoneNumber,
-        clinicianId: match.id,
-        roomId,
+        clinicianId: formData.clinicianId,
+        roomId: formData.roomId,
+        timeSlotId: formData.timeSlotId,
         clinicSite: formData.clinicSite,
         visitType: formData.visitType,
         appointmentDate: formData.appointmentDate,
@@ -85,6 +65,10 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
       setSmsResult(created.sms ?? null);
       setIsConfirmed(true);
     } catch (err) {
+      if (err.response?.status === 409 && typeof onSlotTaken === "function") {
+        onSlotTaken();
+        return;
+      }
       const apiMessage = err.response?.data?.error || err.response?.data?.message;
       setConfirmError(
         apiMessage ||
@@ -190,7 +174,7 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
 
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <Link
-              to="/queue"
+              to={`/queue?ref=${encodeURIComponent(bookingRef)}`}
               className="flex flex-1 items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f]"
             >
               Track Live Queue

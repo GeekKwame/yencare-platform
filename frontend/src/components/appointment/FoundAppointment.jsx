@@ -1,71 +1,47 @@
 import { useState } from "react";
 import { IoMdCloseCircle } from "react-icons/io";
 import { Link } from "react-router-dom";
-import {
-  clinicSiteLabel,
-  formatDateLabel,
-  formatTimeLabel,
-  visitTypeLabel,
-} from "../../data/bookingOptions";
+import { mapAppointment } from "../../lib/appointmentView";
 import { cancelAppointment } from "../../services/appointments";
 
-const CANCELLABLE_STATUSES = new Set(["BOOKED", "WAITING"]);
-
-function nestedValue(value, keys) {
-  if (!value) return "";
-  if (typeof value !== "object") return String(value);
-  for (const key of keys) {
-    if (value[key]) return String(value[key]);
-  }
-  return "";
-}
-
-function mapAppointment(appointment) {
-  const patient = appointment?.patientId;
-  return {
-    id: appointment?.id || appointment?._id || "",
-    referenceCode: appointment?.referenceCode || "—",
-    status: appointment?.status || "",
-    fullName: nestedValue(patient, ["fullName"]) || "—",
-    studentIndex: nestedValue(patient, ["studentIndex"]) || "—",
-    phoneNumber:
-      nestedValue(patient, ["phoneNumber", "phone"]) || "—",
-    clinician: nestedValue(appointment?.clinicianId, ["name"]) || "—",
-    appointmentDate: formatDateLabel(appointment?.appointmentDate),
-    appointmentTime: formatTimeLabel(appointment?.appointmentTime),
-    clinic: clinicSiteLabel(appointment?.clinicSite),
-    visitType: visitTypeLabel(appointment?.visitType),
-  };
-}
-
-const FoundAppointment = ({ appointment, onBack, onHome }) => {
+const FoundAppointment = ({
+  appointment,
+  onBack,
+  onHome,
+  onReschedule,
+  onCancelled,
+}) => {
   const view = mapAppointment(appointment);
-  const canCancel = CANCELLABLE_STATUSES.has(view.status);
+  const isBooked = view.status === "BOOKED";
+  const inQueue = ["CHECKED_IN", "WAITING", "CALLED"].includes(view.status);
   const [modal, setModal] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
 
-  const patientInfo = [
-    { id: 1, label: "Patient", value: view.fullName },
-    { id: 2, label: "Student Index", value: view.studentIndex },
-    { id: 3, label: "Phone", value: view.phoneNumber },
-    { id: 4, label: "Clinician", value: view.clinician },
-    { id: 5, label: "Date", value: view.appointmentDate },
-    { id: 6, label: "Time", value: view.appointmentTime },
-    { id: 7, label: "Clinic", value: view.clinic },
-    { id: 8, label: "Visit Type", value: view.visitType },
-    { id: 9, label: "Status", value: view.status || "—" },
+  const rows = [
+    { label: "Patient", value: view.fullName },
+    { label: "Student Index", value: view.studentIndex },
+    { label: "Phone", value: view.phoneNumber },
+    { label: "Clinician", value: `${view.clinician}${view.room && view.room !== "—" ? ` · ${view.room}` : ""}` },
+    { label: "Date", value: view.dateLabel },
+    { label: "Time", value: view.timeLabel },
+    { label: "Clinic", value: view.clinic },
+    { label: "Visit Type", value: view.visitType },
+    { label: "Status", value: view.status || "—" },
   ];
+
+  if ((view.status === "WAITING" || view.status === "CALLED") && view.queueToken) {
+    rows.push({ label: "Queue Token", value: view.queueToken });
+  }
 
   const handleConfirmCancel = async () => {
     setIsCancelling(true);
     setCancelError("");
-
     try {
       await cancelAppointment(view.referenceCode || view.id, {
         cancelReason: "Cancelled by patient",
       });
-      setModal("success");
+      onCancelled();
     } catch (err) {
       setCancelError(
         err.response?.data?.error ||
@@ -78,21 +54,37 @@ const FoundAppointment = ({ appointment, onBack, onHome }) => {
 
   return (
     <section className="w-full">
-      <button
-        onClick={onBack}
-        type="button"
-        className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#dce8df] px-5 py-3 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
-      >
-        Back to search
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <button
+          onClick={onBack}
+          type="button"
+          className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#dce8df] px-5 py-3 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
+        >
+          Back to search
+        </button>
+        <span className="rounded-full bg-[#e7f5f1] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#176b5f]">
+          {view.status || "Unknown"}
+          {view.queueToken ? ` · ${view.queueToken}` : ""}
+        </span>
+      </div>
+
+      {view.staffChangedTime && (
+        <div className="mt-5 rounded-xl border border-[#fcd34d] bg-[#fef7ed] p-3.5 text-left text-xs text-[#92400e]">
+          <strong className="block text-[#78350f]">
+            Your appointment has been updated by the clinic.
+          </strong>
+          Previous time: {view.staffChangedTime}
+          {view.staffChangeReason ? ` · ${view.staffChangeReason}` : ""}
+        </div>
+      )}
 
       <p className="mt-7 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
         {view.clinic}
       </p>
-
       <h2 className="display-font mt-2 text-center text-2xl font-bold text-[#173b3a] sm:text-3xl">
         Your Appointment
       </h2>
+      <p className="mt-1 text-center text-sm text-[#607672]">{view.visitType}</p>
 
       <div className="mt-8 w-full bg-gray-100 p-5 text-center">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
@@ -106,38 +98,72 @@ const FoundAppointment = ({ appointment, onBack, onHome }) => {
         </p>
       </div>
 
-      <div className="mt-5 space-y-5 text-sm">
-        {patientInfo.map((info) => (
-          <div key={info.id} className="flex items-center justify-between gap-4">
+      <div className="mt-5 divide-y divide-[#e5e7e6] overflow-hidden rounded-2xl border border-[#dce8df] text-sm">
+        {rows.map((info, index) => (
+          <div
+            key={info.label}
+            className={`flex items-center justify-between gap-4 px-4 py-3.5 ${
+              index % 2 === 0 ? "bg-[#f7f8f7]" : "bg-white"
+            }`}
+          >
             <p className="text-[#607672]">{info.label}</p>
             <p className="text-right font-bold text-[#173b3a]">{info.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-7 flex flex-col gap-3 md:flex-row">
-        <Link
-          to="/queue"
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#14594f] focus:outline-none focus:ring-4 focus:ring-[#176b5f]/15"
-        >
-          Check Queue
-        </Link>
+      <div className="mt-7 flex flex-col gap-3">
+        {isBooked && (
+          <div className="rounded-xl border border-[#fcd34d] bg-[#fef7ed] p-3.5 text-sm text-[#92400e]">
+            <strong className="block text-[#78350f]">Not arrived at clinic yet</strong>
+            <p className="mt-1 text-xs leading-5">
+              When you get to the clinic, present {view.referenceCode} at reception.
+              Staff check-in adds you to the live queue.
+            </p>
+          </div>
+        )}
 
-        {canCancel ? (
-          <button
-            onClick={() => {
-              setCancelError("");
-              setModal("confirm");
-            }}
-            type="button"
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-3.5 text-sm font-semibold text-red-600 transition duration-300 hover:border-red-300 hover:bg-red-100 focus:outline-none focus:ring-4 focus:ring-red-500/10"
+        {inQueue && (
+          <Link
+            to={`/queue?ref=${encodeURIComponent(view.referenceCode)}`}
+            className="flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f]"
           >
-            <IoMdCloseCircle size={19} />
-            Cancel Appointment
-          </button>
-        ) : (
-          <p className="flex w-full items-center justify-center rounded-xl border border-[#dce8df] px-6 py-3.5 text-center text-sm text-[#607672]">
-            This appointment can no longer be cancelled online.
+            {view.status === "CHECKED_IN" ? "View arrival status" : "Check Queue Status"}
+          </Link>
+        )}
+
+        {isBooked && (
+          <>
+            <Link
+              to={`/queue?ref=${encodeURIComponent(view.referenceCode)}`}
+              className="flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f]"
+            >
+              View live clinic activity
+            </Link>
+            <button
+              type="button"
+              onClick={onReschedule}
+              className="w-full cursor-pointer rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
+            >
+              Reschedule
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCancelError("");
+                setModal("confirm");
+              }}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-3.5 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            >
+              <IoMdCloseCircle size={19} />
+              Cancel appointment
+            </button>
+          </>
+        )}
+
+        {!isBooked && !inQueue && (
+          <p className="rounded-xl border border-[#dce8df] px-6 py-3.5 text-center text-sm text-[#607672]">
+            This appointment can no longer be changed online.
           </p>
         )}
       </div>
@@ -148,41 +174,51 @@ const FoundAppointment = ({ appointment, onBack, onHome }) => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="cancel-title"
-            className="w-full max-w-md rounded-3xl border border-[#dce8df] bg-white p-7 shadow-[0_25px_70px_rgba(23,59,58,0.18)] sm:p-8"
+            className="w-full max-w-md rounded-3xl border border-[#dce8df] bg-white p-7 text-center shadow-[0_25px_70px_rgba(23,59,58,0.18)] sm:p-8"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
               <IoMdCloseCircle size={28} />
             </div>
-
-            <div className="mt-5 text-center">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
-                Confirm cancellation
-              </p>
-              <h3
-                id="cancel-title"
-                className="display-font mt-2 text-2xl font-bold text-[#173b3a]"
-              >
-                Cancel appointment?
-              </h3>
-              <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#607672]">
-                This will release{" "}
-                <strong className="text-[#173b3a]">{view.referenceCode}</strong>{" "}
-                so another patient can take the slot.
-              </p>
+            <h3
+              id="cancel-title"
+              className="display-font mt-5 text-2xl font-bold text-[#173b3a]"
+            >
+              Cancel appointment?
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-[#607672]">
+              Are you sure you want to cancel your consultation for{" "}
+              <strong className="text-[#173b3a]">{view.referenceCode}</strong>?
+            </p>
+            <div className="mt-5 space-y-2 rounded-xl border border-[#dce8df] bg-[#f7f8f7] p-4 text-left text-xs">
+              <div className="flex justify-between gap-3">
+                <span className="text-[#607672]">Clinician</span>
+                <span className="font-semibold text-[#173b3a]">{view.clinician}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#607672]">Date & time</span>
+                <span className="font-semibold text-[#173b3a]">
+                  {view.dateLabel}, {view.timeLabel}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#607672]">Clinic</span>
+                <span className="font-semibold text-[#173b3a]">{view.clinic}</span>
+              </div>
             </div>
-
+            <p className="mt-4 text-left text-xs leading-5 text-[#607672]">
+              Releasing your appointment helps another patient in need of care.
+            </p>
             {cancelError && (
-              <p className="mt-4 text-center text-xs text-red-500" role="alert">
+              <p className="mt-3 text-xs text-red-500" role="alert">
                 {cancelError}
               </p>
             )}
-
-            <div className="mt-7 flex flex-col gap-3">
+            <div className="mt-6 flex flex-col gap-3">
               <button
                 type="button"
                 disabled={isCancelling}
                 onClick={handleConfirmCancel}
-                className="w-full cursor-pointer rounded-xl bg-red-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-70"
+                className="w-full cursor-pointer rounded-xl bg-red-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-70"
               >
                 {isCancelling ? "Cancelling…" : "Yes, cancel appointment"}
               </button>
@@ -190,7 +226,7 @@ const FoundAppointment = ({ appointment, onBack, onHome }) => {
                 type="button"
                 disabled={isCancelling}
                 onClick={() => setModal(null)}
-                className="w-full cursor-pointer rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
+                className="w-full cursor-pointer rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
               >
                 Keep appointment
               </button>
@@ -199,46 +235,13 @@ const FoundAppointment = ({ appointment, onBack, onHome }) => {
         </div>
       )}
 
-      {modal === "success" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#173b3a]/50 px-4 backdrop-blur-sm">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cancelled-title"
-            className="w-full max-w-md rounded-3xl border border-[#dce8df] bg-white p-7 shadow-[0_25px_70px_rgba(23,59,58,0.18)] sm:p-8"
-          >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#e8f4ed]">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#176b5f] text-white">
-                ✓
-              </div>
-            </div>
-
-            <div className="mt-5 text-center">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
-                Appointment Update
-              </p>
-              <h3
-                id="cancelled-title"
-                className="display-font mt-2 text-2xl font-bold text-[#173b3a]"
-              >
-                Appointment Cancelled
-              </h3>
-              <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#607672]">
-                Your appointment has been successfully cancelled. You can book a
-                new appointment whenever you&apos;re ready.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onHome}
-              className="mt-7 w-full cursor-pointer rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition duration-300 hover:bg-[#14594f] focus:outline-none focus:ring-4 focus:ring-[#176b5f]/15"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={onHome}
+        className="mt-4 w-full cursor-pointer text-sm font-semibold text-[#607672] hover:text-[#173b3a]"
+      >
+        Return home
+      </button>
     </section>
   );
 };

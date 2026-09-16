@@ -31,6 +31,7 @@ import { createQueueRouter } from './queueRoutes.js';
  *     advanceQueue: Function,
  *     markNoShow: Function,
  *     getQueueStatus?: Function,
+ *     getClinicActivity?: Function,
  *   },
  *   staffAuth?: ReturnType<import('../auth/staffAuth.js').createStaffAuthService>,
  *   getHealth?: () => Promise<object>,

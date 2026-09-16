@@ -29,3 +29,14 @@ export async function markQueueNoShow({ appointmentId, referenceCode, roomId, re
   });
   return response.data;
 }
+
+/**
+ * Public clinic-activity snapshot for the patient welcome screen.
+ * @param {string} [clinicSite]
+ */
+export async function getClinicActivity(clinicSite = "students-clinic") {
+  const response = await api.get("/queue/activity", {
+    params: { clinicSite },
+  });
+  return response.data;
+}

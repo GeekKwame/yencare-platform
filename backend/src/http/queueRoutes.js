@@ -13,6 +13,7 @@ function toJson(doc) {
  *   advanceQueue: Function,
  *   markNoShow: Function,
  *   getQueueStatus?: Function,
+ *   getClinicActivity?: Function,
  * }} queueService
  * @param {{
  *   authenticate?: (roles?: string[]) => import('express').RequestHandler,
@@ -23,6 +24,22 @@ export function createQueueRouter(queueService, { authenticate } = {}) {
   const callNextStaff = staffGuard(authenticate, ['DOCTOR', 'ADMIN']);
   const completeStaff = staffGuard(authenticate, ['DOCTOR']);
   const noShowStaff = staffGuard(authenticate, ['RECEPTIONIST', 'DOCTOR', 'ADMIN']);
+
+  router.get(
+    '/activity',
+    asyncHandler(async (req, res) => {
+      if (!queueService.getClinicActivity) {
+        return res.status(501).json({
+          error: 'Clinic activity is not available',
+        });
+      }
+
+      const activity = await queueService.getClinicActivity(
+        req.query.clinicSite || req.query.clinic || 'students-clinic',
+      );
+      res.status(200).json(activity);
+    }),
+  );
 
   router.post(
     '/call-next',

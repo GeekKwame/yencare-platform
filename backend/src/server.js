@@ -23,6 +23,7 @@ import { createAppointment } from "./services/bookAppointment.js";
 import {
   advanceQueue,
   callNextPatient,
+  getClinicActivity,
   getQueueStatus,
   markNoShow,
 } from "./services/queueEngine.js";
@@ -88,6 +89,7 @@ const app = createApp({
     advanceQueue,
     markNoShow,
     getQueueStatus,
+    getClinicActivity,
   },
 });
 

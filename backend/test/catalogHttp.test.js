@@ -70,4 +70,35 @@ describe('clinic catalog HTTP', () => {
     assert.equal(clinicians[0].id, 'clin-1');
     assert.equal(slots[0].id, 'slot-1');
   });
+
+  it('GET /api/time-slots forwards clinicianId and availability filters', async () => {
+    let received = null;
+    const app = createApp({
+      patientService: createPatientService(createMemoryStore()),
+      catalog: {
+        listRooms: async () => [],
+        listClinicians: async () => [],
+        listTimeSlots: async (filters) => {
+          received = filters;
+          return [];
+        },
+      },
+    });
+
+    const instance = await new Promise((resolve) => {
+      const server = app.listen(0, '127.0.0.1', () => {
+        const { port } = server.address();
+        resolve({ server, url: `http://127.0.0.1:${port}` });
+      });
+    });
+    started.push(instance);
+
+    await fetch(
+      `${instance.url}/api/time-slots?clinicianId=clin-1&available=true&date=2026-09-17`,
+    );
+
+    assert.equal(received.clinicianId, 'clin-1');
+    assert.equal(received.available, 'true');
+    assert.equal(received.date, '2026-09-17');
+  });
 });

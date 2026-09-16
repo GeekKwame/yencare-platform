@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { DATE_PATTERN } from '../db/constants.js';
+import { CLINIC_SITES, DATE_PATTERN } from '../db/constants.js';
 import { Appointment } from '../models/Appointment.js';
 import { QueueCounter } from '../models/QueueCounter.js';
 import { Room } from '../models/Room.js';
@@ -459,5 +459,50 @@ export async function getQueueStatus(referenceCode) {
           title: appointment.clinicianId.title,
         }
       : null,
+  };
+}
+
+/**
+ * Public clinic-activity snapshot for the patient home / welcome screen.
+ * Returns tokens and counts only — no patient names or phone numbers.
+ *
+ * @param {string} [clinicSite]
+ */
+export async function getClinicActivity(clinicSite = 'students-clinic') {
+  const site = String(clinicSite || 'students-clinic').trim();
+  if (!CLINIC_SITES.includes(site)) {
+    throw new ValidationError(
+      `clinicSite must be one of: ${CLINIC_SITES.join(', ')}`,
+    );
+  }
+
+  const called = await Appointment.find({
+    clinicSite: site,
+    status: 'CALLED',
+  })
+    .populate('roomId', 'name clinicSite')
+    .sort({ calledTime: 1, appointmentTime: 1 })
+    .lean();
+
+  const waitingCount = await Appointment.countDocuments({
+    clinicSite: site,
+    status: 'WAITING',
+  });
+
+  const rooms = called.map((appointment) => ({
+    name: appointment.roomId?.name || 'Room',
+    nowServingToken: appointment.queueToken || null,
+  }));
+
+  const nowServingToken = rooms[0]?.nowServingToken || null;
+  const estimatedWaitMinutes =
+    waitingCount === 0 ? 0 : Math.max(15, waitingCount * 5 + 10);
+
+  return {
+    clinicSite: site,
+    nowServingToken,
+    waitingCount,
+    estimatedWaitMinutes,
+    rooms,
   };
 }

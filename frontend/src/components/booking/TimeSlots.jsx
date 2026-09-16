@@ -1,24 +1,87 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock } from "react-icons/fa";
 import {
-  getAvailableDates,
-  TIME_SLOTS,
   formatDateLabel,
   formatTimeLabel,
   getArriveByLabel,
 } from "../../data/bookingOptions";
+import { isFutureSlot } from "../../lib/accraTime";
+import { mapTimeSlot } from "../../lib/catalogView";
+import { listTimeSlots } from "../../services/catalog";
 
 const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const arriveBy = getArriveByLabel(formData.appointmentTime);
-  const availableDates = getAvailableDates();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (!formData.clinicianId) {
+        setSlots([]);
+        setLoading(false);
+        setLoadError("Select a clinician before choosing a time.");
+        return;
+      }
+
+      setLoading(true);
+      setLoadError("");
+      try {
+        const rows = await listTimeSlots({
+          clinicianId: formData.clinicianId,
+        });
+        const mapped = (Array.isArray(rows) ? rows : [])
+          .map(mapTimeSlot)
+          .filter((slot) => slot.date && slot.startTime);
+        if (!cancelled) setSlots(mapped);
+      } catch (err) {
+        if (!cancelled) {
+          setSlots([]);
+          setLoadError(
+            err.response?.data?.error ||
+              "Could not load appointment times. Check that the API is running.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.clinicianId]);
+
+  const dates = useMemo(() => {
+    return [...new Set(slots.map((slot) => slot.date))].sort();
+  }, [slots]);
+
+  const times = useMemo(
+    () =>
+      slots
+        .filter((slot) => slot.date === formData.appointmentDate)
+        .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
+    [slots, formData.appointmentDate],
+  );
 
   const handleContinue = () => {
     if (!formData.appointmentDate || !formData.appointmentTime) {
       setError("Please select a date and time for your appointment");
       return;
     }
-
+    if (!formData.timeSlotId) {
+      setError("Please choose an available consultation slot");
+      return;
+    }
+    const selected = slots.find((slot) => slot.id === formData.timeSlotId);
+    if (!selected || selected.isBooked) {
+      setError("That time was taken. Please choose another slot.");
+      return;
+    }
     onNext();
   };
 
@@ -47,68 +110,116 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
         <h2 className="text-2xl font-bold leading-tight text-[#173b3a] sm:text-3xl">
           Select Date & Time
         </h2>
-
         <span className="mt-2 inline-block rounded-full bg-[#dce8df] px-3 py-1 text-xs font-semibold text-[#173b3a]">
           Step 5 of 6
         </span>
-
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
           Choose an appointment date and 30-minute consultation slot
         </p>
       </div>
 
-      <div className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#173b3a]">
-          <FaCalendarAlt className="text-[#176b5f]" />
-          Available dates
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {availableDates.map((date) => (
-            <button
-              key={date.iso}
-              type="button"
-              onClick={() => {
-                updateFormData({ appointmentDate: date.iso });
-                setError("");
-              }}
-              className={`rounded-xl border p-3 text-left transition ${
-                formData.appointmentDate === date.iso
-                  ? "border-[#176b5f] bg-[#f5faf7] text-[#176b5f]"
-                  : "border-gray-200 hover:border-[#9fc8bb]"
-              }`}
-            >
-              <span className="block text-xs font-semibold text-gray-500">{date.day}</span>
-              <span className="mt-1 block text-sm font-bold">{date.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {loading ? (
+        <p className="mt-8 text-center text-sm text-[#607672]">Loading available times…</p>
+      ) : loadError ? (
+        <p className="mt-8 text-center text-sm text-red-500">{loadError}</p>
+      ) : dates.length === 0 ? (
+        <p className="mt-8 text-center text-sm text-[#607672]">
+          No consultation slots are open for this clinician. Try another clinician or ask reception.
+        </p>
+      ) : (
+        <>
+          <div className="mt-7">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#173b3a]">
+              <FaCalendarAlt className="text-[#176b5f]" />
+              Available dates
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {dates.map((iso) => {
+                const openCount = slots.filter(
+                  (slot) => slot.date === iso && !slot.isBooked,
+                ).length;
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    onClick={() => {
+                      updateFormData({
+                        appointmentDate: iso,
+                        appointmentTime: "",
+                        timeSlotId: "",
+                      });
+                      setError("");
+                    }}
+                    className={`rounded-xl border p-3 text-left transition ${
+                      formData.appointmentDate === iso
+                        ? "border-[#176b5f] bg-[#f5faf7] text-[#176b5f]"
+                        : "border-gray-200 hover:border-[#9fc8bb]"
+                    }`}
+                  >
+                    <span className="block text-xs font-semibold text-gray-500">
+                      {formatDateLabel(iso).split(" ")[0]}
+                    </span>
+                    <span className="mt-1 block text-sm font-bold">
+                      {formatDateLabel(iso).replace(/^\w+\s/, "")}
+                    </span>
+                    <span className="mt-1 block text-[10px] font-medium text-[#607672]">
+                      {openCount} open
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      <div className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#173b3a]">
-          <FaClock className="text-[#176b5f]" />
-          Available times
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {TIME_SLOTS.map((slot) => (
-            <button
-              key={slot.value}
-              type="button"
-              onClick={() => {
-                updateFormData({ appointmentTime: slot.value });
-                setError("");
-              }}
-              className={`rounded-xl border p-4 text-left text-sm font-semibold transition ${
-                formData.appointmentTime === slot.value
-                  ? "border-[#176b5f] bg-[#f5faf7] text-[#176b5f]"
-                  : "border-gray-200 text-[#173b3a] hover:border-[#9fc8bb]"
-              }`}
-            >
-              {slot.label}
-            </button>
-          ))}
-        </div>
-      </div>
+          {formData.appointmentDate && (
+            <div className="mt-7">
+              <div className="flex items-center justify-between gap-2 text-sm font-bold text-[#173b3a]">
+                <span className="flex items-center gap-2">
+                  <FaClock className="text-[#176b5f]" />
+                  Available times
+                </span>
+                <span className="text-[11px] font-medium text-[#607672]">30-min window</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {times.map((slot) => {
+                  const past = !isFutureSlot(slot.date, slot.startTime);
+                  const taken = slot.isBooked || past;
+                  const selected = formData.timeSlotId === slot.id;
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      disabled={taken}
+                      onClick={() => {
+                        updateFormData({
+                          appointmentTime: slot.startTime,
+                          timeSlotId: slot.id,
+                          roomId: slot.roomId || formData.roomId,
+                        });
+                        setError("");
+                      }}
+                      className={`rounded-xl border p-3 text-center text-sm font-semibold transition ${
+                        taken
+                          ? "cursor-not-allowed border-[#e5e7e6] bg-[#f0f2f1] text-[#8a948f] line-through opacity-70"
+                          : selected
+                            ? "border-[#176b5f] bg-[#176b5f] text-white"
+                            : "border-gray-200 text-[#173b3a] hover:border-[#9fc8bb]"
+                      }`}
+                    >
+                      <span className="block">{formatTimeLabel(slot.startTime)}</span>
+                      {taken && (
+                        <span className="mt-0.5 block text-[10px] font-normal no-underline">
+                          {slot.isBooked ? "Taken" : "Passed"}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {formData.appointmentDate && formData.appointmentTime && (
         <div className="mt-6 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-sm text-[#76551f]">
@@ -125,7 +236,8 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
       <button
         type="button"
         onClick={handleContinue}
-        className="relative mt-7 flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#14594f]"
+        disabled={loading}
+        className="relative mt-7 flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:opacity-60"
       >
         <span>Review Booking</span>
         <FaArrowRight size={12} className="absolute right-6" />

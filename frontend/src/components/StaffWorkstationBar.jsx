@@ -6,7 +6,13 @@ const ROLE_LABELS = {
   ADMIN: "Admin",
 };
 
-export default function StaffWorkstationBar({ staff, onSignOut, showDisplayBoard = false }) {
+export default function StaffWorkstationBar({
+  staff,
+  onSignOut,
+  view,
+  onViewChange,
+  arrivedCount = 0,
+}) {
   const initials = String(staff?.name || "YC")
     .split(" ")
     .filter(Boolean)
@@ -14,6 +20,13 @@ export default function StaffWorkstationBar({ staff, onSignOut, showDisplayBoard
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+
+  const showOpsNav = staff?.role !== "DOCTOR" && typeof onViewChange === "function";
+  const navItems = [
+    { id: "today", label: "Today" },
+    { id: "roster", label: "Appointments" },
+    { id: "queue", label: "Live Queue" },
+  ];
 
   return (
     <header className="border-b border-[#dce8df] bg-white">
@@ -31,15 +44,27 @@ export default function StaffWorkstationBar({ staff, onSignOut, showDisplayBoard
           </div>
         </div>
 
+        {showOpsNav && (
+          <nav className="flex flex-wrap gap-1">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onViewChange(item.id)}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+                  view === item.id
+                    ? "bg-[#E7F5F1] text-[#176b5f]"
+                    : "text-[#66706B] hover:bg-[#f5faf7] hover:text-[#173b3a]"
+                }`}
+              >
+                {item.label}
+                {item.id === "roster" && arrivedCount > 0 ? ` (${arrivedCount})` : ""}
+              </button>
+            ))}
+          </nav>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
-          {showDisplayBoard && (
-            <Link
-              to="/staff/display"
-              className="rounded-xl border border-[#dce8df] px-3 py-2 text-xs font-semibold text-[#173b3a] hover:bg-[#E7F5F1]"
-            >
-              Corridor TV
-            </Link>
-          )}
           <Link
             to="/"
             className="rounded-xl border border-[#dce8df] px-3 py-2 text-xs font-semibold text-[#66706B] hover:text-[#173b3a]"

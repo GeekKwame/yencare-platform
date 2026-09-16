@@ -18,6 +18,13 @@ const ClinicSelection = ({
   const handleSelect = (clinic) => {
     updateFormData({
       clinicSite: clinic.id,
+      clinicianId: "",
+      clinician: "",
+      clinicianRoom: "",
+      roomId: "",
+      timeSlotId: "",
+      appointmentDate: "",
+      appointmentTime: "",
     });
 
     setError("");
