@@ -130,7 +130,7 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
             <div className="flex justify-between p-3.5">
               <span className="text-xs font-medium text-gray-500">Clinician</span>
               <span className="font-semibold text-[#173b3a]">
-                {formData.clinician} ({formData.clinicianRoom})
+                {formData.clinician || "—"}
               </span>
             </div>
             <div className="flex justify-between p-3.5">
