@@ -96,6 +96,13 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
     }
   };
 
+  const handleBookAnother = () => {
+    setIsSubmitting(false);
+    setIsConfirmed(false);
+    setBookingRef("");
+    onReset?.();
+  };
+
   if (isConfirmed) {
     return (
       <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
@@ -198,8 +205,8 @@ const ReviewBooking = ({ formData, onBack, onReset }) => {
             {onReset && (
               <button
                 type="button"
-                onClick={onReset}
-                className="flex flex-1 items-center justify-center rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
+                onClick={handleBookAnother}
+                className="flex flex-1 items-center justify-center rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7] cursor-pointer"
               >
                 Book Another
               </button>

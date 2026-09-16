@@ -6,24 +6,10 @@ import ClinicianSelection from "./ClinicianSelection";
 import ServiceSelection from "./ServiceSelection";
 import TimeSlots from "./TimeSlots";
 import ReviewBooking from "./ReviewBooking";
+import { initialFormData } from "./initialFormData";
 
-const initialFormData = {
-  fullName: "",
-  studentIndex: "",
-  phoneNumber: "",
-  nhisNumber: "",
-  clinicSite: "",
-  visitType: "",
-  clinicianId: "",
-  clinician: "",
-  clinicianRoom: "",
-  appointmentDate: "",
-  appointmentTime: "",
-};
-
-const BookingForm = () => {
+const BookingForm = ({ formData, setFormData }) => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState(initialFormData);
 
   const updateFormData = (changes) => {
     setFormData((prev) => ({

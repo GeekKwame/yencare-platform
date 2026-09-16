@@ -76,26 +76,35 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
               }`}
             >
               {/* Doctor Information */}
-              <div className="min-w-0">
-                <p
-                  className={`text-base font-bold sm:text-lg ${
-                    isSelected ? "text-[#176b5f]" : "text-[#173b3a]"
-                  }`}
-                >
-                  {doctor.name}
-                </p>
+              <div className="flex min-w-0 items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f7d37a] text-lg font-bold text-[#173b3a]">
+                  {doctor.name
+                    .replace("Dr. ", "")
+                    .split(" ")
+                    .map((namePart) => namePart[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0">
+                  <p
+                    className={`text-base font-bold sm:text-lg ${
+                      isSelected ? "text-[#176b5f]" : "text-[#173b3a]"
+                    }`}
+                  >
+                    {doctor.name}
+                  </p>
 
                 <p className="mt-1.5 text-xs font-medium text-gray-500 sm:text-sm">
                   {doctor.roomLabel}
                 </p>
 
-                <p className="mt-1.5 text-xs font-semibold text-[#176b5f] sm:text-sm">
-                  {doctor.position}
-                </p>
-                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 sm:text-sm">
-                  <GoDotFill className="text-green-600" size={10} />
-                  Available for booking
-                </p>
+                  <p className="mt-1.5 text-xs font-semibold text-[#176b5f] sm:text-sm">
+                    {doctor.position}
+                  </p>
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 sm:text-sm">
+                    <GoDotFill className="text-green-600" size={10} />
+                    Available for booking
+                  </p>
+                </div>
               </div>
 
               {/* Checkbox */}

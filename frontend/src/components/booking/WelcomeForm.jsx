@@ -7,12 +7,20 @@ import {
   FaFacebookMessenger,
 } from "react-icons/fa";
 import Logo from "../../assets/Yencare Logo.png";
+import FindAppointment from "../appointment/FindAppointment";
+import { useState } from "react";
 
 const WelcomeForm = ({ onStartBooking }) => {
   const time = new Date().toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const [findAppointment, setFindAppointment] = useState(false);
+
+  if (findAppointment) {
+    return <FindAppointment setAppointment={setFindAppointment} />;
+  }
 
   return (
     <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
@@ -78,8 +86,8 @@ const WelcomeForm = ({ onStartBooking }) => {
           />
         </button>
 
-        <Link
-          to="/queue"
+        <button onClick={() => setFindAppointment(true)}
+          type="button"
           className="group flex w-full cursor-pointer items-center gap-3 rounded-full border border-[#d5dfda] bg-white px-5 py-3.5 text-sm font-bold text-[#173b3a] transition duration-300 hover:border-[#176b5f] hover:bg-[#f5faf7] hover:text-[#176b5f]"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#edf5ed] text-[#176b5f]">
@@ -92,7 +100,7 @@ const WelcomeForm = ({ onStartBooking }) => {
             size={12}
             className="ml-auto opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100"
           />
-        </Link>
+        </button>
 
         <div className="flex items-center gap-4 py-2">
           <div className="h-px flex-1 bg-[#e6eee9]" />

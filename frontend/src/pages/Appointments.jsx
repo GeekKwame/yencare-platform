@@ -1,14 +1,14 @@
-import {
-  FaCalendarAlt,
-  FaCheckCircle,
-} from "react-icons/fa";
+import { useState } from "react";
+import { FaCalendarAlt, FaCheckCircle } from "react-icons/fa";
 import BookingForm from "../components/booking/BookingForm";
+import { initialFormData } from "../components/booking/initialFormData";
 
 const Appointments = () => {
+  const [formData, setFormData] = useState(initialFormData);
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-7xl flex-col items-center px-5 pb-16 pt-28 sm:px-8 lg:px-10">
       <div className="flex w-full max-w-3xl flex-col gap-10">
-
         {/* ================= INTRO ================= */}
         <section className="text-center">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dcebe1] text-xl text-[#176b5f]">
@@ -46,17 +46,13 @@ const Appointments = () => {
             </p>
           </div>
         </section>
-
       </div>
 
+{/* -------------Form Starts Here ----------- */}
 
-
-<div className="mt-12 w-full max-w-3xl">
-<BookingForm/>
-
-</div>
-
-
+      <div className="mt-12 w-full max-w-3xl">
+        <BookingForm formData={formData} setFormData={setFormData} />
+      </div>
     </main>
   );
 };
