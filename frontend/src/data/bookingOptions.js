@@ -133,7 +133,15 @@ export function visitTypeLabel(id) {
 export function formatDateLabel(iso) {
   const found = getAvailableDates().find((date) => date.iso === iso);
   if (found) return `${found.day} ${found.label}`;
-  return iso || "—";
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || "—";
+  const date = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function formatTimeLabel(value) {

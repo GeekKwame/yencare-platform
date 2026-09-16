@@ -17,6 +17,7 @@ import { createQueueRouter } from './queueRoutes.js';
  *   appointmentService?: {
  *     createAppointment: Function,
  *     findByReference?: Function,
+ *     lookupAppointment?: Function,
  *     listAppointments?: Function,
  *     updateStatus?: Function,
  *     cancelAppointment?: Function,

@@ -179,6 +179,92 @@ describe('appointments HTTP', () => {
     assert.equal(body.error, 'Appointment not found');
   });
 
+  it('GET /api/appointments/lookup returns 200 for a matching reference', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      lookupAppointment: async ({ reference }) => {
+        if (reference === 'YC-4821') {
+          return {
+            id: '68bf2c0e9c1a2b0012345678',
+            referenceCode: 'YC-4821',
+            status: 'BOOKED',
+          };
+        }
+        return null;
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(
+      `${url}/api/appointments/lookup?reference=YC-4821`,
+    );
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.referenceCode, 'YC-4821');
+  });
+
+  it('GET /api/appointments/lookup returns 200 for student index search', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      lookupAppointment: async ({ studentIndex, phone }) => {
+        assert.equal(studentIndex, '20612345');
+        assert.equal(phone, undefined);
+        return {
+          id: '68bf2c0e9c1a2b0012345678',
+          referenceCode: 'YC-4821',
+          status: 'BOOKED',
+        };
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(
+      `${url}/api/appointments/lookup?studentIndex=20612345`,
+    );
+
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).referenceCode, 'YC-4821');
+  });
+
+  it('GET /api/appointments/lookup returns 404 when not found', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      lookupAppointment: async () => {
+        const err = new Error('Appointment not found');
+        err.status = 404;
+        throw err;
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(
+      `${url}/api/appointments/lookup?phone=0241234567`,
+    );
+
+    assert.equal(res.status, 404);
+    assert.equal((await res.json()).error, 'Appointment not found');
+  });
+
+  it('GET /api/appointments/lookup returns 400 when no search field is provided', async () => {
+    const mockService = {
+      createAppointment: async () => {},
+      lookupAppointment: async () => {
+        const err = new Error(
+          'Provide a reference code, student index, or phone number',
+        );
+        err.status = 400;
+        throw err;
+      },
+    };
+
+    const { url } = await client(mockService);
+    const res = await fetch(`${url}/api/appointments/lookup`);
+
+    assert.equal(res.status, 400);
+    assert.match((await res.json()).error, /reference code/i);
+  });
+
   it('GET /api/appointments lists appointments filtered by date and clinicSite', async () => {
     const mockService = {
       createAppointment: async () => {},
