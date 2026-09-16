@@ -11,6 +11,7 @@ import { createPatientService } from "./patients/service.js";
 
 import {
   listAppointments,
+  lookupAppointment,
   updateAppointmentStatus,
   cancelAppointment,
   rescheduleAppointment,
@@ -68,6 +69,8 @@ const app = createApp({
     createAppointment,
 
     findByReference: (ref) => Appointment.findByReference(ref),
+
+    lookupAppointment,
 
     listAppointments,
 

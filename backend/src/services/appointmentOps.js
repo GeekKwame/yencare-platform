@@ -5,11 +5,15 @@ import {
   APPOINTMENT_STATUSES,
   CLINIC_SITES,
   DATE_PATTERN,
+  REFERENCE_CODE_PATTERN,
+  STUDENT_INDEX_PATTERN,
 } from '../db/constants.js';
 
 import { Appointment } from '../models/Appointment.js';
+import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
 import { AuditLog } from '../models/AuditLog.js';
+import { normalizeGhanaPhone } from '../sms/normalizePhone.js';
 
 import {
   NotFoundError,
@@ -49,6 +53,112 @@ export async function listAppointments(filters = {}) {
   }
 
   return Appointment.populateQueue(query);
+}
+
+const ACTIVE_PATIENT_LOOKUP_STATUSES = [
+  'BOOKED',
+  'CHECKED_IN',
+  'WAITING',
+  'CALLED',
+];
+
+function normalizeReferenceCode(raw) {
+  const compact = String(raw || '').replace(/\s+/g, '').toUpperCase();
+  if (/^YC\d{4}$/.test(compact)) {
+    return `YC-${compact.slice(2)}`;
+  }
+  return compact;
+}
+
+function populatedAppointment(query) {
+  return query
+    .populate('patientId')
+    .populate({ path: 'clinicianId', populate: { path: 'roomId' } })
+    .populate('roomId')
+    .populate('timeSlotId');
+}
+
+/**
+ * Public patient lookup used by Find Appointment (P09).
+ * Search with exactly one of reference, student index, or Ghana phone.
+ *
+ * @param {{ reference?: string, studentIndex?: string, phone?: string }} query
+ */
+export async function lookupAppointment({
+  reference,
+  studentIndex,
+  phone,
+} = {}) {
+  const refRaw = String(reference || '').trim();
+  const indexRaw = String(studentIndex || '').trim();
+  const phoneRaw = String(phone || '').trim();
+  const provided = [refRaw, indexRaw, phoneRaw].filter(Boolean);
+
+  if (provided.length === 0) {
+    throw new ValidationError(
+      'Provide a reference code, student index, or phone number',
+    );
+  }
+
+  if (provided.length > 1) {
+    throw new ValidationError(
+      'Search with one of reference, student index, or phone number',
+    );
+  }
+
+  if (refRaw) {
+    const ref = normalizeReferenceCode(refRaw);
+    if (!REFERENCE_CODE_PATTERN.test(ref)) {
+      throw new ValidationError(
+        'Please enter a valid reference code (e.g. YC-4821)',
+      );
+    }
+
+    const appointment = await Appointment.findByReference(ref);
+    if (!appointment) {
+      throw new NotFoundError('Appointment not found');
+    }
+    return appointment;
+  }
+
+  let patient = null;
+
+  if (indexRaw) {
+    const index = indexRaw.replace(/\s+/g, '');
+    if (!STUDENT_INDEX_PATTERN.test(index)) {
+      throw new ValidationError(
+        'Please enter a valid student index number (e.g. 20612345)',
+      );
+    }
+    patient = await Patient.findOne({ studentIndex: index });
+  } else {
+    let e164;
+    try {
+      e164 = normalizeGhanaPhone(phoneRaw);
+    } catch {
+      throw new ValidationError(
+        'Please enter a valid Ghana phone number (e.g. 024 123 4567)',
+      );
+    }
+    patient = await Patient.findOne({ phone: e164 });
+  }
+
+  if (!patient) {
+    throw new NotFoundError('Appointment not found');
+  }
+
+  const appointment = await populatedAppointment(
+    Appointment.findOne({
+      patientId: patient._id,
+      status: { $in: ACTIVE_PATIENT_LOOKUP_STATUSES },
+    }).sort({ appointmentDate: 1, appointmentTime: 1 }),
+  );
+
+  if (!appointment) {
+    throw new NotFoundError('Appointment not found');
+  }
+
+  return appointment;
 }
 
 /**

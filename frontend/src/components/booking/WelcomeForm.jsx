@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaClock,
@@ -8,7 +9,6 @@ import {
 } from "react-icons/fa";
 import Logo from "../../assets/Yencare Logo.png";
 import FindAppointment from "../appointment/FindAppointment";
-import { useState } from "react";
 
 const WelcomeForm = ({ onStartBooking }) => {
   const time = new Date().toLocaleTimeString([], {

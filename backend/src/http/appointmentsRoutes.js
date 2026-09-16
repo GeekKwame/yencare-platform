@@ -14,6 +14,7 @@ function toJson(doc) {
  * @param {{
  *   createAppointment: (data: object) => Promise<{ appointment: object, sms: object }>,
  *   findByReference?: (referenceCode: string) => Promise<object | null>,
+ *   lookupAppointment?: (query: object) => Promise<object>,
  *   listAppointments?: (filters: object) => Promise<object[]>,
  *   updateStatus?: (idOrReference: string, status: string) => Promise<object>,
  *   cancelAppointment?: (idOrReference: string, options: object) => Promise<object>,
@@ -137,6 +138,33 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
       res.end();
     });
   });
+
+  // GET /api/appointments/lookup
+  // Public patient search by YC reference, student index, or Ghana phone.
+  router.get(
+    '/lookup',
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.lookupAppointment) {
+        return res.status(501).json({
+          error: 'Appointment lookup is not available',
+        });
+      }
+
+      const appointment = await appointmentService.lookupAppointment({
+        reference: req.query.reference,
+        studentIndex: req.query.studentIndex || req.query.studentId,
+        phone: req.query.phone || req.query.phoneNumber,
+      });
+
+      if (!appointment) {
+        return res.status(404).json({
+          error: 'Appointment not found',
+        });
+      }
+
+      res.status(200).json(toJson(appointment));
+    }),
+  );
 
   // PATCH /api/appointments/:id/status
   router.patch(

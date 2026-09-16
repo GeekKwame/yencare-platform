@@ -28,3 +28,24 @@ export async function updateAppointmentStatus(id, status) {
   const response = await api.patch(`/appointments/${id}/status`, { status });
   return response.data;
 }
+
+/**
+ * Public patient lookup: exactly one of reference, studentIndex, or phone.
+ * @param {{ reference?: string, studentIndex?: string, phone?: string }} query
+ */
+export async function lookupAppointment(query) {
+  const response = await api.get("/appointments/lookup", { params: query });
+  return response.data;
+}
+
+/**
+ * @param {string} idOrReference Mongo id or YC-XXXX
+ * @param {{ cancelReason?: string }} [options]
+ */
+export async function cancelAppointment(idOrReference, options = {}) {
+  const response = await api.patch(
+    `/appointments/${encodeURIComponent(idOrReference)}/cancel`,
+    { cancelReason: options.cancelReason },
+  );
+  return response.data;
+}
