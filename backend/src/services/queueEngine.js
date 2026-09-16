@@ -4,8 +4,7 @@ import { Appointment } from '../models/Appointment.js';
 import { QueueCounter } from '../models/QueueCounter.js';
 import { Room } from '../models/Room.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
-import { resolveSmsDestination } from '../patients/fields.js';
-import { sendSms } from '../sms/sendSms.js';
+import { notifyPatientCalled } from './callPatient.js';
 
 export const AVERAGE_CONSULT_DURATION_MINUTES = 15;
 
@@ -98,31 +97,6 @@ export async function assignDailyQueueToken(appointment, { dateOverride = null }
   appointment.queueSequence = sequence;
 
   return { queueToken, queueDate, queueSequence: sequence };
-}
-
-/**
- * Dispatches an SMS alert to the patient when they are called.
- * Non-blocking so failures do not interrupt clinic flow.
- */
-async function dispatchCallNextSms(appointment, room) {
-  try {
-    const patient = appointment.patientId;
-    if (!patient) return;
-    const phone = resolveSmsDestination(patient);
-    if (!phone) return;
-
-    const roomName = room?.name || 'the consultation room';
-    const message = [
-      'YenCare Health',
-      '',
-      `Token ${appointment.queueToken} is now called to ${roomName}.`,
-      'Please proceed inside immediately.',
-    ].join('\n');
-
-    await sendSms(phone, message);
-  } catch (err) {
-    console.error('[queue] Failed to dispatch call-next SMS:', err?.message || err);
-  }
 }
 
 /**
@@ -219,8 +193,8 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
     { upsert: true },
   );
 
-  // Dispatch SMS non-blocking
-  dispatchCallNextSms(nextAppointment, room);
+  // Dispatch SMS non-blocking (failures never undo the CALLED transition)
+  void notifyPatientCalled(nextAppointment, room);
 
   return {
     appointment: nextAppointment,
@@ -280,7 +254,7 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
           { $set: { activeAppointmentId: appointment._id } },
           { upsert: true },
         );
-        dispatchCallNextSms(appointment, room);
+        void notifyPatientCalled(appointment, room);
         break;
       }
 
