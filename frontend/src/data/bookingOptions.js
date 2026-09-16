@@ -4,7 +4,8 @@ export const CLINIC_SITES = [
   {
     id: "students-clinic",
     name: "Students' Clinic",
-    location: "KNUST University Health Services · Main Campus",
+    location: "Opposite Hall 7, Africa Hall Road",
+    description: "KNUST public health department for student outpatient care.",
     openTime: "8:00 AM",
     closeTime: "4:00 PM",
     hoursLabel: "Mon–Fri: 8:00 AM – 4:00 PM",
@@ -13,6 +14,7 @@ export const CLINIC_SITES = [
     id: "social-science-gf7",
     name: "Social Science Block GF7",
     location: "Social Science Building, Ground Floor",
+    description: "Satellite consultation post under University Health Services.",
     openTime: "9:00 AM",
     closeTime: "3:00 PM",
     hoursLabel: "Mon–Fri: 9:00 AM – 3:00 PM",

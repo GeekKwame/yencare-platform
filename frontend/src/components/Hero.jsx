@@ -78,7 +78,7 @@ const Hero = () => {
                   <FaMapMarkerAlt className="text-[#c37d32]" />
                   <p className="mt-2 text-xs text-[#8da19a]">Location</p>
                   <p className="mt-1 text-sm font-bold text-[#173b3a]">
-                    KNUST, Kumasi.
+                    Opposite Hall 7, KNUST
                   </p>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { FaHome, FaCalendarAlt, FaUsers, FaBars,  } from "react-icons/fa";
+import { FaHome, FaCalendarAlt, FaUsers, FaBars, FaMapMarkerAlt } from "react-icons/fa";
 import { FiX  } from "react-icons/fi";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
@@ -9,19 +9,26 @@ const Nav = () => {
     {
       id: 1,
       name: "Home",
-      href: "/",
+      to: "/",
+      end: true,
       icon: <FaHome />,
     },
     {
       id: 2,
-      name: "Appointments",
-      href: "/appointments",
-      icon: <FaCalendarAlt />,
+      name: "Facilities",
+      to: { pathname: "/", hash: "campus-facilities" },
+      icon: <FaMapMarkerAlt />,
     },
     {
       id: 3,
+      name: "Appointments",
+      to: "/appointments",
+      icon: <FaCalendarAlt />,
+    },
+    {
+      id: 4,
       name: "Queue",
-      href: "/queue",
+      to: "/queue",
       icon: <FaUsers />,
     },
   ];
@@ -48,7 +55,8 @@ const Nav = () => {
           {navLinks.map((li) => (
             <li key={li.id}>
               <NavLink
-                to={li.href}
+                to={li.to}
+                end={li.end}
                 className="group flex items-center gap-2 transition-colors hover:text-[#176b5f]"
               >
                 <span className="text-[#176b5f] opacity-70 transition-opacity group-hover:opacity-100">
@@ -83,7 +91,8 @@ const Nav = () => {
           {navLinks.map((li) => (
             <li key={li.id}>
               <NavLink
-                to={li.href}
+                to={li.to}
+                end={li.end}
                 className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white transition hover:bg-[#24514d]"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2b6359] text-[#f7d37a]">

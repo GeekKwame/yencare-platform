@@ -169,7 +169,7 @@ export const CLINIC_SITE_LABELS: Record<ClinicSite, { name: string; org: string;
   'students-clinic': {
     name: "Students' Clinic",
     org: 'KNUST University Health Services',
-    address: 'Main Campus, KNUST, Kumasi',
+    address: 'Opposite Hall 7, Africa Hall Road, KNUST',
   },
   'social-science-gf7': {
     name: 'Social Science Block GF7',

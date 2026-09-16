@@ -97,6 +97,11 @@ const ClinicSelection = ({
                   <p className="mt-1 text-xs text-gray-400 sm:text-sm">
                     {clinic.location}
                   </p>
+                  {clinic.description ? (
+                    <p className="mt-2 text-xs leading-5 text-[#728681] sm:text-sm">
+                      {clinic.description}
+                    </p>
+                  ) : null}
 
                   {/* Opening Hours */}
                   <div className="mt-4 flex items-center gap-2">

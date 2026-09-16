@@ -28,8 +28,8 @@ const date = new Date().getFullYear()
               </span>
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-6 text-[#b8cfbf]">
-              Making healthcare easier to find, plan, and access for everyone in
-              Ghana.
+              Outpatient booking and live queues for KNUST University Health
+              Services, including the Students&apos; Clinic opposite Hall 7.
             </p>
             
           </div>
@@ -49,21 +49,48 @@ const date = new Date().getFullYear()
                   Queue tracking
                 </Link>
               </li>
+              <li>
+                <Link to={{ pathname: "/", hash: "campus-facilities" }} className="transition hover:text-white">
+                  Campus facilities
+                </Link>
+              </li>
              
             </ul>
           </div>
           <div>
-            <h2 className="text-sm font-bold text-[#f7d37a]">Support</h2>
+            <h2 className="text-sm font-bold text-[#f7d37a]">Campus health</h2>
             <ul className="mt-5 space-y-3 text-sm text-[#b8cfbf]">
               <li>
+                <Link to={{ pathname: "/", hash: "campus-facilities" }} className="transition hover:text-white">
+                  KNUST Hospital &amp; Students&apos; Clinic
+                </Link>
+              </li>
+              <li>
                 <a
-                  href="mailto:hello@yencare.com"
+                  href="tel:+233322397998"
                   className="transition hover:text-white"
                 >
-                  Contact us
+                  Hospital: +233 32 239 7998
                 </a>
               </li>
-             
+              <li>
+                <a
+                  href="mailto:hospital@knust.edu.gh"
+                  className="transition hover:text-white"
+                >
+                  hospital@knust.edu.gh
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://uhs.knust.edu.gh/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-white"
+                >
+                  uhs.knust.edu.gh
+                </a>
+              </li>
             </ul>
           </div>
           {/* <div>

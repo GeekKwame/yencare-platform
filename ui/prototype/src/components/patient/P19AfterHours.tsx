@@ -32,7 +32,7 @@ export const P19AfterHours: React.FC = () => {
             <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">emergency</span>
             <div>
               <strong className="block mb-1">For urgent or emergency medical needs</strong>
-              Please seek immediate medical attention at KNUST University Health Services. Do not wait for a clinic appointment.
+              Please seek immediate medical attention at KNUST Hospital (University Health Services), on the north-eastern campus along the Kumasi–Accra Highway (N6, MCPG+GCX). The hospital is open 24 hours. Call +233 32 239 7998. Do not wait for a clinic appointment.
             </div>
           </div>
         </div>
@@ -46,9 +46,14 @@ export const P19AfterHours: React.FC = () => {
             <span className="text-[#66706B]">Students' Clinic</span>
             <span className="font-semibold text-[#111111]">Mon–Fri: 8:00 AM – 4:00 PM</span>
           </div>
+          <p className="text-[#66706B]">Opposite Hall 7, Africa Hall Road</p>
           <div className="flex justify-between items-center">
             <span className="text-[#66706B]">Social Science Block GF7</span>
             <span className="font-semibold text-[#111111]">Mon–Fri: 9:00 AM – 3:00 PM</span>
+          </div>
+          <div className="flex justify-between items-center pt-1">
+            <span className="text-[#66706B]">KNUST Hospital</span>
+            <span className="font-semibold text-[#111111]">Open 24 hours</span>
           </div>
         </div>
 
