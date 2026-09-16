@@ -8,7 +8,9 @@ import {
   FaFacebookMessenger,
 } from "react-icons/fa";
 import Logo from "../../assets/Yencare Logo.png";
+import { isStudentsClinicOpen } from "../../lib/accraTime";
 import FindAppointment from "../appointment/FindAppointment";
+import AfterHours from "./AfterHours";
 import { getClinicActivity } from "../../services/queue";
 
 const WelcomeForm = ({ onStartBooking }) => {
@@ -18,6 +20,7 @@ const WelcomeForm = ({ onStartBooking }) => {
   });
 
   const [findAppointment, setFindAppointment] = useState(false);
+  const [afterHours, setAfterHours] = useState(false);
   const [activity, setActivity] = useState({
     nowServingToken: "—",
     waitingCount: "—",
@@ -57,6 +60,19 @@ const WelcomeForm = ({ onStartBooking }) => {
 
   if (findAppointment) {
     return <FindAppointment setAppointment={setFindAppointment} />;
+  }
+
+  if (afterHours) {
+    return (
+      <AfterHours
+        onFindAppointment={() => {
+          setAfterHours(false);
+          setFindAppointment(true);
+        }}
+        onBookHospital={() => onStartBooking({ clinicSite: "knust-hospital" })}
+        onHome={() => setAfterHours(false)}
+      />
+    );
   }
 
   return (
@@ -118,7 +134,13 @@ const WelcomeForm = ({ onStartBooking }) => {
 
         <button
           type="button"
-          onClick={onStartBooking}
+          onClick={() => {
+            if (!isStudentsClinicOpen()) {
+              setAfterHours(true);
+              return;
+            }
+            onStartBooking();
+          }}
           className="group flex w-full cursor-pointer items-center gap-3 rounded-full bg-[#176b5f] px-5 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(23,107,95,0.15)] transition duration-300 hover:bg-[#12584f]"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
@@ -173,7 +195,7 @@ const WelcomeForm = ({ onStartBooking }) => {
             </div>
 
             <Link
-              to="/queue"
+              to="/clinic-activity"
               className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-[#176b5f] px-4 py-2.5 text-[10px] font-bold text-[#176b5f] transition duration-300 hover:bg-[#176b5f] hover:text-white"
             >
               View

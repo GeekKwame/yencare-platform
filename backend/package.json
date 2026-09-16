@@ -18,6 +18,8 @@
     "db:migrate:dry": "node scripts/migrate.js --dry-run",
     "db:seed": "node scripts/seed.js",
     "db:seed:dry": "node scripts/seed.js --dry-run",
+    "ops:slots": "node scripts/ensure-slots.js",
+    "ops:reminders": "node scripts/send-reminders.js",
     "test": "node --test ./test/*.test.js"
   },
   "engines": {

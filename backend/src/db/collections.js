@@ -144,6 +144,7 @@ export const COLLECTION_SPECS = [
           cancelReason: optionalString,
           staffChangeReason: optionalString,
           staffChangedTime: optionalString,
+          reminderSentAt: optionalDate,
           notes: optionalString,
         },
       },

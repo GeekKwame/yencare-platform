@@ -8,10 +8,12 @@ export default function StaffLogin() {
   const { staff, login } = useStaffAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [identifier, setIdentifier] = useState("abena.osei@yencare.gh");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const showDemo =
+    import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_STAFF === "true";
 
   const redirectTo = location.state?.from || "/staff";
 
@@ -108,6 +110,7 @@ export default function StaffLogin() {
           </div>
         </form>
 
+        {showDemo && (
         <div className="space-y-2 border-t border-[#E5E7E6] pt-4">
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#66706B]">
             Instant Demo Sign-In (Select Role):
@@ -143,6 +146,7 @@ export default function StaffLogin() {
             Demo password for typed sign-in: <span className="font-mono">{DEMO_STAFF_PASSWORD}</span>
           </p>
         </div>
+        )}
 
         <div className="mt-5 border-t border-[#E5E7E6] pt-3.5 text-center">
           <Link to="/" className="text-xs font-semibold text-[#66706B] hover:text-[#173b3a]">

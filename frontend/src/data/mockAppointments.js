@@ -192,6 +192,9 @@ export function mapAppointmentToCard(appt) {
     roomName: appt.roomId?.name || appt.assignedRoom || appt.roomName || "",
     roomId: appt.roomId?.id || appt.roomId?._id || (typeof appt.roomId === "string" ? appt.roomId : ""),
     clinicianName: appt.clinicianId?.name || appt.clinicianName || "",
+    clinicianId: appt.clinicianId?.id || appt.clinicianId?._id || (typeof appt.clinicianId === "string" ? appt.clinicianId : ""),
     nhisNumber: patient?.nhisNumber || appt.nhisNumber || "",
+    staffChangedTime: appt.staffChangedTime || "",
+    staffChangeReason: appt.staffChangeReason || "",
   };
 }

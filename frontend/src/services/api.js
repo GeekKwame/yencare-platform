@@ -22,4 +22,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = String(error?.config?.url || "");
+    const isLogin = url.includes("/auth/login");
+    if (status === 401 && !isLogin && typeof window !== "undefined") {
+      try {
+        if (localStorage.getItem(TOKEN_KEY)) {
+          window.dispatchEvent(new CustomEvent("yencare:staff-unauthorized"));
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default api;

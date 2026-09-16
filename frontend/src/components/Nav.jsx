@@ -31,6 +31,12 @@ const Nav = () => {
       to: "/queue",
       icon: <FaUsers />,
     },
+    {
+      id: 5,
+      name: "Clinic activity",
+      to: "/clinic-activity",
+      icon: <FaUsers />,
+    },
   ];
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);

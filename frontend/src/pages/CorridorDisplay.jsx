@@ -4,7 +4,6 @@ import Logo from "../assets/Yencare Logo.png";
 import {
   CLINIC_SITE_LABELS,
   DEFAULT_CLINIC_SITE,
-  getMockTodaysAppointments,
   mapAppointmentToCard,
   todayIsoDate,
 } from "../data/mockAppointments";
@@ -44,9 +43,7 @@ function NowServingCard({ room, doctor, token, serving }) {
 
 export default function CorridorDisplay() {
   const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
-  const [appointments, setAppointments] = useState(() =>
-    getMockTodaysAppointments(DEFAULT_CLINIC_SITE, todayIsoDate()),
-  );
+  const [appointments, setAppointments] = useState([]);
   const [clock, setClock] = useState(() =>
     new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
   );
@@ -65,13 +62,10 @@ export default function CorridorDisplay() {
       try {
         const data = await getTodaysAppointments(clinicSite, todayIsoDate());
         if (cancelled) return;
-        const list = Array.isArray(data) ? data.map(mapAppointmentToCard) : [];
-        setAppointments(
-          list.length > 0 ? list : getMockTodaysAppointments(clinicSite, todayIsoDate()),
-        );
+        setAppointments(Array.isArray(data) ? data.map(mapAppointmentToCard) : []);
       } catch {
         if (cancelled) return;
-        setAppointments(getMockTodaysAppointments(clinicSite, todayIsoDate()));
+        setAppointments([]);
       }
     }
 

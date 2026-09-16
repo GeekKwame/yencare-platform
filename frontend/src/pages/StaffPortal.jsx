@@ -3,6 +3,9 @@ import StaffLiveQueue from "../components/staff/StaffLiveQueue";
 import StaffRoster from "../components/staff/StaffRoster";
 import StaffToday from "../components/staff/StaffToday";
 import StaffWalkIn from "../components/staff/StaffWalkIn";
+import StaffAppointmentDetail from "../components/staff/StaffAppointmentDetail";
+import StaffChangeAppointment from "../components/staff/StaffChangeAppointment";
+import StaffNoShowConfirm from "../components/staff/StaffNoShowConfirm";
 import { matchesDeskQuery } from "../components/staff/staffUtils";
 import StaffWorkstationBar from "../components/StaffWorkstationBar";
 import { useStaffAuth } from "../context/StaffAuthContext";
@@ -16,7 +19,7 @@ import { accraTodayIso } from "../lib/accraTime";
 import DoctorWorkstation from "./DoctorWorkstation";
 import { updateAppointmentStatus } from "../services/appointments";
 import { listRooms } from "../services/catalog";
-import { advanceQueue, callNextPatient } from "../services/queue";
+import { advanceQueue, callNextPatient, markQueueNoShow } from "../services/queue";
 
 const SEED_DATE = "2026-09-15";
 
@@ -28,6 +31,7 @@ const StaffPortal = () => {
   const [deskQuery, setDeskQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [highlightedId, setHighlightedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
   const [lookupFeedback, setLookupFeedback] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
   const [busyRoomId, setBusyRoomId] = useState("");
@@ -104,8 +108,9 @@ const StaffPortal = () => {
     }
 
     setStatusFilter("all");
-    setView("roster");
+    setView("detail");
     setHighlightedId(found.id);
+    setSelectedId(found.id);
     setLookupFeedback(`Opened ${found.patientName} (${found.reference}).`);
     requestAnimationFrame(() => {
       document.getElementById(`staff-appt-${found.id}`)?.scrollIntoView({
@@ -141,6 +146,24 @@ const StaffPortal = () => {
       setUpdatingId(null);
     }
   }
+
+  async function handleMarkNoShow(id) {
+    setUpdatingId(id);
+    setMessage("");
+    try {
+      await markQueueNoShow({ appointmentId: id });
+      setMessage("Marked no-show. Slot released.");
+      await reload();
+      return true;
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Could not mark no-show.");
+      return false;
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  const selectedAppointment = appointments.find((appt) => appt.id === selectedId) || null;
 
   const filteredAppointments = appointments
     .filter((appt) => matchesDeskQuery(appt, deskQuery))
@@ -287,10 +310,44 @@ const StaffPortal = () => {
             onCheckIn={(id) => applyStatus(id, "CHECKED_IN", "Checked in")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             onNoShow={(id) => {
-              if (!window.confirm("Mark this appointment as a no-show?")) return;
-              return applyStatus(id, "NO_SHOW", "Marked no-show");
+              setSelectedId(id);
+              setView("noshow");
+            }}
+            onOpenRecord={(id) => {
+              setSelectedId(id);
+              setHighlightedId(id);
+              setView("detail");
             }}
             onOpenWalkIn={() => setView("walkin")}
+          />
+        )}
+
+        {view === "detail" && (
+          <StaffAppointmentDetail
+            appointment={selectedAppointment}
+            updating={updatingId === selectedAppointment?.id}
+            onBack={() => setView("roster")}
+            onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
+            onChangeTime={() => setView("change")}
+            onNoShow={() => setView("noshow")}
+            onOpenQueue={() => setView("queue")}
+          />
+        )}
+
+        {view === "change" && (
+          <StaffChangeAppointment
+            appointment={selectedAppointment}
+            onBack={() => setView("detail")}
+            onDone={reload}
+          />
+        )}
+
+        {view === "noshow" && (
+          <StaffNoShowConfirm
+            appointment={selectedAppointment}
+            busy={updatingId === selectedAppointment?.id}
+            onBack={() => setView("roster")}
+            onConfirm={() => handleMarkNoShow(selectedAppointment.id)}
           />
         )}
 

@@ -20,11 +20,55 @@ import {
   ValidationError,
 } from '../patients/errors.js';
 
-import { assignDailyQueueToken } from './queueEngine.js';
+import { resolveSmsDestination } from '../patients/fields.js';
+import { sendSms } from '../sms/sendSms.js';
+import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
 
 // Used by the real-time layer to notify clients after a successful
 // cancellation/reschedule transaction.
 export const appointmentEvents = new EventEmitter();
+
+function clinicSiteLabel(clinicSite) {
+  return clinicSite === 'knust-hospital'
+    ? 'KNUST Hospital'
+    : "KNUST Students' Clinic";
+}
+
+function formatHm(hhmm) {
+  if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return hhmm || '';
+  const [hour, minute] = hhmm.split(':').map(Number);
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = ((hour + 11) % 12) + 1;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
+}
+
+function patientPhone(appointment) {
+  const patient =
+    appointment?.patientId && typeof appointment.patientId === 'object'
+      ? appointment.patientId
+      : null;
+  return resolveSmsDestination(patient);
+}
+
+function notifyQuiet(phone, message) {
+  if (!phone || !message) return;
+  void sendSms(phone, message).then((result) => {
+    if (!result?.ok) {
+      console.error('[sms] notification failed:', result?.error || 'unknown error');
+    }
+  });
+}
+
+function phonesMatch(left, right) {
+  try {
+    return normalizeGhanaPhone(left) === normalizeGhanaPhone(right);
+  } catch {
+    const digits = (value) => String(value || '').replace(/\D/g, '').slice(-9);
+    const a = digits(left);
+    const b = digits(right);
+    return a.length === 9 && a === b;
+  }
+}
 
 /**
  * @param {{ date?: string, clinicSite?: string, clinic?: string }} filters
@@ -195,10 +239,32 @@ export async function updateAppointmentStatus(idOrReference, status) {
     throw new NotFoundError('Appointment not found');
   }
 
+  if (status === 'WAITING' && appointment.status === 'BOOKED') {
+    appointment.status = 'CHECKED_IN';
+    try {
+      await appointment.save();
+    } catch (err) {
+      if (String(err?.message || '').startsWith('Illegal status transition')) {
+        throw new ValidationError(err.message);
+      }
+      throw err;
+    }
+    appointment._originalStatus = 'CHECKED_IN';
+  }
+
   appointment.status = status;
 
-  if (status === 'CHECKED_IN') {
+  // Prototype: token is assigned when reception puts the student in the live queue.
+  if (status === 'WAITING') {
     await assignDailyQueueToken(appointment);
+    const roomId = appointment.roomId?._id || appointment.roomId;
+    const waitingAhead = await Appointment.countDocuments({
+      roomId,
+      status: 'WAITING',
+      _id: { $ne: appointment._id },
+    });
+    appointment.estimatedWaitMinutes =
+      (waitingAhead + 1) * AVERAGE_CONSULT_DURATION_MINUTES;
   }
 
   try {
@@ -214,6 +280,84 @@ export async function updateAppointmentStatus(idOrReference, status) {
 
     throw err;
   }
+
+  if (status === 'WAITING') {
+    const phone = patientPhone(appointment);
+    notifyQuiet(
+      phone,
+      [
+        'YɛnCare',
+        '',
+        `You are in the live queue at ${clinicSiteLabel(appointment.clinicSite)}.`,
+        appointment.queueToken ? `Token: ${appointment.queueToken}` : null,
+        appointment.estimatedWaitMinutes
+          ? `Estimated wait: about ${appointment.estimatedWaitMinutes} minutes.`
+          : null,
+        `Ref: ${appointment.referenceCode}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    );
+  }
+
+  return appointment;
+}
+
+/**
+ * Patient "I've arrived": BOOKED → CHECKED_IN without a queue token.
+ * Reception later moves CHECKED_IN → WAITING and assigns the token.
+ *
+ * @param {string} referenceCode
+ * @param {{ phone?: string }} [options]
+ */
+export async function markPatientArrived(referenceCode, { phone } = {}) {
+  const ref = String(referenceCode || '').trim().toUpperCase();
+  if (!ref) {
+    throw new ValidationError('Appointment reference is required');
+  }
+
+  const appointment = await Appointment.findByReference(ref);
+  if (!appointment) {
+    throw new NotFoundError('Appointment not found');
+  }
+
+  if (phone) {
+    const stored = patientPhone(appointment);
+    if (!stored || !phonesMatch(stored, phone)) {
+      throw new NotFoundError('Appointment not found');
+    }
+  }
+
+  if (appointment.status === 'CHECKED_IN') {
+    return appointment;
+  }
+
+  if (appointment.status !== 'BOOKED') {
+    throw new ValidationError(
+      `Arrival can only be recorded when status is BOOKED (current: ${appointment.status})`,
+    );
+  }
+
+  appointment.status = 'CHECKED_IN';
+  try {
+    await appointment.save();
+  } catch (err) {
+    if (String(err?.message || '').startsWith('Illegal status transition')) {
+      throw new ValidationError(err.message);
+    }
+    throw err;
+  }
+
+  notifyQuiet(
+    patientPhone(appointment),
+    [
+      'YɛnCare',
+      '',
+      `We've noted your arrival at ${clinicSiteLabel(appointment.clinicSite)}.`,
+      `Present Ref ${appointment.referenceCode} at reception.`,
+      'Reception will add you to the live queue.',
+    ].join('\n'),
+  );
 
   return appointment;
 }
@@ -395,6 +539,18 @@ export async function cancelAppointment(
       releasedAt: result.cancelledTime,
     });
 
+    const cancelled = result.appointment;
+    notifyQuiet(
+      patientPhone(cancelled),
+      [
+        'YɛnCare',
+        '',
+        `Your appointment ${cancelled.referenceCode} on ${cancelled.appointmentDate} at ${formatHm(cancelled.appointmentTime)} has been cancelled.`,
+        `KNUST ${clinicSiteLabel(cancelled.clinicSite)}`,
+        'You can book again when you need care.',
+      ].join('\n'),
+    );
+
     return result;
   } finally {
     await session.endSession();
@@ -406,11 +562,11 @@ export async function cancelAppointment(
  * with a new available slot.
  *
  * @param {string} idOrReference
- * @param {{ newSlotId: string, performedBy?: string|null }} options
+ * @param {{ newSlotId: string, performedBy?: string|null, staffChangeReason?: string }} options
  */
 export async function rescheduleAppointment(
   idOrReference,
-  { newSlotId, performedBy = null } = {},
+  { newSlotId, performedBy = null, staffChangeReason = '' } = {},
 ) {
   const key = String(idOrReference || '').trim();
 
@@ -583,6 +739,12 @@ export async function rescheduleAppointment(
               appointmentTime: newSlot.startTime,
               roomId: newSlot.roomId,
               clinicSite: newSlot.clinicSite,
+              ...(staffChangeReason
+                ? {
+                    staffChangeReason: String(staffChangeReason).trim(),
+                    staffChangedTime: appointment.appointmentTime,
+                  }
+                : {}),
             },
           },
           {
@@ -641,6 +803,22 @@ export async function rescheduleAppointment(
       isBooked: true,
       bookedAt: new Date(),
     });
+
+    const moved = result.appointment;
+    const reason = moved.staffChangeReason
+      ? `\nReason: ${moved.staffChangeReason}`
+      : '';
+    notifyQuiet(
+      patientPhone(moved),
+      [
+        'YɛnCare Update',
+        '',
+        'Your appointment has been updated.',
+        `New: ${moved.appointmentDate}, ${formatHm(moved.appointmentTime)}`,
+        `Ref: ${moved.referenceCode}${reason}`,
+        clinicSiteLabel(moved.clinicSite),
+      ].join('\n'),
+    );
 
     return result;
   } finally {

@@ -93,6 +93,7 @@ const appointmentSchema = new mongoose.Schema(
     cancelReason: { type: String, trim: true },
     staffChangeReason: { type: String, trim: true },
     staffChangedTime: { type: String, trim: true },
+    reminderSentAt: { type: Date, default: null },
     notes: { type: String, trim: true },
   },
   { timestamps: true, collection: 'appointments' },

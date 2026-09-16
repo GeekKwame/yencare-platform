@@ -276,7 +276,7 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] appointment ${appointment.referenceCode}`);
   }
 
-  for (const clinician of cliniciansByName.values()) {
+    for (const clinician of cliniciansByName.values()) {
     const room = roomForClinician(clinician, roomsByKey);
     if (!room) continue;
 
@@ -301,6 +301,10 @@ export async function seed({ dryRun = false } = {}) {
       console.log(`[seed] open slots ${clinician.name} ${date}`);
     }
   }
+
+  const { ensureOpenSlots } = await import('../src/services/generateSlots.js');
+  const rolling = await ensureOpenSlots({ days: 14 });
+  console.log(`[seed] rolling slots created=${rolling.created} skipped=${rolling.skipped}`);
 
   const passwordHash = bcrypt.hashSync(DEMO_STAFF_PASSWORD, 8);
   for (const person of DEMO_STAFF) {

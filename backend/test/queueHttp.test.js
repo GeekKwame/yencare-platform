@@ -231,4 +231,33 @@ describe('queue HTTP endpoints', () => {
     assert.equal(body.estimatedWaitMinutes, 25);
     assert.equal(body.rooms[0].name, 'Room 1');
   });
+
+  it('POST /api/appointments/:reference/arrive records patient arrival', async () => {
+    const mockAppointmentService = {
+      markPatientArrived: async (reference, { phone } = {}) => {
+        if (reference !== 'YC-4821') {
+          const err = new Error('Appointment not found');
+          err.status = 404;
+          throw err;
+        }
+        return {
+          referenceCode: reference,
+          status: 'CHECKED_IN',
+          queueToken: null,
+          phone,
+        };
+      },
+    };
+
+    const { url } = await client({ mockAppointmentService });
+    const res = await fetch(`${url}/api/appointments/YC-4821/arrive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: '0241234567' }),
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.status, 'CHECKED_IN');
+    assert.equal(body.queueToken, null);
+  });
 });

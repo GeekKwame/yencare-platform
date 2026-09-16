@@ -47,8 +47,11 @@ const BookingForm = () => {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleStartBooking = () => {
+  const handleStartBooking = (preset = {}) => {
     setSlotTaken(false);
+    if (preset.clinicSite) {
+      setFormData((prev) => ({ ...prev, clinicSite: preset.clinicSite }));
+    }
     setStep(2);
   };
 

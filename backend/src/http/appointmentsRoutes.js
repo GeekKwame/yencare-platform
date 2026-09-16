@@ -17,6 +17,7 @@ function toJson(doc) {
  *   lookupAppointment?: (query: object) => Promise<object>,
  *   listAppointments?: (filters: object) => Promise<object[]>,
  *   updateStatus?: (idOrReference: string, status: string) => Promise<object>,
+ *   markPatientArrived?: (reference: string, options: object) => Promise<object>,
  *   cancelAppointment?: (idOrReference: string, options: object) => Promise<object>,
  *   rescheduleAppointment?: (idOrReference: string, options: object) => Promise<object>,
  *   getQueueStatus?: (reference: string) => Promise<object>,
@@ -166,6 +167,26 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
     }),
   );
 
+  // POST /api/appointments/:reference/arrive
+  // Public patient arrival — BOOKED → CHECKED_IN, no queue token.
+  router.post(
+    '/:reference/arrive',
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.markPatientArrived) {
+        return res.status(501).json({
+          error: 'Arrival check-in is not available',
+        });
+      }
+
+      const appointment = await appointmentService.markPatientArrived(
+        req.params.reference,
+        { phone: req.body?.phone || req.body?.phoneNumber },
+      );
+
+      res.status(200).json(toJson(appointment));
+    }),
+  );
+
   // PATCH /api/appointments/:id/status
   router.patch(
     '/:id/status',
@@ -239,6 +260,7 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
           req.params.id,
           {
             newSlotId: req.body?.newSlotId,
+            staffChangeReason: req.body?.staffChangeReason,
             performedBy:
               req.user?._id ||
               req.user?.id ||

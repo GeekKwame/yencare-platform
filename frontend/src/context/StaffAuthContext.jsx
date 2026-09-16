@@ -16,11 +16,13 @@ export function StaffAuthProvider({ children }) {
   const [token, setToken] = useState(stored.token);
   const [staff, setStaff] = useState(stored.staff);
   const [loading, setLoading] = useState(Boolean(stored.token));
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const applySession = useCallback((nextToken, nextStaff) => {
     persistStaffSession(nextToken, nextStaff);
     setToken(nextToken);
     setStaff(nextStaff);
+    setSessionExpired(false);
   }, []);
 
   const logout = useCallback(() => {
@@ -28,6 +30,16 @@ export function StaffAuthProvider({ children }) {
     setToken(null);
     setStaff(null);
   }, []);
+
+  useEffect(() => {
+    function onUnauthorized() {
+      if (!token || String(token).startsWith("demo-local.")) return;
+      setSessionExpired(true);
+      logout();
+    }
+    window.addEventListener("yencare:staff-unauthorized", onUnauthorized);
+    return () => window.removeEventListener("yencare:staff-unauthorized", onUnauthorized);
+  }, [logout, token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +62,10 @@ export function StaffAuthProvider({ children }) {
       } catch (err) {
         if (cancelled) return;
         const status = err?.response?.status;
-        if (status === 401) logout();
+        if (status === 401) {
+          setSessionExpired(true);
+          logout();
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,6 +87,10 @@ export function StaffAuthProvider({ children }) {
         const status = err?.response?.status;
         if (status === 401 || status === 400) throw err;
 
+        const allowDemoFallback =
+          import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_STAFF === "true";
+        if (!allowDemoFallback) throw err;
+
         const demo = DEMO_STAFF_ACCOUNTS.find(
           (account) =>
             account.identifier.toLowerCase() === String(identifier || "").trim().toLowerCase() &&
@@ -92,11 +111,13 @@ export function StaffAuthProvider({ children }) {
       token,
       staff,
       loading,
+      sessionExpired,
+      clearSessionExpired: () => setSessionExpired(false),
       isAuthenticated: Boolean(staff),
       login,
       logout,
     }),
-    [token, staff, loading, login, logout],
+    [token, staff, loading, sessionExpired, login, logout],
   );
 
   return <StaffAuthContext.Provider value={value}>{children}</StaffAuthContext.Provider>;

@@ -8,6 +8,7 @@ import {
 import { isFutureSlot } from "../../lib/accraTime";
 import { mapTimeSlot } from "../../lib/catalogView";
 import { listTimeSlots } from "../../services/catalog";
+import api from "../../services/api";
 
 const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
@@ -19,7 +20,7 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function load({ silent = false } = {}) {
       if (!formData.clinicianId) {
         setSlots([]);
         setLoading(false);
@@ -27,8 +28,10 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
         return;
       }
 
-      setLoading(true);
-      setLoadError("");
+      if (!silent) {
+        setLoading(true);
+        setLoadError("");
+      }
       try {
         const rows = await listTimeSlots({
           clinicianId: formData.clinicianId,
@@ -38,7 +41,7 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
           .filter((slot) => slot.date && slot.startTime);
         if (!cancelled) setSlots(mapped);
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && !silent) {
           setSlots([]);
           setLoadError(
             err.response?.data?.error ||
@@ -51,8 +54,23 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
     }
 
     load();
+
+    const eventsUrl = `${api.defaults.baseURL}/appointments/events`;
+    let source;
+    try {
+      source = new EventSource(eventsUrl);
+      const refresh = () => {
+        if (!cancelled) load({ silent: true });
+      };
+      source.addEventListener("slotBooked", refresh);
+      source.addEventListener("slotReleased", refresh);
+    } catch {
+      source = null;
+    }
+
     return () => {
       cancelled = true;
+      source?.close();
     };
   }, [formData.clinicianId]);
 

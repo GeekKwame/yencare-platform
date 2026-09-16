@@ -5,8 +5,17 @@ import { createAuthRouter } from './authRoutes.js';
 import { createCatalogRouter } from './catalogRoutes.js';
 import { buildCorsOptions } from './corsOrigins.js';
 import { getHealthStatus } from './health.js';
+import { createOpsRouter } from './opsRoutes.js';
 import { createPatientsRouter } from './patientsRoutes.js';
 import { createQueueRouter } from './queueRoutes.js';
+import { rateLimit, securityHeaders } from './security.js';
+
+function maybeRateLimit(options) {
+  if (process.env.NODE_ENV !== 'production') {
+    return (_req, _res, next) => next();
+  }
+  return rateLimit(options);
+}
 
 /**
  * @param {{
@@ -34,6 +43,10 @@ import { createQueueRouter } from './queueRoutes.js';
  *     getClinicActivity?: Function,
  *   },
  *   staffAuth?: ReturnType<import('../auth/staffAuth.js').createStaffAuthService>,
+ *   opsService?: {
+ *     ensureOpenSlots?: Function,
+ *     sendAppointmentReminders?: Function,
+ *   },
  *   getHealth?: () => Promise<object>,
  * }} deps
  */
@@ -43,10 +56,13 @@ export function createApp({
   appointmentService,
   queueService,
   staffAuth,
+  opsService,
   getHealth = getHealthStatus,
 }) {
   const app = express();
 
+  app.set('trust proxy', 1);
+  app.use(securityHeaders);
   app.use(cors(buildCorsOptions()));
   app.use(express.json({ limit: '32kb' }));
 
@@ -65,7 +81,11 @@ export function createApp({
     }
   });
 
-  app.use('/api/patients', createPatientsRouter(patientService));
+  app.use(
+    '/api/patients',
+    maybeRateLimit({ windowMs: 60_000, max: 30 }),
+    createPatientsRouter(patientService),
+  );
 
   if (staffAuth) {
     app.use('/api/auth', createAuthRouter(staffAuth));
@@ -78,6 +98,7 @@ export function createApp({
   if (appointmentService) {
     app.use(
       '/api/appointments',
+      maybeRateLimit({ windowMs: 60_000, max: 60 }),
       createAppointmentsRouter(appointmentService, staffHttp),
     );
   }
@@ -88,6 +109,10 @@ export function createApp({
 
   if (catalog) {
     app.use('/api', createCatalogRouter(catalog));
+  }
+
+  if (opsService && staffAuth) {
+    app.use('/api/ops', createOpsRouter(opsService, staffHttp));
   }
 
   app.use((_req, res) => {

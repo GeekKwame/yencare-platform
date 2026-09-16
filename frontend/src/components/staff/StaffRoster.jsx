@@ -12,6 +12,7 @@ export default function StaffRoster({
   onCheckInToQueue,
   onNoShow,
   onOpenWalkIn,
+  onOpenRecord,
 }) {
   const sorted = sortRoster(filteredAppointments);
 
@@ -73,11 +74,12 @@ export default function StaffRoster({
             <div
               key={appt.id}
               id={`staff-appt-${appt.id}`}
-              className={`rounded-2xl border bg-white p-5 shadow-[0_14px_30px_rgba(23,59,58,0.07)] ${
+              className={`cursor-pointer rounded-2xl border bg-white p-5 shadow-[0_14px_30px_rgba(23,59,58,0.07)] ${
                 highlightedId === appt.id
                   ? "border-[#176b5f] ring-2 ring-[#176b5f]/25"
                   : "border-[#dce8df]"
               }`}
+              onClick={() => onOpenRecord?.(appt.id)}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold uppercase tracking-wide text-[#c37d32]">
@@ -112,7 +114,10 @@ export default function StaffRoster({
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => onCheckIn(appt.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onCheckIn(appt.id);
+                    }}
                     disabled={updatingId === appt.id}
                     className="rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
                   >
@@ -120,7 +125,10 @@ export default function StaffRoster({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onNoShow(appt.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onNoShow(appt.id);
+                    }}
                     disabled={updatingId === appt.id}
                     className="rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:opacity-60"
                   >
@@ -132,7 +140,10 @@ export default function StaffRoster({
               {appt.status === "CHECKED_IN" && (
                 <button
                   type="button"
-                  onClick={() => onCheckInToQueue(appt.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onCheckInToQueue(appt.id);
+                  }}
                   disabled={updatingId === appt.id}
                   className="mt-4 w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
                 >

@@ -13,12 +13,15 @@ import {
   listAppointments,
   lookupAppointment,
   updateAppointmentStatus,
+  markPatientArrived,
   cancelAppointment,
   rescheduleAppointment,
 } from "./services/appointmentOps.js";
 
 import { createStaffAuthService } from "./auth/staffAuth.js";
 import { createAppointment } from "./services/bookAppointment.js";
+import { ensureOpenSlots } from "./services/generateSlots.js";
+import { sendAppointmentReminders } from "./services/sendReminders.js";
 
 import {
   advanceQueue,
@@ -39,6 +42,10 @@ dotenv.config({
 
 const port = Number(process.env.PORT || 4000);
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set in production");
+}
+
 await connectDb();
 
 const staffAuth = createStaffAuthService({
@@ -46,18 +53,24 @@ const staffAuth = createStaffAuthService({
 });
 
 if (staffAuth.usingDevSecret) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET must be set in production");
+  }
   console.warn(
     "[staff-auth] JWT_SECRET is unset; using the local development secret",
   );
 }
 
-try {
-  const seeded = await staffAuth.seedDemoStaff();
-  if (!seeded.skipped) {
-    console.log(`[staff-auth] demo staff ready (${seeded.seeded} accounts)`);
+const shouldSeedDemo = process.env.STAFF_SEED_DEMO !== "false";
+if (shouldSeedDemo) {
+  try {
+    const seeded = await staffAuth.seedDemoStaff();
+    if (!seeded.skipped) {
+      console.log(`[staff-auth] demo staff ready (${seeded.seeded} accounts)`);
+    }
+  } catch (err) {
+    console.warn("[staff-auth] demo seed skipped:", err.message);
   }
-} catch (err) {
-  console.warn("[staff-auth] demo seed skipped:", err.message);
 }
 
 const app = createApp({
@@ -77,6 +90,8 @@ const app = createApp({
 
     updateStatus: updateAppointmentStatus,
 
+    markPatientArrived,
+
     cancelAppointment,
 
     rescheduleAppointment,
@@ -91,11 +106,26 @@ const app = createApp({
     getQueueStatus,
     getClinicActivity,
   },
+
+  opsService: {
+    ensureOpenSlots,
+    sendAppointmentReminders,
+  },
 });
 
 const server = app.listen(port, () => {
   console.log(`[yencare] API listening on http://localhost:${port}`);
 });
+
+void ensureOpenSlots({ days: 14 })
+  .then((result) => {
+    if (result.created > 0) {
+      console.log(`[yencare] open slots ready (${result.created} created)`);
+    }
+  })
+  .catch((err) => {
+    console.warn("[yencare] slot generation skipped:", err.message);
+  });
 
 async function shutdown(signal) {
   console.log(`[yencare] ${signal} received, shutting down`);

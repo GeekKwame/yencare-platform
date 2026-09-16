@@ -22,6 +22,28 @@ export function accraNowHm(date = new Date()) {
   return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
+export function accraWeekday(date = new Date()) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: ACCRA,
+    weekday: "short",
+  }).format(date);
+}
+
+/**
+ * Students' Clinic: Mon–Fri 08:00–16:00 Accra. KNUST Hospital is open 24 hours.
+ */
+export function isClinicOpen(clinicSite = "students-clinic", date = new Date()) {
+  if (clinicSite === "knust-hospital") return true;
+  const weekday = accraWeekday(date);
+  if (weekday === "Sat" || weekday === "Sun") return false;
+  const hour = Number(accraNowHm(date).slice(0, 2));
+  return hour >= 8 && hour < 16;
+}
+
+export function isStudentsClinicOpen(date = new Date()) {
+  return isClinicOpen("students-clinic", date);
+}
+
 export function isFutureSlot(dateIso, startTime, now = new Date()) {
   const today = accraTodayIso(now);
   if (!dateIso) return false;

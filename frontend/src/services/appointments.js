@@ -62,10 +62,26 @@ export async function cancelAppointment(idOrReference, options = {}) {
  * @param {string} idOrReference
  * @param {string} newSlotId
  */
-export async function rescheduleAppointment(idOrReference, newSlotId) {
+export async function rescheduleAppointment(idOrReference, newSlotId, options = {}) {
   const response = await api.patch(
     `/appointments/${encodeURIComponent(idOrReference)}/reschedule`,
-    { newSlotId },
+    {
+      newSlotId,
+      staffChangeReason: options.staffChangeReason,
+    },
+  );
+  return response.data;
+}
+
+/**
+ * Patient "I've arrived": BOOKED → CHECKED_IN, no queue token.
+ * @param {string} reference
+ * @param {{ phone?: string }} [options]
+ */
+export async function arriveAppointment(reference, options = {}) {
+  const response = await api.post(
+    `/appointments/${encodeURIComponent(reference)}/arrive`,
+    { phone: options.phone },
   );
   return response.data;
 }

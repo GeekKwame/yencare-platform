@@ -5,6 +5,7 @@ import {
 } from "../data/mockAppointments";
 import { useClinicRoster } from "../hooks/useClinicRoster";
 import { accraTodayIso } from "../lib/accraTime";
+import { announcePatientCall } from "../lib/clinicSpeech";
 import { listRooms } from "../services/catalog";
 import { advanceQueue, callNextPatient, markQueueNoShow } from "../services/queue";
 
@@ -78,6 +79,15 @@ export default function DoctorWorkstation({ staff }) {
         roomId: selectedRoom.id || selectedRoom._id,
         completePrevious,
       });
+      const calledAppt = result.appointment;
+      if (calledAppt) {
+        const name = calledAppt.patientId?.fullName || calledAppt.patientName || "Patient";
+        announcePatientCall(
+          name,
+          selectedName,
+          calledAppt.queueToken || result.queueToken,
+        );
+      }
       setMessage(result.message || `Called next patient to ${selectedName}.`);
       await reload();
     } catch (err) {

@@ -150,6 +150,7 @@ const FindAppointment = ({ setAppointment }) => {
           onHome={() => setAppointment(false)}
           onReschedule={() => setFlow("reschedule")}
           onCancelled={() => setFlow("cancelled")}
+          onUpdated={(updated) => setFoundAppointment(updated)}
         />
       </section>
     );

@@ -3,8 +3,10 @@ import { CLINIC_SITES, DATE_PATTERN } from '../db/constants.js';
 import { Appointment } from '../models/Appointment.js';
 import { QueueCounter } from '../models/QueueCounter.js';
 import { Room } from '../models/Room.js';
+import { Clinician } from '../models/Clinician.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
 import { notifyPatientCalled } from './callPatient.js';
+import { isClinicOpen } from '../lib/accraTime.js';
 
 export const AVERAGE_CONSULT_DURATION_MINUTES = 15;
 
@@ -223,12 +225,12 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
     switch (appointment.status) {
       case 'BOOKED':
         appointment.status = 'CHECKED_IN';
-        await assignDailyQueueToken(appointment);
         await appointment.save();
         break;
 
       case 'CHECKED_IN':
         appointment.status = 'WAITING';
+        await assignDailyQueueToken(appointment);
         await appointment.save();
         break;
 
@@ -484,25 +486,62 @@ export async function getClinicActivity(clinicSite = 'students-clinic') {
     .sort({ calledTime: 1, appointmentTime: 1 })
     .lean();
 
-  const waitingCount = await Appointment.countDocuments({
+  const waiting = await Appointment.find({
     clinicSite: site,
     status: 'WAITING',
+  })
+    .sort({ queueSequence: 1, checkInTime: 1, createdAt: 1 })
+    .lean();
+
+  const waitingCount = waiting.length;
+  const waitingTokens = waiting
+    .map((appointment) => appointment.queueToken)
+    .filter(Boolean);
+
+  const rooms = await Room.find({ clinicSite: site, status: 'active' }).lean();
+  const clinicians = await Clinician.find({ clinicSite: site }).lean();
+  const cliniciansByRoom = new Map(
+    clinicians.map((clinician) => [
+      String(clinician.roomId),
+      clinician,
+    ]),
+  );
+
+  const activeRooms = rooms.map((room) => {
+    const serving = called.find(
+      (appointment) =>
+        String(appointment.roomId?._id || appointment.roomId) === String(room._id),
+    );
+    const clinician = cliniciansByRoom.get(String(room._id));
+    return {
+      room: room.name,
+      name: room.name,
+      doctorName: clinician?.name || 'Duty clinician',
+      specialty: clinician?.specialty || '',
+      status: serving ? 'in-consultation' : 'available',
+      currentToken: serving?.queueToken || null,
+      nowServingToken: serving?.queueToken || null,
+    };
   });
 
-  const rooms = called.map((appointment) => ({
-    name: appointment.roomId?.name || 'Room',
-    nowServingToken: appointment.queueToken || null,
-  }));
-
-  const nowServingToken = rooms[0]?.nowServingToken || null;
+  const nowServingToken = activeRooms.find((room) => room.currentToken)?.currentToken || null;
+  const nowServingRoom = activeRooms.find((room) => room.currentToken)?.name || null;
   const estimatedWaitMinutes =
-    waitingCount === 0 ? 0 : Math.max(15, waitingCount * 5 + 10);
+    waitingCount === 0 ? 0 : waitingCount * AVERAGE_CONSULT_DURATION_MINUTES;
+  const demandLevel =
+    waitingCount >= 6 ? 'high' : waitingCount <= 2 ? 'low' : 'normal';
 
   return {
     clinicSite: site,
+    isOpen: isClinicOpen(site),
     nowServingToken,
+    nowServingRoom,
     waitingCount,
+    waitingTokens,
     estimatedWaitMinutes,
-    rooms,
+    demandLevel,
+    lastUpdated: new Date().toISOString(),
+    rooms: activeRooms,
+    activeRooms,
   };
 }
