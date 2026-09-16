@@ -31,9 +31,17 @@ export async function updateAppointmentStatus(id, status) {
 
 /**
  * Public patient lookup: exactly one of reference, studentIndex, or phone.
+ * Reference uses GET /appointments/:reference so staging works before /lookup deploys.
  * @param {{ reference?: string, studentIndex?: string, phone?: string }} query
  */
 export async function lookupAppointment(query) {
+  if (query.reference) {
+    const response = await api.get(
+      `/appointments/${encodeURIComponent(query.reference)}`,
+    );
+    return response.data;
+  }
+
   const response = await api.get("/appointments/lookup", { params: query });
   return response.data;
 }
