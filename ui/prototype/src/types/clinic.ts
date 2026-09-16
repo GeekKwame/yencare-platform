@@ -3,7 +3,7 @@ export type AppointmentStatus = 'BOOKED' | 'CHECKED_IN' | 'WAITING' | 'CALLED' |
 
 export type StaffRole = 'Receptionist' | 'Doctor' | 'Admin';
 
-export type ClinicSite = 'students-clinic' | 'social-science-gf7';
+export type ClinicSite = 'students-clinic' | 'knust-hospital';
 
 export type VisitType = 'general-opd' | 'follow-up' | 'dressing' | 'other';
 
@@ -167,14 +167,14 @@ export type ActiveShell = 'PATIENT' | 'STAFF';
 // ─── Clinic Site Labels ──────────────────────────────────────────
 export const CLINIC_SITE_LABELS: Record<ClinicSite, { name: string; org: string; address: string }> = {
   'students-clinic': {
-    name: "Students' Clinic",
-    org: 'KNUST University Health Services',
+    name: "KNUST Students' Clinic",
+    org: 'Public health department',
     address: 'Opposite Hall 7, Africa Hall Road, KNUST',
   },
-  'social-science-gf7': {
-    name: 'Social Science Block GF7',
-    org: 'KNUST University Health Services',
-    address: 'Social Science Building, Ground Floor, KNUST',
+  'knust-hospital': {
+    name: 'KNUST Hospital',
+    org: 'University Health Services',
+    address: 'North-eastern campus, Kumasi–Accra Highway (N6) · MCPG+GCX',
   },
 };
 

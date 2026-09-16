@@ -23,9 +23,9 @@ const CampusFacilities = () => {
             Key medical facilities
           </h2>
           <p className="mt-4 text-sm leading-6 text-[#607672] sm:text-base">
-            Book outpatient visits at the Students&apos; Clinic or the Social
-            Science Block GF7 satellite. KNUST Hospital is the 24-hour
-            University Health Services site for emergency and specialist care.
+            Yencare serves KNUST&apos;s two official health facilities: KNUST
+            Hospital (University Health Services) and the KNUST Students&apos;
+            Clinic.
           </p>
         </div>
 
@@ -194,26 +194,6 @@ const CampusFacilities = () => {
             </article>
           ))}
         </div>
-
-        <aside className="mt-5 rounded-[1.75rem] border border-[#dce8df] bg-[#f8faf6] p-6 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-8">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#c37d32]">
-              Satellite consultation post
-            </p>
-            <h3 className="mt-2 text-xl font-bold text-[#173b3a]">
-              Social Science Block GF7
-            </h3>
-            <p className="mt-1 text-sm text-[#728681]">
-              Social Science Building, Ground Floor · Mon–Fri 9:00 AM – 3:00 PM
-            </p>
-          </div>
-          <Link
-            to="/appointments"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#176b5f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#12584f] sm:mt-0"
-          >
-            Book at GF7 <FaArrowRight className="text-xs" />
-          </Link>
-        </aside>
       </div>
     </section>
   );

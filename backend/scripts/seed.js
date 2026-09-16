@@ -14,7 +14,8 @@ const DEMO_DATE = '2026-09-15';
 const ROOMS = [
   { name: 'Room 1', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active', tokenPrefix: 'A' },
   { name: 'Room 2', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active', tokenPrefix: 'B' },
-  { name: 'Consultation Room GF7', clinicSite: 'social-science-gf7', floor: 'Ground Floor', status: 'active', tokenPrefix: 'C' },
+  { name: 'OPD Room 1', clinicSite: 'knust-hospital', floor: 'Ground Floor', status: 'active', tokenPrefix: 'H' },
+  { name: 'OPD Room 2', clinicSite: 'knust-hospital', floor: 'Ground Floor', status: 'active', tokenPrefix: 'J' },
 ];
 
 const CLINICIANS = [
@@ -34,6 +35,22 @@ const CLINICIANS = [
     clinicSite: 'students-clinic',
     available: true,
   },
+  {
+    name: 'Dr. Kofi Adjei',
+    title: 'Medical Officer',
+    specialty: 'Hospital General OPD',
+    roomName: 'OPD Room 1',
+    clinicSite: 'knust-hospital',
+    available: true,
+  },
+  {
+    name: 'Dr. Akua Mensah',
+    title: 'Medical Officer',
+    specialty: 'Hospital General OPD',
+    roomName: 'OPD Room 2',
+    clinicSite: 'knust-hospital',
+    available: true,
+  },
 ];
 
 const PATIENTS = [
@@ -49,6 +66,10 @@ const OPEN_SLOTS = [
   { clinician: 'Dr. Kwame Boateng', startTime: '11:30', endTime: '12:00' },
   { clinician: 'Dr. Ama Serwaa', startTime: '11:00', endTime: '11:30' },
   { clinician: 'Dr. Ama Serwaa', startTime: '11:30', endTime: '12:00' },
+  { clinician: 'Dr. Kofi Adjei', startTime: '11:00', endTime: '11:30' },
+  { clinician: 'Dr. Kofi Adjei', startTime: '11:30', endTime: '12:00' },
+  { clinician: 'Dr. Akua Mensah', startTime: '11:00', endTime: '11:30' },
+  { clinician: 'Dr. Akua Mensah', startTime: '11:30', endTime: '12:00' },
 ];
 
 async function upsertRoom(data) {
@@ -241,13 +262,23 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] appointment ${appointment.referenceCode}`);
   }
 
+  const opd1 = roomsByKey.get('knust-hospital:OPD Room 1');
+  const opd2 = roomsByKey.get('knust-hospital:OPD Room 2');
+
   for (const open of OPEN_SLOTS) {
     const clinician = cliniciansByName.get(open.clinician);
-    const room = clinician.name === 'Dr. Ama Serwaa' ? room2 : room1;
+    const room =
+      clinician.clinicSite === 'knust-hospital'
+        ? clinician.name === 'Dr. Akua Mensah'
+          ? opd2
+          : opd1
+        : clinician.name === 'Dr. Ama Serwaa'
+          ? room2
+          : room1;
     await upsertSlot({
       clinician,
       room,
-      clinicSite: 'students-clinic',
+      clinicSite: clinician.clinicSite,
       date: DEMO_DATE,
       startTime: open.startTime,
       endTime: open.endTime,

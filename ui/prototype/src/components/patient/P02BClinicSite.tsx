@@ -9,7 +9,7 @@ export const P02BClinicSite: React.FC = () => {
 
   const sites: { id: ClinicSite; icon: string; hours: string }[] = [
     { id: 'students-clinic', icon: 'local_hospital', hours: 'Mon–Fri: 8:00 AM – 4:00 PM' },
-    { id: 'social-science-gf7', icon: 'apartment', hours: 'Mon–Fri: 9:00 AM – 3:00 PM' },
+    { id: 'knust-hospital', icon: 'emergency', hours: 'Open 24 hours' },
   ];
 
   const handleSelect = (site: ClinicSite) => {

@@ -1,4 +1,4 @@
-export const CLINIC_SITES = Object.freeze(['students-clinic', 'social-science-gf7']);
+export const CLINIC_SITES = Object.freeze(['students-clinic', 'knust-hospital']);
 
 export const VISIT_TYPES = Object.freeze(['general-opd', 'follow-up', 'dressing', 'other']);
 

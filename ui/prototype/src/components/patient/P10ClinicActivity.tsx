@@ -122,15 +122,15 @@ export const P10ClinicActivity: React.FC = () => {
             <span>Students' Clinic</span>
           </button>
           <button
-            onClick={() => setSelectedSite('social-science-gf7')}
+            onClick={() => setSelectedSite('knust-hospital')}
             className={`flex-1 py-2 px-3 font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              selectedSite === 'social-science-gf7'
+              selectedSite === 'knust-hospital'
                 ? 'bg-[#111111] text-white shadow-xs'
                 : 'text-[#66706B] hover:bg-white'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">location_on</span>
-            <span>Social Science GF7</span>
+            <span>KNUST Hospital</span>
           </button>
         </div>
 

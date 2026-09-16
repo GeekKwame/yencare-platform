@@ -1,23 +1,24 @@
-/** Prototype-aligned booking options for the public frontend wizard. */
+/** Official KNUST health facilities used by the public booking wizard. */
 
 export const CLINIC_SITES = [
   {
     id: "students-clinic",
-    name: "Students' Clinic",
+    name: "KNUST Students' Clinic",
     location: "Opposite Hall 7, Africa Hall Road",
-    description: "KNUST public health department for student outpatient care.",
+    description: "Public health department outpatient clinic for students.",
     openTime: "8:00 AM",
     closeTime: "4:00 PM",
     hoursLabel: "Mon–Fri: 8:00 AM – 4:00 PM",
   },
   {
-    id: "social-science-gf7",
-    name: "Social Science Block GF7",
-    location: "Social Science Building, Ground Floor",
-    description: "Satellite consultation post under University Health Services.",
-    openTime: "9:00 AM",
-    closeTime: "3:00 PM",
-    hoursLabel: "Mon–Fri: 9:00 AM – 3:00 PM",
+    id: "knust-hospital",
+    name: "KNUST Hospital",
+    location: "North-eastern campus, Kumasi–Accra Highway (N6) · MCPG+GCX",
+    description:
+      "University Health Services district-level hospital serving students, staff, and the public.",
+    openTime: "12:00 AM",
+    closeTime: "11:59 PM",
+    hoursLabel: "Open 24 hours",
   },
 ];
 
@@ -35,6 +36,7 @@ export const CLINICIANS = [
     room: "Room 1",
     roomLabel: "General Clinic · Room 1",
     position: "Senior Medical Officer",
+    clinicSite: "students-clinic",
   },
   {
     id: "dr-ama-serwaa",
@@ -42,6 +44,23 @@ export const CLINICIANS = [
     room: "Room 2",
     roomLabel: "General Clinic · Room 2",
     position: "Medical Officer",
+    clinicSite: "students-clinic",
+  },
+  {
+    id: "dr-kofi-adjei",
+    name: "Dr. Kofi Adjei",
+    room: "OPD Room 1",
+    roomLabel: "Hospital OPD · Room 1",
+    position: "Medical Officer",
+    clinicSite: "knust-hospital",
+  },
+  {
+    id: "dr-akua-mensah",
+    name: "Dr. Akua Mensah",
+    room: "OPD Room 2",
+    roomLabel: "Hospital OPD · Room 2",
+    position: "Medical Officer",
+    clinicSite: "knust-hospital",
   },
 ];
 

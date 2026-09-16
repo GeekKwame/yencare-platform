@@ -5,6 +5,9 @@ import { CLINICIANS } from "../../data/bookingOptions";
 
 const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
+  const siteClinicians = CLINICIANS.filter(
+    (doctor) => !formData.clinicSite || doctor.clinicSite === formData.clinicSite,
+  );
 
   const handleSelect = (doctor) => {
     updateFormData({
@@ -58,7 +61,7 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
 
       {/* Doctors */}
       <div className="mt-8 space-y-4">
-        {CLINICIANS.map((doctor) => {
+        {siteClinicians.map((doctor) => {
           const isSelected = formData.clinicianId === doctor.id;
 
           return (

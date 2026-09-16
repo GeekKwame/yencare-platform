@@ -242,7 +242,7 @@ Create an appointment and automatically dispatch an SMS confirmation to the pati
 | `patientId` | Yes | MongoDB ObjectId of the patient (`POST /api/patients`) |
 | `clinicianId` | Yes | MongoDB ObjectId of the clinician (`GET /api/clinicians`) |
 | `roomId` | Yes | MongoDB ObjectId of the consultation room (`GET /api/rooms`) |
-| `clinicSite` | Yes | `students-clinic` or `social-science-gf7` |
+| `clinicSite` | Yes | `students-clinic` or `knust-hospital` |
 | `visitType` | Yes | `general-opd`, `follow-up`, `dressing`, or `other` |
 | `appointmentDate` | Yes | Date string formatted as `YYYY-MM-DD` |
 | `appointmentTime` | Yes | 24-hour time string formatted as `HH:mm` (e.g. `10:00`) |

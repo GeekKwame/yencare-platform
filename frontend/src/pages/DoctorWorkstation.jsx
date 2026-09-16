@@ -13,7 +13,8 @@ import { advanceQueue, callNextPatient, markQueueNoShow } from "../services/queu
 const FALLBACK_ROOMS = [
   { id: "mock-room-1", name: "Room 1", clinicSite: "students-clinic" },
   { id: "mock-room-2", name: "Room 2", clinicSite: "students-clinic" },
-  { id: "mock-room-gf7", name: "Consultation Room GF7", clinicSite: "social-science-gf7" },
+  { id: "mock-room-opd-1", name: "OPD Room 1", clinicSite: "knust-hospital" },
+  { id: "mock-room-opd-2", name: "OPD Room 2", clinicSite: "knust-hospital" },
 ];
 
 function roomKey(room) {

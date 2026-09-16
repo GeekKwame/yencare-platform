@@ -213,7 +213,6 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     estimatedWaitMinutes: 35,
     room: 'Room 2',
   },
-  // Social Science Block GF7 Separate Location Queue
   {
     id: 'YC-9101',
     patientName: 'Efua Sutherland',
@@ -223,14 +222,14 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     date: 'Tuesday 15 September 2026',
     time: '9:15 AM',
     status: 'CALLED',
-    clinicSite: 'social-science-gf7',
+    clinicSite: 'knust-hospital',
     visitType: 'other',
     bookingType: 'BOOKED',
     queueToken: '#1',
-    assignedRoom: 'Room 1',
-    room: 'Room 1',
+    assignedRoom: 'OPD Room 1',
+    room: 'OPD Room 1',
     estimatedWaitMinutes: 0,
-    notes: 'Social Science consult',
+    notes: 'Hospital OPD consult',
   },
   {
     id: 'YC-9102',
@@ -241,7 +240,7 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     date: 'Tuesday 15 September 2026',
     time: '9:30 AM',
     status: 'WAITING',
-    clinicSite: 'social-science-gf7',
+    clinicSite: 'knust-hospital',
     visitType: 'general-opd',
     bookingType: 'BOOKED',
     queueToken: '#2',
@@ -257,7 +256,7 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     date: 'Tuesday 15 September 2026',
     time: '9:45 AM',
     status: 'WAITING',
-    clinicSite: 'social-science-gf7',
+    clinicSite: 'knust-hospital',
     visitType: 'dressing',
     bookingType: 'BOOKED',
     queueToken: '#3',
@@ -273,7 +272,7 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     date: 'Tuesday 15 September 2026',
     time: '10:00 AM',
     status: 'WAITING',
-    clinicSite: 'social-science-gf7',
+    clinicSite: 'knust-hospital',
     visitType: 'general-opd',
     bookingType: 'BOOKED',
     queueToken: '#4',
@@ -525,7 +524,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: newRef,
       type: 'confirmation',
       phone: newAppointment.phone,
-      body: `YɛnCare\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\n${visitLabel}\nKNUST ${newAppointment.clinicSite === 'social-science-gf7' ? 'Social Science Block GF7' : "Students' Clinic"}`,
+      body: `YɛnCare\n\nAppointment Confirmed\n${newAppointment.date.split(' ').slice(0, 3).join(' ')}, ${newAppointment.time}\nRef: ${newRef}\nArrive by ${getArriveBy(newAppointment.time)}\n\n${newAppointment.doctor.name} · ${newAppointment.doctor.room}\n${visitLabel}\nKNUST ${newAppointment.clinicSite === 'knust-hospital' ? 'Hospital' : "Students' Clinic"}`,
     });
 
     setActivePatientAppointmentId(newRef);
@@ -597,7 +596,7 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       appointmentId: id,
       type: 'arrived',
       phone: target.phone,
-      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'social-science-gf7' ? 'KNUST Social Science Block GF7' : "KNUST Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
+      body: `YɛnCare\n\nWe've noted your arrival at ${target.clinicSite === 'knust-hospital' ? 'KNUST Hospital' : "KNUST Students' Clinic"}.\n\nPresent Ref ${id} at reception.\nReception will add you to the live queue.`,
     });
 
     showToast(`${target.patientName} has arrived. Reception can now check them into the live queue.`);
@@ -929,11 +928,18 @@ export const ClinicProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       },
     ] : [
       {
-        room: 'Room 1',
-        doctorName: 'Dr. Kwame Boateng',
+        room: 'OPD Room 1',
+        doctorName: 'Duty clinician',
         status: room1Called ? 'in-consultation' : 'available',
         currentToken: room1Called?.queueToken,
-        specialty: 'Outreach Consult',
+        specialty: 'Hospital OPD',
+      },
+      {
+        room: 'OPD Room 2',
+        doctorName: 'Duty clinician',
+        status: room2Called ? 'in-consultation' : 'available',
+        currentToken: room2Called?.queueToken,
+        specialty: 'Hospital OPD',
       },
     ];
 

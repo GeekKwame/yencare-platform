@@ -1,4 +1,4 @@
-/** Real KNUST campus health sites shown on the public homepage. */
+/** Official KNUST campus health facilities shown on the public homepage. */
 
 export const CAMPUS_FACILITIES = [
   {
@@ -44,7 +44,8 @@ export const CAMPUS_FACILITIES = [
     extensionsUrl: "https://voip.knust.edu.gh/extensions?deptid=18",
     mapsUrl:
       "https://www.google.com/maps/search/?api=1&query=MCPG%2BGCX%20KNUST%20University%20Hospital%20N6",
-    bookable: false,
+    bookable: true,
+    hoursLabel: "Open 24 hours",
   },
   {
     id: "students-clinic",

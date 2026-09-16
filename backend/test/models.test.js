@@ -135,7 +135,7 @@ describe('Appointment', () => {
       patientId: oid(),
       clinicianId: oid(),
       roomId: oid(),
-      clinicSite: 'social-science-gf7',
+      clinicSite: 'knust-hospital',
       visitType: 'dressing',
       bookingType: 'WALK_IN',
       appointmentDate: '2026-09-15',

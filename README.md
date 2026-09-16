@@ -1,7 +1,7 @@
 # YɛnCare — Outpatient Healthcare & Virtual Queue Platform
 
 > **Healthcare access, wherever you are. Ghana.**  
-> Outpatient clinic appointment scheduling and live virtual queue management for **KNUST University Health Services · Students' Clinic** and **Social Science Block GF7**.
+> Outpatient clinic appointment scheduling and live virtual queue management for **KNUST Hospital (University Health Services)** and **KNUST Students' Clinic**.
 
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
@@ -14,7 +14,7 @@
 
 ## 1. Project Overview
 
-**YɛnCare** is an outpatient clinic management and virtual queue platform designed for campus and regional healthcare clinics across Ghana, centered on the **KNUST University Health Services · Students' Clinic** and its satellite facility at **Social Science Block GF7**.
+**YɛnCare** is an outpatient clinic management and virtual queue platform designed for campus and regional healthcare clinics across Ghana, centered on **KNUST's two official health facilities**: **KNUST Hospital (University Health Services)** and the **KNUST Students' Clinic**.
 
 ### The Problem It Solves
 University healthcare corridors frequently suffer from severe overcrowding, long physical waiting queues, and chaotic triage desks. Students waste hours sitting in waiting rooms during lectures, while clinic staff struggle to manage unscheduled walk-ins alongside pre-booked visits.

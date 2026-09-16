@@ -43,18 +43,15 @@ export const P19AfterHours: React.FC = () => {
             KNUST University Health Services
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-[#66706B]">Students' Clinic</span>
+            <span className="text-[#66706B]">KNUST Students&apos; Clinic</span>
             <span className="font-semibold text-[#111111]">Mon–Fri: 8:00 AM – 4:00 PM</span>
           </div>
           <p className="text-[#66706B]">Opposite Hall 7, Africa Hall Road</p>
-          <div className="flex justify-between items-center">
-            <span className="text-[#66706B]">Social Science Block GF7</span>
-            <span className="font-semibold text-[#111111]">Mon–Fri: 9:00 AM – 3:00 PM</span>
-          </div>
           <div className="flex justify-between items-center pt-1">
             <span className="text-[#66706B]">KNUST Hospital</span>
             <span className="font-semibold text-[#111111]">Open 24 hours</span>
           </div>
+          <p className="text-[#66706B]">N6 · MCPG+GCX · University Health Services</p>
         </div>
 
         {/* Actions */}

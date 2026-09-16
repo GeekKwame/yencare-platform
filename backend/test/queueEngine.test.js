@@ -26,8 +26,9 @@ describe('queueEngine room prefix and date logic', () => {
     assert.equal(getRoomTokenPrefix({ name: 'Consulting Room 4' }), 'D');
   });
 
-  it('derives C for Consultation Room GF7', () => {
-    assert.equal(getRoomTokenPrefix({ name: 'Consultation Room GF7' }), 'C');
+  it('uses explicit tokenPrefix for hospital OPD rooms', () => {
+    assert.equal(getRoomTokenPrefix({ name: 'OPD Room 1', tokenPrefix: 'H' }), 'H');
+    assert.equal(getRoomTokenPrefix({ name: 'OPD Room 2', tokenPrefix: 'J' }), 'J');
   });
 
   it('falls back to first letter for unnumbered rooms', () => {

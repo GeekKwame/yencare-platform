@@ -45,12 +45,12 @@ export const S10DisplayBoard: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setSite('social-science-gf7')}
+              onClick={() => setSite('knust-hospital')}
               className={`px-3 py-1.5 text-[11px] font-semibold cursor-pointer ${
-                site === 'social-science-gf7' ? 'bg-white text-black' : 'text-[#8A948F] hover:text-white'
+                site === 'knust-hospital' ? 'bg-white text-black' : 'text-[#8A948F] hover:text-white'
               }`}
             >
-              Social Science GF7
+              KNUST Hospital
             </button>
           </div>
           <div className="px-3 py-1.5 font-mono text-lg tabular-nums">{time}</div>
@@ -73,23 +73,17 @@ export const S10DisplayBoard: React.FC = () => {
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 py-6">
         <NowServingCard
-          room="Room 1"
-          doctor="Dr. Kwame Boateng"
+          room={site === 'knust-hospital' ? 'OPD Room 1' : 'Room 1'}
+          doctor={site === 'knust-hospital' ? 'Duty clinician' : 'Dr. Kwame Boateng'}
           token={room1?.queueToken}
           serving={Boolean(room1)}
         />
-        {site === 'students-clinic' ? (
-          <NowServingCard
-            room="Room 2"
-            doctor="Dr. Ama Serwaa"
-            token={room2?.queueToken}
-            serving={Boolean(room2)}
-          />
-        ) : (
-          <div className="border border-[#2A2A2A] bg-[#161616] p-6 flex items-center justify-center text-[#8A948F] text-sm">
-            Single consultation room at this site
-          </div>
-        )}
+        <NowServingCard
+          room={site === 'knust-hospital' ? 'OPD Room 2' : 'Room 2'}
+          doctor={site === 'knust-hospital' ? 'Duty clinician' : 'Dr. Ama Serwaa'}
+          token={room2?.queueToken}
+          serving={Boolean(room2)}
+        />
       </div>
 
       <footer className="border-t border-[#2A2A2A] pt-4">

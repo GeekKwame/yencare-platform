@@ -13,7 +13,8 @@ import { getTodaysAppointments } from "../services/appointments";
 const ROOM_DOCTORS = {
   "Room 1": "Dr. Kwame Boateng",
   "Room 2": "Dr. Ama Serwaa",
-  "Consultation Room GF7": "Duty clinician",
+  "OPD Room 1": "Duty clinician",
+  "OPD Room 2": "Duty clinician",
 };
 
 function NowServingCard({ room, doctor, token, serving }) {
@@ -96,10 +97,12 @@ export default function CorridorDisplay() {
     .filter((appt) => appt.status === "WAITING")
     .sort((a, b) => String(a.queueToken || "").localeCompare(String(b.queueToken || "")));
 
-  const room1 = calledByRoom["Room 1"];
-  const room2 = calledByRoom["Room 2"];
-  const gf7 = calledByRoom["Consultation Room GF7"];
+  const room1 = calledByRoom["Room 1"] || calledByRoom["OPD Room 1"];
+  const room2 = calledByRoom["Room 2"] || calledByRoom["OPD Room 2"];
   const siteLabel = CLINIC_SITE_LABELS[clinicSite] || clinicSite;
+  const isHospital = clinicSite === "knust-hospital";
+  const leftRoom = isHospital ? "OPD Room 1" : "Room 1";
+  const rightRoom = isHospital ? "OPD Room 2" : "Room 2";
 
   return (
     <div className="flex min-h-screen flex-col bg-[#111111] px-4 py-4 text-white md:px-8 md:py-6">
@@ -139,34 +142,18 @@ export default function CorridorDisplay() {
       </header>
 
       <div className="grid flex-1 grid-cols-1 gap-4 py-6 lg:grid-cols-2 md:gap-6">
-        {clinicSite === "social-science-gf7" ? (
-          <>
-            <NowServingCard
-              room="Consultation Room GF7"
-              doctor={ROOM_DOCTORS["Consultation Room GF7"]}
-              token={gf7?.queueToken}
-              serving={Boolean(gf7)}
-            />
-            <div className="flex items-center justify-center border border-[#2A2A2A] bg-[#161616] p-6 text-sm text-[#8A948F]">
-              Single consultation room at this site
-            </div>
-          </>
-        ) : (
-          <>
-            <NowServingCard
-              room="Room 1"
-              doctor={ROOM_DOCTORS["Room 1"]}
-              token={room1?.queueToken}
-              serving={Boolean(room1)}
-            />
-            <NowServingCard
-              room="Room 2"
-              doctor={ROOM_DOCTORS["Room 2"]}
-              token={room2?.queueToken}
-              serving={Boolean(room2)}
-            />
-          </>
-        )}
+        <NowServingCard
+          room={leftRoom}
+          doctor={ROOM_DOCTORS[leftRoom]}
+          token={room1?.queueToken}
+          serving={Boolean(room1)}
+        />
+        <NowServingCard
+          room={rightRoom}
+          doctor={ROOM_DOCTORS[rightRoom]}
+          token={room2?.queueToken}
+          serving={Boolean(room2)}
+        />
       </div>
 
       <footer className="border-t border-[#2A2A2A] pt-4">
