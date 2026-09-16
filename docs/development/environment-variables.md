@@ -23,6 +23,10 @@ These variables configure the Express server, MongoDB connection, and third-part
 |---|---|---|---|---|---|
 | `PORT` | No | `4000` | Server | TCP port on which the Express HTTP server listens. | `4000` |
 | `MONGODB_URI` | **Yes** (to start API) | `mongodb://127.0.0.1:27017/yencare` | Database | Full MongoDB connection string. Supports local instances and MongoDB Atlas SRV URIs. | `mongodb://127.0.0.1:27017/yencare` |
+| `MONGO_MIN_POOL_SIZE` | No | `10` | Database | Minimum sockets kept in the Mongoose pool (prevents cold-start starvation). | `10` |
+| `MONGO_MAX_POOL_SIZE` | No | `50` | Database | Maximum sockets in the Mongoose pool. Stay at 50 or below on a single staging API instance. | `50` |
+| `CORS_ORIGIN` | Staging **Yes** | *YɛnCare Vercel hosts* | HTTP | Extra comma-separated browser origins. Canonical staging frontend: `https://yencare-platform.vercel.app`. | `https://yencare-platform.vercel.app` |
+| `CORS_ALLOW_VERCEL_PREVIEWS` | No | `true` | HTTP | When not `"false"`, allow `https://yencare-platform*.vercel.app` preview URLs. | `true` |
 | `SMS_PROVIDER` | No | `mock` | SMS | Delivery provider for outbound SMS. Valid options: `mock` (terminal logs), `mnotify` (real Ghana phones), or `africastalking` (AT sandbox). | `mock` |
 | `MNOTIFY_API_KEY` | Conditional | *Empty* | SMS (mNotify) | Required when `SMS_PROVIDER=mnotify`. API v2 key generated from the mNotify dashboard. If empty, the system logs a warning and falls back to `mock`. | `ak_live_xyz123abc456` |
 | `MNOTIFY_SENDER_ID` | No | `YenCare` | SMS (mNotify) | Registered SMS sender alphanumeric header (max 11 characters). Must be approved in the mNotify dashboard. | `YenCare` |
@@ -39,7 +43,7 @@ These variables configure the React 19 web client bundle via Vite:
 
 | Variable | Required | Default | Purpose & Description | Safe Example |
 |---|---|---|---|---|
-| `VITE_API_BASE_URL` | **Yes** (for live API calls) | `http://localhost:4000/api` | Base URL used by Axios (`frontend/src/services/api.js`) for all backend REST calls. Must include `/api` suffix. | `http://localhost:4000/api` |
+| `VITE_API_BASE_URL` | **Yes** (for live API calls) | `http://localhost:4000/api` | Base URL used by Axios (`frontend/src/services/api.js`) for all backend REST calls. Must include `/api` suffix. Set this in the Vercel project for Production and Preview. | `https://yencare-api-staging.onrender.com/api` |
 
 ---
 

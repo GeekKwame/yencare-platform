@@ -45,12 +45,15 @@ None required.
 None.
 
 #### Success Response
-- **Status Code**: `200 OK`
+- **Status Code**: `200 OK` when MongoDB answers a ping; `503` when the database is down
 - **Body**:
   ```json
   {
     "ok": true,
-    "service": "yencare-api"
+    "service": "yencare-api",
+    "db": "connected",
+    "readyState": 1,
+    "latencyMs": 12
   }
   ```
 

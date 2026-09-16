@@ -39,9 +39,9 @@ app.use(express.json({ limit: '32kb' }));
 This protects against memory exhaustion and payload injection denial-of-service (DoS) attempts.
 
 ### 3.2 Cross-Origin Resource Sharing (CORS)
-CORS middleware (`cors()`) is configured to allow decoupled frontend clients to communicate with the API.
-> [!IMPORTANT]
-> In production deployment, CORS must be restricted from wildcard `*` to the specific authorized domain names of the production frontend (e.g., `https://yencare.knust.edu.gh`).
+CORS is restricted to the staging Vercel frontend (`https://yencare-platform.vercel.app` and other `yencare-platform*.vercel.app` hosts), plus localhost during local development.
+
+Set `CORS_ORIGIN` on Render to the canonical Vercel URL. Unknown origins do not receive `Access-Control-Allow-Origin`.
 
 ### 3.3 Strict Input Validation & Normalization
 - **Student Index**: Strictly enforced to **exactly 8 numeric digits** (`/^[0-9]{8}$/`). Non-digit or mismatched lengths return `400 Bad Request`.

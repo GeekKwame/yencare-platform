@@ -128,10 +128,14 @@ describe('patients HTTP', () => {
     assert.match((await badPhone.json()).error, /Ghana phone/);
   });
 
-  it('GET /health is ok', async () => {
+  it('GET /health reports service identity and database fields', async () => {
     const { url } = await client();
     const res = await fetch(`${url}/health`);
-    assert.equal(res.status, 200);
-    assert.equal((await res.json()).ok, true);
+    const body = await res.json();
+    assert.equal(body.service, 'yencare-api');
+    assert.equal(typeof body.ok, 'boolean');
+    assert.equal(typeof body.db, 'string');
+    assert.equal(typeof body.latencyMs, 'number');
+    assert.equal(res.status, body.ok ? 200 : 503);
   });
 });

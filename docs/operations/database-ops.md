@@ -106,3 +106,25 @@ If MongoDB returns `IndexKeySpecsConflict` (e.g. attempting to create an index w
    db.appointments.dropIndex("conflicting_index_name")
    ```
 4. Re-run `npm run db:migrate` to recreate the canonical index specification.
+
+---
+
+## 5. Staging Atlas Pooling, Backups, and Autoscaling
+
+Staging MongoDB is MongoDB Atlas. The Express API on Render uses a warm pool (`MONGO_MIN_POOL_SIZE=10`, `MONGO_MAX_POOL_SIZE=50`) so multi-client load does not open a new socket per request.
+
+### 5.1 Nightly snapshot backups (Atlas UI)
+
+These settings are cluster-level; they are not stored in Git.
+
+1. Open the staging cluster in [MongoDB Atlas](https://cloud.mongodb.com/).
+2. **Backup** (or **Cloud Backup**) → enable backups if they are off.
+3. Snapshot schedule: **daily** (nightly in `Africa/Accra`).
+4. Retention: at least 2 days for staging; 7 days is safer.
+5. Confirm a snapshot appears after the first night.
+
+M0/M2/M5 free/shared tiers do not include continuous cloud backup. Use at least **M10** (or Atlas backup-capable tier) for automated nightly snapshots.
+
+### 5.2 Cluster autoscaling
+
+Storage/compute autoscaling is also an Atlas cluster toggle (M10+). Turn it on under Cluster → Edit → Auto-scale if the staging tier supports it. Application pooling does not replace cluster autoscaling.

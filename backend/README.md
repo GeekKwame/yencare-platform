@@ -10,7 +10,7 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 
 | Method | Path | Behaviour |
 |---|---|---|
-| `GET` | `/health` | Liveness. **200** `{ "ok": true, "service": "yencare-api" }` |
+| `GET` | `/health` | Readiness. **200** when Mongo pings; **503** if the database is down. Body includes `db` and `latencyMs`. |
 | `POST` | `/api/auth/staff-login` | Staff JWT login (email or Staff ID + password) |
 | `GET` | `/api/auth/staff-me` | Current staff profile (**Bearer token**) |
 | `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
@@ -143,7 +143,7 @@ npm run dev:api
 ```
 
 Verify the server is running by visiting:
-- [http://localhost:4000/health](http://localhost:4000/health) → returns `{ "ok": true, "service": "yencare-api" }`
+- [http://localhost:4000/health](http://localhost:4000/health) → `{ "ok": true, "service": "yencare-api", "db": "connected", "latencyMs": … }` when Mongo is up
 
 #### 5. Configure the Frontend
 In `frontend/`:
@@ -169,16 +169,20 @@ Configure these required environment variables in the Render dashboard for the s
 - `MONGODB_URI` (staging Atlas URI)
 - `MNOTIFY_API_KEY` (mNotify API v2 key)
 - `MNOTIFY_SENDER_ID` (approved sender ID, max 11 chars)
+- `JWT_SECRET`
+- `CORS_ORIGIN=https://yencare-platform.vercel.app`
 
 Recommended defaults for staging:
 - `NODE_ENV=production`
 - `SMS_PROVIDER=mnotify`
 - `PORT=4000`
+- `MONGO_MIN_POOL_SIZE=10`
+- `MONGO_MAX_POOL_SIZE=50`
 
 Verification checklist:
-1. Trigger a Render deploy from your staging branch.
-2. Open `https://<your-render-service>.onrender.com/health`.
-3. Confirm HTTP `200` and body `{ "ok": true, "service": "yencare-api" }`.
+1. Trigger a Render deploy from `main`.
+2. Open `https://yencare-api-staging.onrender.com/health`.
+3. Confirm HTTP `200` and body includes `"ok": true`, `"db": "connected"`, and `latencyMs`.
 4. Confirm secrets are only set in Render dashboard and not committed to Git.
 
 ### Postman

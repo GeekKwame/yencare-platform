@@ -243,24 +243,37 @@ When running `npm run dev` at `http://localhost:5173/`:
 
 ## 10. Staging Deployment & PR CI
 
+### Vercel Staging (Public Frontend)
+- Project root directory: `frontend`.
+- SPA rewrites: `frontend/vercel.json`.
+- Public staging URL: `https://yencare-platform.vercel.app`.
+- Build-time env: `VITE_API_BASE_URL=https://yencare-api-staging.onrender.com/api`.
+
+Keep Deployment Protection off on this production hostname so patients can open the site without a Vercel login. Preview URLs (`yencare-platform-*.vercel.app`) may stay protected.
+
 ### Render Staging (Backend API)
 - Render blueprint file: `render.yaml` (repo root).
 - Service root directory: `backend/`.
-- Health endpoint: `GET /health` (must return HTTP `200`).
+- Health endpoint: `GET /health` (HTTP **200** only when MongoDB answers a ping).
 
 Set these environment variables in the Render dashboard (do not commit secrets):
 - `MONGODB_URI` (MongoDB Atlas staging connection string)
 - `MNOTIFY_API_KEY` (mNotify API v2 key)
 - `MNOTIFY_SENDER_ID` (approved sender, e.g. `YenCare`)
+- `JWT_SECRET`
+- `CORS_ORIGIN=https://yencare-platform.vercel.app`
 
 Recommended additional values:
 - `NODE_ENV=production`
 - `SMS_PROVIDER=mnotify`
 - `PORT=4000`
+- `MONGO_MIN_POOL_SIZE=10`
+- `MONGO_MAX_POOL_SIZE=50`
 
 After first deploy, verify:
-1. Open `https://<your-render-service>.onrender.com/health`.
-2. Confirm a `200` response with `{ "ok": true, "service": "yencare-api" }`.
+1. Open `https://yencare-api-staging.onrender.com/health`.
+2. Confirm a `200` response with `{ "ok": true, "service": "yencare-api", "db": "connected", "latencyMs": <number> }`.
+3. From the Vercel site, book or look up a patient with no CORS error.
 
 ### Pull Request CI (`main`)
 GitHub Actions workflow file: `.github/workflows/pr-ci.yml`.

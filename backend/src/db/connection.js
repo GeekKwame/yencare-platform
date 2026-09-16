@@ -36,7 +36,23 @@ function bindConnectionListeners() {
 }
 
 /**
- * Connect with a modest pool and fail fast if Mongo is down.
+ * Staging/production pool: keep sockets warm (min 10) without starving Atlas (max 50).
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+export function mongoPoolOptions(env = process.env) {
+  const min = Number(env.MONGO_MIN_POOL_SIZE);
+  const max = Number(env.MONGO_MAX_POOL_SIZE);
+  const minPoolSize = Number.isFinite(min) && min > 0 ? min : 10;
+  const maxPoolSize = Number.isFinite(max) && max > 0 ? max : 50;
+
+  return {
+    minPoolSize: Math.min(minPoolSize, maxPoolSize),
+    maxPoolSize: Math.max(minPoolSize, maxPoolSize),
+  };
+}
+
+/**
+ * Connect with a warm pool and fail fast if Mongo is down.
  * Safe to call more than once — returns the existing connection when ready.
  */
 export async function connectDb(uri = process.env.MONGODB_URI || DEFAULT_URI) {
@@ -47,8 +63,7 @@ export async function connectDb(uri = process.env.MONGODB_URI || DEFAULT_URI) {
   bindConnectionListeners();
 
   await mongoose.connect(uri, {
-    maxPoolSize: 10,
-    minPoolSize: 1,
+    ...mongoPoolOptions(),
     serverSelectionTimeoutMS: 15000,
     heartbeatFrequencyMS: 10000,
     retryWrites: true,

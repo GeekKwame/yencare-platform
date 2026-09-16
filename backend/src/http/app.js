@@ -3,6 +3,8 @@ import express from 'express';
 import { createAppointmentsRouter } from './appointmentsRoutes.js';
 import { createAuthRouter } from './authRoutes.js';
 import { createCatalogRouter } from './catalogRoutes.js';
+import { buildCorsOptions } from './corsOrigins.js';
+import { getHealthStatus } from './health.js';
 import { createPatientsRouter } from './patientsRoutes.js';
 import { createQueueRouter } from './queueRoutes.js';
 
@@ -31,6 +33,7 @@ import { createQueueRouter } from './queueRoutes.js';
  *     getQueueStatus?: Function,
  *   },
  *   staffAuth?: ReturnType<import('../auth/staffAuth.js').createStaffAuthService>,
+ *   getHealth?: () => Promise<object>,
  * }} deps
  */
 export function createApp({
@@ -39,14 +42,26 @@ export function createApp({
   appointmentService,
   queueService,
   staffAuth,
+  getHealth = getHealthStatus,
 }) {
   const app = express();
 
-  app.use(cors());
+  app.use(cors(buildCorsOptions()));
   app.use(express.json({ limit: '32kb' }));
 
-  app.get('/health', (_req, res) => {
-    res.json({ ok: true, service: 'yencare-api' });
+  app.get('/health', async (_req, res) => {
+    try {
+      const health = await getHealth();
+      res.status(health.ok ? 200 : 503).json(health);
+    } catch {
+      res.status(503).json({
+        ok: false,
+        service: 'yencare-api',
+        db: 'unhealthy',
+        readyState: 0,
+        latencyMs: 0,
+      });
+    }
   });
 
   app.use('/api/patients', createPatientsRouter(patientService));

@@ -23,3 +23,13 @@ services:
         sync: false
       - key: MNOTIFY_API_KEY
         sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://yencare-platform.vercel.app
+      - key: CORS_ALLOW_VERCEL_PREVIEWS
+        value: "true"
+      - key: MONGO_MIN_POOL_SIZE
+        value: "10"
+      - key: MONGO_MAX_POOL_SIZE
+        value: "50"
