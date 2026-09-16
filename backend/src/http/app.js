@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { createAppointmentsRouter } from './appointmentsRoutes.js';
+import { createAuthRouter } from './authRoutes.js';
 import { createCatalogRouter } from './catalogRoutes.js';
 import { createPatientsRouter } from './patientsRoutes.js';
 import { createQueueRouter } from './queueRoutes.js';
@@ -28,6 +29,7 @@ import { createQueueRouter } from './queueRoutes.js';
  *     markNoShow: Function,
  *     getQueueStatus?: Function,
  *   },
+ *   staffAuth?: ReturnType<import('../auth/staffAuth.js').createStaffAuthService>,
  * }} deps
  */
 export function createApp({
@@ -35,6 +37,7 @@ export function createApp({
   catalog,
   appointmentService,
   queueService,
+  staffAuth,
 }) {
   const app = express();
 
@@ -47,15 +50,23 @@ export function createApp({
 
   app.use('/api/patients', createPatientsRouter(patientService));
 
+  if (staffAuth) {
+    app.use('/api/auth', createAuthRouter(staffAuth));
+  }
+
+  const staffHttp = {
+    authenticate: staffAuth?.authenticate,
+  };
+
   if (appointmentService) {
     app.use(
       '/api/appointments',
-      createAppointmentsRouter(appointmentService),
+      createAppointmentsRouter(appointmentService, staffHttp),
     );
   }
 
   if (queueService) {
-    app.use('/api/queue', createQueueRouter(queueService));
+    app.use('/api/queue', createQueueRouter(queueService, staffHttp));
   }
 
   if (catalog) {

@@ -2,7 +2,9 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { connectDb, disconnectDb } from '../src/db/connection.js';
-import { Patient, Room, Clinician, TimeSlot, Appointment } from '../src/models/index.js';
+import { Patient, Room, Clinician, TimeSlot, Appointment, StaffUser } from '../src/models/index.js';
+import { DEMO_STAFF, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
+import bcrypt from 'bcryptjs';
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(backendRoot, '.env') });
@@ -251,6 +253,22 @@ export async function seed({ dryRun = false } = {}) {
       endTime: open.endTime,
     });
     console.log(`[seed] open slot ${clinician.name} ${open.startTime}`);
+  }
+
+  const passwordHash = bcrypt.hashSync(DEMO_STAFF_PASSWORD, 8);
+  for (const person of DEMO_STAFF) {
+    await StaffUser.findOneAndUpdate(
+      { email: person.email },
+      {
+        $set: {
+          ...person,
+          passwordHash,
+          active: true,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    console.log(`[seed] staff ${person.name} (${person.role})`);
   }
 
   return { ok: true, dryRun: false };

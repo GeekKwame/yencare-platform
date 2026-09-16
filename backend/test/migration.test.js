@@ -15,10 +15,10 @@ function hasIndex(collectionName, keys, { unique = false } = {}) {
 }
 
 describe('collection specs', () => {
-  it('covers the five core collections', () => {
+  it('covers the six core collections', () => {
     assert.deepEqual(
       COLLECTION_SPECS.map((item) => item.name),
-      ['patients', 'rooms', 'clinicians', 'time_slots', 'appointments'],
+      ['patients', 'rooms', 'clinicians', 'time_slots', 'appointments', 'staff_users'],
     );
   });
 

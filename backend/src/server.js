@@ -16,6 +16,7 @@ import {
   rescheduleAppointment,
 } from "./services/appointmentOps.js";
 
+import { createStaffAuthService } from "./auth/staffAuth.js";
 import { createAppointment } from "./services/bookAppointment.js";
 
 import {
@@ -38,8 +39,28 @@ const port = Number(process.env.PORT || 4000);
 
 await connectDb();
 
+const staffAuth = createStaffAuthService({
+  jwtSecret: process.env.JWT_SECRET,
+});
+
+if (staffAuth.usingDevSecret) {
+  console.warn(
+    "[staff-auth] JWT_SECRET is unset; using the local development secret",
+  );
+}
+
+try {
+  const seeded = await staffAuth.seedDemoStaff();
+  if (!seeded.skipped) {
+    console.log(`[staff-auth] demo staff ready (${seeded.seeded} accounts)`);
+  }
+} catch (err) {
+  console.warn("[staff-auth] demo seed skipped:", err.message);
+}
+
 const app = createApp({
   patientService: createPatientService(createMongoPatientStore()),
+  staffAuth,
 
   catalog: createMongoCatalog(),
 

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import StaffWorkstationBar from "../components/StaffWorkstationBar";
+import { useStaffAuth } from "../context/StaffAuthContext";
 import {
   CLINIC_SITE_LABELS,
   DEFAULT_CLINIC_SITE,
@@ -6,6 +8,7 @@ import {
   mapAppointmentToCard,
   todayIsoDate,
 } from "../data/mockAppointments";
+import DoctorWorkstation from "./DoctorWorkstation";
 import {
   getTodaysAppointments,
   updateAppointmentStatus,
@@ -71,7 +74,8 @@ function matchesDeskQuery(appt, rawQuery) {
 }
 
 const StaffPortal = () => {
-  const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
+  const { staff, logout } = useStaffAuth();
+  const [clinicSite, setClinicSite] = useState(staff?.clinicSite || DEFAULT_CLINIC_SITE);
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [isWalkInOpen, setIsWalkInOpen] = useState(false);
   const [walkInData, setWalkInData] = useState({
@@ -94,6 +98,8 @@ const StaffPortal = () => {
   const [lookupFeedback, setLookupFeedback] = useState("");
 
   useEffect(() => {
+    if (staff?.role === "DOCTOR") return;
+
     let cancelled = false;
 
     async function loadRoster() {
@@ -130,7 +136,7 @@ const StaffPortal = () => {
     return () => {
       cancelled = true;
     };
-  }, [clinicSite, selectedDate]);
+  }, [clinicSite, selectedDate, staff?.role]);
 
   async function applyStatus(id, nextStatus, successLabel) {
     setUpdatingId(id);
@@ -289,6 +295,15 @@ const StaffPortal = () => {
       return String(a.time || "").localeCompare(String(b.time || ""));
     });
 
+  if (staff?.role === "DOCTOR") {
+    return (
+      <>
+        <StaffWorkstationBar staff={staff} onSignOut={logout} />
+        <DoctorWorkstation staff={staff} />
+      </>
+    );
+  }
+
   const kpiCards = [
     {
       label: "Total Patients",
@@ -349,7 +364,13 @@ const StaffPortal = () => {
   ];
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-22 pb-16 sm:px-8 lg:px-10">
+    <>
+    <StaffWorkstationBar
+      staff={staff}
+      onSignOut={logout}
+      showDisplayBoard={staff?.role === "ADMIN"}
+    />
+    <main className="mx-auto max-w-6xl px-5 pt-8 pb-16 sm:px-8 lg:px-10">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
@@ -682,6 +703,7 @@ const StaffPortal = () => {
   </div>
 )}
     </main>
+    </>
   );
 };
 

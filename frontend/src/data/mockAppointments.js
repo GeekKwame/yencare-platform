@@ -51,6 +51,7 @@ export const mockAppointments = [
     phone: "027 333 4455",
     bookingType: "SCHEDULED",
     queueToken: "#3",
+    roomName: "Room 1",
   },
   {
     id: "mock-4",
@@ -188,5 +189,9 @@ export function mapAppointmentToCard(appt) {
     phone: patient?.phone || patient?.phoneNumber || appt.phone || "",
     bookingType: appt.bookingType || "SCHEDULED",
     queueToken: appt.queueToken || "",
+    roomName: appt.roomId?.name || appt.assignedRoom || appt.roomName || "",
+    roomId: appt.roomId?.id || appt.roomId?._id || (typeof appt.roomId === "string" ? appt.roomId : ""),
+    clinicianName: appt.clinicianId?.name || appt.clinicianName || "",
+    nhisNumber: patient?.nhisNumber || appt.nhisNumber || "",
   };
 }

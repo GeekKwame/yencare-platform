@@ -11,21 +11,25 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | Method | Path | Behaviour |
 |---|---|---|
 | `GET` | `/health` | Liveness. **200** `{ "ok": true, "service": "yencare-api" }` |
+| `POST` | `/api/auth/staff-login` | Staff JWT login (email or Staff ID + password) |
+| `GET` | `/api/auth/staff-me` | Current staff profile (**Bearer token**) |
 | `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
 | `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
-| `GET` | `/api/appointments` | List appointments (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
+| `GET` | `/api/appointments` | List appointments — **staff JWT** (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
 | `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
 | `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
 | `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, and room token |
-| `PATCH` | `/api/appointments/:id/status` | Transition status (e.g. `BOOKED` → `CHECKED_IN`) |
-| `POST` | `/api/queue/call-next` | Call next FIFO waiting patient into room (`WAITING` → `CALLED`) |
-| `POST` | `/api/queue/advance` | Advance state machine progression or complete active consultation |
-| `POST` | `/api/queue/no-show` | Mark appointment as `NO_SHOW` and release linked slot |
+| `PATCH` | `/api/appointments/:id/status` | Desk status change — **receptionist/admin JWT** |
+| `POST` | `/api/queue/call-next` | Call next patient — **doctor/admin JWT** |
+| `POST` | `/api/queue/advance` | Complete consultation — **doctor JWT** |
+| `POST` | `/api/queue/no-show` | Mark no-show — **staff JWT** |
 | `GET` | `/api/rooms` | Seeded rooms (`id` → `roomId`) |
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
 
-No auth on these routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+No auth on **patient** booking, lookup, cancel/reschedule, or catalog routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+
+Staff workstation routes require `Authorization: Bearer <token>` from `POST /api/auth/staff-login`. Demo accounts (password `yencare`): `abena.osei@yencare.gh` (receptionist), `kwame.boateng@yencare.gh` (doctor), `kojo.mensah@yencare.gh` (admin).
 
 ### Status codes
 

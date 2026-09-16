@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import { asyncHandler } from './asyncHandler.js';
 import { appointmentEvents } from '../services/appointmentOps.js';
+import { staffGuard } from './staffGuard.js';
 
 function toJson(doc) {
   if (!doc) return null;
@@ -19,13 +20,19 @@ function toJson(doc) {
  *   rescheduleAppointment?: (idOrReference: string, options: object) => Promise<object>,
  *   getQueueStatus?: (reference: string) => Promise<object>,
  * }} appointmentService
+ * @param {{
+ *   authenticate?: (roles?: string[]) => import('express').RequestHandler,
+ * }} [options]
  */
-export function createAppointmentsRouter(appointmentService) {
+export function createAppointmentsRouter(appointmentService, { authenticate } = {}) {
   const router = Router();
+  const anyStaff = staffGuard(authenticate);
+  const deskStaff = staffGuard(authenticate, ['RECEPTIONIST', 'ADMIN']);
 
   // GET /api/appointments
   router.get(
     '/',
+    anyStaff,
     asyncHandler(async (req, res) => {
       if (!appointmentService.listAppointments) {
         return res.status(501).json({
@@ -134,6 +141,7 @@ export function createAppointmentsRouter(appointmentService) {
   // PATCH /api/appointments/:id/status
   router.patch(
     '/:id/status',
+    deskStaff,
     asyncHandler(async (req, res) => {
       if (!appointmentService.updateStatus) {
         return res.status(501).json({

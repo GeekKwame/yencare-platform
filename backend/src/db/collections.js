@@ -159,6 +159,30 @@ export const COLLECTION_SPECS = [
       { keys: { timeSlotId: 1 }, options: { sparse: true, name: 'appointments_timeslot' } },
     ],
   },
+  {
+    name: 'staff_users',
+    validator: {
+      $jsonSchema: {
+        bsonType: 'object',
+        required: ['staffId', 'email', 'passwordHash', 'name', 'role', 'clinicSite'],
+        properties: {
+          staffId: { bsonType: 'string', minLength: 3 },
+          email: { bsonType: 'string', minLength: 5 },
+          passwordHash: { bsonType: 'string', minLength: 10 },
+          name: { bsonType: 'string', minLength: 2 },
+          role: { enum: ['RECEPTIONIST', 'DOCTOR', 'ADMIN'] },
+          assignedRoom: optionalString,
+          clinicSite: { enum: [...CLINIC_SITES] },
+          active: { bsonType: 'bool' },
+        },
+      },
+    },
+    indexes: [
+      { keys: { email: 1 }, options: { unique: true, name: 'staff_users_email_unique' } },
+      { keys: { staffId: 1 }, options: { unique: true, name: 'staff_users_staffId_unique' } },
+      { keys: { role: 1, clinicSite: 1 }, options: { name: 'staff_users_role_site' } },
+    ],
+  },
 ];
 
 export function findConflictingIndexes(specs = COLLECTION_SPECS) {
