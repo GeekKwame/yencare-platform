@@ -10,6 +10,7 @@ import {
   getTodaysAppointments,
   updateAppointmentStatus,
 } from "../services/appointments";
+import { registerPatient } from "../services/patients";
 
 const STATUS_RANK = {
   CHECKED_IN: 0,
@@ -72,6 +73,14 @@ function matchesDeskQuery(appt, rawQuery) {
 const StaffPortal = () => {
   const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
+  const [isWalkInOpen, setIsWalkInOpen] = useState(false);
+  const [walkInData, setWalkInData] = useState({
+    fullName: "",
+    studentIndex: "",
+    phoneNumber: "",
+    visitType: "General OPD",
+    priority: "Standard",
+  });
   const [appointments, setAppointments] = useState(() =>
     getMockTodaysAppointments(DEFAULT_CLINIC_SITE, todayIsoDate()),
   );
@@ -157,6 +166,47 @@ const StaffPortal = () => {
 
   function handleCheckIn(id) {
     return applyStatus(id, "CHECKED_IN", "Checked in");
+  }
+
+  async function handleWalkInSubmit(e) {
+    e.preventDefault();
+    setMessage("");
+
+    try {
+      const patient = await registerPatient({
+        fullName: walkInData.fullName,
+        studentIndex: walkInData.studentIndex,
+        phoneNumber: walkInData.phoneNumber,
+      });
+
+      const newCard = {
+        id: crypto.randomUUID(),
+        patientId: patient.id,
+        patientName: patient.fullName,
+        reference: "W-" + Math.floor(Math.random() * 1000),
+        service: walkInData.visitType,
+        time: "Now",
+        status: "CHECKED_IN",
+        bookingType: "WALK_IN",
+      };
+
+      setAppointments((prev) => [...prev, newCard]);
+      setIsWalkInOpen(false);
+      setWalkInData({
+        fullName: "",
+        studentIndex: "",
+        phoneNumber: "",
+        visitType: "General OPD",
+        priority: "Standard",
+      });
+      setMessage(`Walk-in ${patient.fullName} added to today's roster.`);
+    } catch (err) {
+      const error =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Could not register this walk-in. Check the name, index, and phone.";
+      setMessage(error);
+    }
   }
 
   function handleCheckInToQueue(id) {
@@ -363,6 +413,14 @@ const StaffPortal = () => {
               15 Sep (Demo)
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsWalkInOpen(true)}
+            className="shrink-0 rounded-xl bg-[#176b5f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#14594f]"
+          >
+            Add Walk-in
+          </button>
         </div>
       </div>
 
@@ -573,6 +631,56 @@ const StaffPortal = () => {
           ))}
         </div>
       )}
+
+      {isWalkInOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+    <div className="bg-white p-6 rounded-xl">
+      <form onSubmit={handleWalkInSubmit}>
+      <input name="fullName"
+      value={walkInData.fullName}
+      onChange={(e) => setWalkInData((prev) => ({...prev, fullName: e.target.value}))}
+      placeholder="Full Name"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+       />
+      <input name="studentIndex" 
+      value={walkInData.studentIndex} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, studentIndex: e.target.value}))}
+      placeholder="Student Index"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      />
+      <input name="phoneNumber" 
+      value={walkInData.phoneNumber} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, phoneNumber: e.target.value}))}
+      placeholder="Phone Number"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      />
+      <select name="visitType" 
+      value={walkInData.visitType} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, visitType: e.target.value}))}
+      placeholder="Visit Type"
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      >
+        <option value="General OPD">General OPD</option>
+        <option value="Follow-up/Review">Follow-up/Review</option>
+        <option value="Dressing">Dressing</option>
+        <option value="Other clinic service">Other clinic service</option>
+      </select>
+      <select name="priority" 
+      value={walkInData.priority} 
+      onChange={(e) => setWalkInData((prev) => ({...prev, priority: e.target.value}) )}
+      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm mb-2"
+      >
+        <option value="Standard">Standard</option>
+        <option value="Urgent">Urgent</option>
+      </select>
+    <div className="flex gap-2 mt-3">
+      <button type="submit" className="rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white">Add to Queue</button>
+      <button type="button" onClick={() => setIsWalkInOpen(false)} className="rounded-xl border border-gray-300 px-4 py-2 text-sm">Close</button>
+    </div>  
+    </form>
+    </div>
+  </div>
+)}
     </main>
   );
 };
