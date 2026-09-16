@@ -1,8 +1,11 @@
 import { Router } from 'express';
+
 import { asyncHandler } from './asyncHandler.js';
+import { appointmentEvents } from '../services/appointmentOps.js';
 
 function toJson(doc) {
   if (!doc) return null;
+
   return typeof doc.toJSON === 'function' ? doc.toJSON() : doc;
 }
 
@@ -12,32 +15,48 @@ function toJson(doc) {
  *   findByReference?: (referenceCode: string) => Promise<object | null>,
  *   listAppointments?: (filters: object) => Promise<object[]>,
  *   updateStatus?: (idOrReference: string, status: string) => Promise<object>,
+ *   cancelAppointment?: (idOrReference: string, options: object) => Promise<object>,
+ *   rescheduleAppointment?: (idOrReference: string, options: object) => Promise<object>,
+ *   getQueueStatus?: (reference: string) => Promise<object>,
  * }} appointmentService
  */
 export function createAppointmentsRouter(appointmentService) {
   const router = Router();
 
+  // GET /api/appointments
   router.get(
     '/',
     asyncHandler(async (req, res) => {
       if (!appointmentService.listAppointments) {
-        return res.status(501).json({ error: 'Listing appointments is not available' });
+        return res.status(501).json({
+          error: 'Listing appointments is not available',
+        });
       }
 
       const appointments = await appointmentService.listAppointments({
         date: req.query.date,
-        clinicSite: req.query.clinicSite || req.query.clinic,
+        clinicSite:
+          req.query.clinicSite || req.query.clinic,
       });
 
-      res.status(200).json(appointments.map((doc) => toJson(doc)));
+      res.status(200).json(
+        appointments.map((doc) => toJson(doc)),
+      );
     }),
   );
 
+  // POST /api/appointments
   router.post(
     '/',
     asyncHandler(async (req, res) => {
-      const result = await appointmentService.createAppointment(req.body);
-      const appointmentJson = toJson(result.appointment) ?? result.appointment;
+      const result =
+        await appointmentService.createAppointment(
+          req.body,
+        );
+
+      const appointmentJson =
+        toJson(result.appointment) ??
+        result.appointment;
 
       res.status(201).json({
         ...appointmentJson,
@@ -46,44 +65,200 @@ export function createAppointmentsRouter(appointmentService) {
     }),
   );
 
+  // GET /api/appointments/events
+  //
+  // Server-Sent Events endpoint for real-time slot updates.
+  router.get('/events', (req, res) => {
+    res.setHeader(
+      'Content-Type',
+      'text/event-stream',
+    );
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    // Tell the client that the connection is alive.
+    res.write(': connected\n\n');
+
+    const sendEvent = (eventName, payload) => {
+      res.write(
+        `event: ${eventName}\n` +
+        `data: ${JSON.stringify(payload)}\n\n`,
+      );
+    };
+
+    const onSlotReleased = (payload) => {
+      sendEvent('slotReleased', payload);
+    };
+
+    const onSlotBooked = (payload) => {
+      sendEvent('slotBooked', payload);
+    };
+
+    appointmentEvents.on(
+      'slotReleased',
+      onSlotReleased,
+    );
+
+    appointmentEvents.on(
+      'slotBooked',
+      onSlotBooked,
+    );
+
+    // Keep the connection alive.
+    const heartbeat = setInterval(() => {
+      res.write(': heartbeat\n\n');
+    }, 30000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+
+      appointmentEvents.off(
+        'slotReleased',
+        onSlotReleased,
+      );
+
+      appointmentEvents.off(
+        'slotBooked',
+        onSlotBooked,
+      );
+
+      res.end();
+    });
+  });
+
+  // PATCH /api/appointments/:id/status
   router.patch(
     '/:id/status',
     asyncHandler(async (req, res) => {
       if (!appointmentService.updateStatus) {
-        return res.status(501).json({ error: 'Updating appointment status is not available' });
+        return res.status(501).json({
+          error:
+            'Updating appointment status is not available',
+        });
       }
 
       const status = req.body?.status;
-      const appointment = await appointmentService.updateStatus(req.params.id, status);
+
+      const appointment =
+        await appointmentService.updateStatus(
+          req.params.id,
+          status,
+        );
+
       res.status(200).json(toJson(appointment));
     }),
   );
 
+  // PATCH /api/appointments/:id/cancel
+  router.patch(
+    '/:id/cancel',
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.cancelAppointment) {
+        return res.status(501).json({
+          error:
+            'Cancelling appointments is not available',
+        });
+      }
+
+      const result =
+        await appointmentService.cancelAppointment(
+          req.params.id,
+          {
+            cancelReason: req.body?.cancelReason,
+            performedBy:
+              req.user?._id ||
+              req.user?.id ||
+              null,
+          },
+        );
+
+      res.status(200).json({
+        message:
+          'Appointment cancelled successfully',
+        appointment: toJson(result.appointment),
+        releasedSlotId: result.releasedSlotId,
+        cancelledTime: result.cancelledTime,
+      });
+    }),
+  );
+
+  // PATCH /api/appointments/:id/reschedule
+  router.patch(
+    '/:id/reschedule',
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.rescheduleAppointment) {
+        return res.status(501).json({
+          error:
+            'Rescheduling appointments is not available',
+        });
+      }
+
+      const result =
+        await appointmentService.rescheduleAppointment(
+          req.params.id,
+          {
+            newSlotId: req.body?.newSlotId,
+            performedBy:
+              req.user?._id ||
+              req.user?.id ||
+              null,
+          },
+        );
+
+      res.status(200).json({
+        message:
+          'Appointment rescheduled successfully',
+        appointment: toJson(result.appointment),
+        oldSlotId: result.oldSlotId,
+        newSlotId: result.newSlotId,
+      });
+    }),
+  );
+
+  // GET /api/appointments/:reference/queue-status
   router.get(
     '/:reference/queue-status',
     asyncHandler(async (req, res) => {
       if (!appointmentService.getQueueStatus) {
-        return res.status(501).json({ error: 'Queue status is not available' });
+        return res.status(501).json({
+          error: 'Queue status is not available',
+        });
       }
 
-      const queueStatus = await appointmentService.getQueueStatus(req.params.reference);
+      const queueStatus =
+        await appointmentService.getQueueStatus(
+          req.params.reference,
+        );
+
       res.status(200).json(queueStatus);
     }),
   );
 
+  // GET /api/appointments/:reference
   router.get(
     '/:reference',
     asyncHandler(async (req, res) => {
       const ref = req.params.reference;
-      const appointment = appointmentService.findByReference
-        ? await appointmentService.findByReference(ref)
-        : null;
+
+      const appointment =
+        appointmentService.findByReference
+          ? await appointmentService.findByReference(ref)
+          : null;
 
       if (!appointment) {
-        return res.status(404).json({ error: 'Appointment not found' });
+        return res.status(404).json({
+          error: 'Appointment not found',
+        });
       }
 
-      res.status(200).json(toJson(appointment));
+      res.status(200).json(
+        toJson(appointment),
+      );
     }),
   );
 

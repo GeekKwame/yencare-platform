@@ -1,12 +1,26 @@
 import mongoose from 'mongoose';
+import { EventEmitter } from 'node:events';
+
 import {
   APPOINTMENT_STATUSES,
   CLINIC_SITES,
   DATE_PATTERN,
 } from '../db/constants.js';
+
 import { Appointment } from '../models/Appointment.js';
-import { NotFoundError, ValidationError } from '../patients/errors.js';
+import { TimeSlot } from '../models/TimeSlot.js';
+import { AuditLog } from '../models/AuditLog.js';
+
+import {
+  NotFoundError,
+  ValidationError,
+} from '../patients/errors.js';
+
 import { assignDailyQueueToken } from './queueEngine.js';
+
+// Used by the real-time layer to notify clients after a successful
+// cancellation/reschedule transaction.
+export const appointmentEvents = new EventEmitter();
 
 /**
  * @param {{ date?: string, clinicSite?: string, clinic?: string }} filters
@@ -20,13 +34,17 @@ export async function listAppointments(filters = {}) {
     if (!DATE_PATTERN.test(String(date))) {
       throw new ValidationError('date must be YYYY-MM-DD');
     }
+
     query.appointmentDate = String(date);
   }
 
   if (clinicSite != null && clinicSite !== '') {
     if (!CLINIC_SITES.includes(clinicSite)) {
-      throw new ValidationError(`clinicSite must be one of: ${CLINIC_SITES.join(', ')}`);
+      throw new ValidationError(
+        `clinicSite must be one of: ${CLINIC_SITES.join(', ')}`,
+      );
     }
+
     query.clinicSite = clinicSite;
   }
 
@@ -45,11 +63,13 @@ export async function updateAppointmentStatus(idOrReference, status) {
   }
 
   const key = String(idOrReference || '').trim();
+
   if (!key) {
     throw new ValidationError('Appointment id or reference is required');
   }
 
   let appointment = null;
+
   if (mongoose.isValidObjectId(key)) {
     appointment = await Appointment.findById(key)
       .populate('patientId', 'fullName phone studentIndex')
@@ -74,11 +94,447 @@ export async function updateAppointmentStatus(idOrReference, status) {
   try {
     await appointment.save();
   } catch (err) {
-    if (String(err?.message || '').startsWith('Illegal status transition')) {
+    if (
+      String(err?.message || '').startsWith(
+        'Illegal status transition',
+      )
+    ) {
       throw new ValidationError(err.message);
     }
+
     throw err;
   }
 
   return appointment;
 }
+
+/**
+ * Cancel an appointment and release its slot atomically.
+ *
+ * @param {string} idOrReference
+ * @param {{ cancelReason?: string, performedBy?: string|null }} options
+ */
+export async function cancelAppointment(
+  idOrReference,
+  { cancelReason = '', performedBy = null } = {},
+) {
+  const key = String(idOrReference || '').trim();
+
+  if (!key) {
+    throw new ValidationError(
+      'Appointment id or reference is required',
+    );
+  }
+
+  const session = await mongoose.startSession();
+
+  let result = null;
+
+  try {
+    await session.withTransaction(async () => {
+      const query = mongoose.isValidObjectId(key)
+        ? { _id: key }
+        : { referenceCode: key.toUpperCase() };
+
+      // Lock the appointment for this transaction.
+      const appointment = await Appointment.findOne(query)
+        .session(session);
+
+      if (!appointment) {
+        throw new NotFoundError('Appointment not found');
+      }
+
+      if (
+        appointment.status === 'CHECKED_IN' ||
+        appointment.status === 'CALLED' ||
+        appointment.status === 'COMPLETED'
+      ) {
+        throw new ValidationError(
+          `Appointment cannot be cancelled when status is ${appointment.status}`,
+        );
+      }
+
+      // Prevent cancelling twice and releasing the same slot twice.
+      if (appointment.status === 'CANCELLED') {
+        throw new ValidationError(
+          'Appointment is already cancelled',
+        );
+      }
+
+      if (!appointment.timeSlotId) {
+        throw new ValidationError(
+          'Appointment has no linked time slot',
+        );
+      }
+
+      // Lock the slot too.
+      const slot = await TimeSlot.findOne({
+        _id: appointment.timeSlotId,
+      }).session(session);
+
+      if (!slot) {
+        throw new NotFoundError('Time slot not found');
+      }
+
+      // The slot must still belong to this appointment.
+      if (
+        !slot.isBooked ||
+        !slot.appointmentId ||
+        String(slot.appointmentId) !== String(appointment._id)
+      ) {
+        throw new ValidationError(
+          'Appointment slot is already released or belongs to another appointment',
+        );
+      }
+
+      const cancelledTime = new Date();
+
+      // Update the appointment inside the same transaction.
+      const updatedAppointment =
+        await Appointment.findOneAndUpdate(
+          {
+            _id: appointment._id,
+            status: {
+              $nin: [
+                'CANCELLED',
+                'CHECKED_IN',
+                'CALLED',
+                'COMPLETED',
+              ],
+            },
+          },
+          {
+            $set: {
+              status: 'CANCELLED',
+              cancelledTime,
+              cancelReason: cancelReason
+                ? String(cancelReason).trim()
+                : null,
+            },
+          },
+          {
+            new: true,
+            session,
+            runValidators: true,
+          },
+        )
+          .populate('patientId', 'fullName phone studentIndex')
+          .populate(
+            'clinicianId',
+            'name title specialty roomId',
+          )
+          .populate('roomId', 'name clinicSite')
+          .populate('timeSlotId');
+
+      if (!updatedAppointment) {
+        throw new ValidationError(
+          'Appointment could not be cancelled because its status changed',
+        );
+      }
+
+      // Release only THIS appointment's slot.
+      const released = await TimeSlot.updateOne(
+        {
+          _id: slot._id,
+          isBooked: true,
+          appointmentId: appointment._id,
+        },
+        {
+          $set: {
+            isBooked: false,
+            appointmentId: null,
+          },
+        },
+        { session },
+      );
+
+      if (released.modifiedCount !== 1) {
+        throw new ValidationError(
+          'Time slot could not be released because it has already changed',
+        );
+      }
+
+      // Audit stamp.
+      await AuditLog.create(
+        [
+          {
+            action: 'APPOINTMENT_CANCELLED',
+            appointmentId: appointment._id,
+            cancelledTime,
+            cancelReason: cancelReason
+              ? String(cancelReason).trim()
+              : null,
+            performedBy: performedBy || null,
+          },
+        ],
+        { session },
+      );
+
+      result = {
+        appointment: updatedAppointment,
+        releasedSlotId: slot._id,
+        cancelledTime,
+      };
+    });
+
+    // Only notify clients after MongoDB commits successfully.
+    appointmentEvents.emit('slotReleased', {
+      slotId: String(result.releasedSlotId),
+      appointmentId: String(result.appointment._id),
+      isBooked: false,
+      releasedAt: result.cancelledTime,
+    });
+
+    return result;
+  } finally {
+    await session.endSession();
+  }
+}
+
+/**
+ * Reschedule an appointment by atomically swapping its old slot
+ * with a new available slot.
+ *
+ * @param {string} idOrReference
+ * @param {{ newSlotId: string, performedBy?: string|null }} options
+ */
+export async function rescheduleAppointment(
+  idOrReference,
+  { newSlotId, performedBy = null } = {},
+) {
+  const key = String(idOrReference || '').trim();
+
+  if (!key) {
+    throw new ValidationError(
+      'Appointment id or reference is required',
+    );
+  }
+
+  if (!newSlotId || !mongoose.isValidObjectId(newSlotId)) {
+    throw new ValidationError(
+      'A valid newSlotId is required',
+    );
+  }
+
+  const session = await mongoose.startSession();
+
+  let result = null;
+
+  try {
+    await session.withTransaction(async () => {
+      const query = mongoose.isValidObjectId(key)
+        ? { _id: key }
+        : { referenceCode: key.toUpperCase() };
+
+      // Lock appointment.
+      const appointment = await Appointment.findOne(query)
+        .session(session);
+
+      if (!appointment) {
+        throw new NotFoundError('Appointment not found');
+      }
+
+      if (
+        appointment.status === 'CHECKED_IN' ||
+        appointment.status === 'CALLED' ||
+        appointment.status === 'COMPLETED' ||
+        appointment.status === 'CANCELLED'
+      ) {
+        throw new ValidationError(
+          `Appointment cannot be rescheduled when status is ${appointment.status}`,
+        );
+      }
+
+      if (!appointment.timeSlotId) {
+        throw new ValidationError(
+          'Appointment has no current time slot',
+        );
+      }
+
+      if (
+        String(appointment.timeSlotId) === String(newSlotId)
+      ) {
+        throw new ValidationError(
+          'New time slot must be different from the current time slot',
+        );
+      }
+
+      // Lock old slot.
+      const oldSlot = await TimeSlot.findOne({
+        _id: appointment.timeSlotId,
+      }).session(session);
+
+      if (!oldSlot) {
+        throw new NotFoundError(
+          'Current time slot not found',
+        );
+      }
+
+      // Lock new slot.
+      const newSlot = await TimeSlot.findOne({
+        _id: newSlotId,
+      }).session(session);
+
+      if (!newSlot) {
+        throw new NotFoundError('New time slot not found');
+      }
+
+      // New slot must be completely free.
+      if (newSlot.isBooked || newSlot.appointmentId) {
+        throw new ValidationError(
+          'The selected time slot is already booked',
+        );
+      }
+
+      // Old slot must still belong to this appointment.
+      if (
+        !oldSlot.isBooked ||
+        !oldSlot.appointmentId ||
+        String(oldSlot.appointmentId) !== String(appointment._id)
+      ) {
+        throw new ValidationError(
+          'Current time slot is no longer linked to this appointment',
+        );
+      }
+
+      // Reschedule within the same clinician.
+      if (
+        String(newSlot.clinicianId) !==
+        String(appointment.clinicianId)
+      ) {
+        throw new ValidationError(
+          'New time slot must belong to the same clinician',
+        );
+      }
+
+      // Reserve the new slot first.
+      const reserved = await TimeSlot.updateOne(
+        {
+          _id: newSlot._id,
+          isBooked: false,
+          appointmentId: null,
+        },
+        {
+          $set: {
+            isBooked: true,
+            appointmentId: appointment._id,
+          },
+        },
+        { session },
+      );
+
+      if (reserved.modifiedCount !== 1) {
+        throw new ValidationError(
+          'The new time slot became unavailable',
+        );
+      }
+
+      // Release the old slot.
+      const released = await TimeSlot.updateOne(
+        {
+          _id: oldSlot._id,
+          isBooked: true,
+          appointmentId: appointment._id,
+        },
+        {
+          $set: {
+            isBooked: false,
+            appointmentId: null,
+          },
+        },
+        { session },
+      );
+
+      if (released.modifiedCount !== 1) {
+        throw new ValidationError(
+          'The old time slot could not be released',
+        );
+      }
+
+      // Move the appointment to the new slot.
+      const updatedAppointment =
+        await Appointment.findOneAndUpdate(
+          {
+            _id: appointment._id,
+            timeSlotId: oldSlot._id,
+            status: {
+              $nin: [
+                'CHECKED_IN',
+                'CALLED',
+                'COMPLETED',
+                'CANCELLED',
+              ],
+            },
+          },
+          {
+            $set: {
+              timeSlotId: newSlot._id,
+              appointmentDate: newSlot.date,
+              appointmentTime: newSlot.startTime,
+              roomId: newSlot.roomId,
+              clinicSite: newSlot.clinicSite,
+            },
+          },
+          {
+            new: true,
+            session,
+            runValidators: true,
+          },
+        )
+          .populate('patientId', 'fullName phone studentIndex')
+          .populate(
+            'clinicianId',
+            'name title specialty roomId',
+          )
+          .populate('roomId', 'name clinicSite')
+          .populate('timeSlotId');
+
+      if (!updatedAppointment) {
+        throw new ValidationError(
+          'Appointment could not be rescheduled because its state changed',
+        );
+      }
+
+      // Audit log.
+      await AuditLog.create(
+        [
+          {
+            action: 'APPOINTMENT_RESCHEDULED',
+            appointmentId: appointment._id,
+            oldSlotId: oldSlot._id,
+            newSlotId: newSlot._id,
+            rescheduledTime: new Date(),
+            performedBy: performedBy || null,
+          },
+        ],
+        { session },
+      );
+
+      result = {
+        appointment: updatedAppointment,
+        oldSlotId: oldSlot._id,
+        newSlotId: newSlot._id,
+      };
+    });
+
+    // Notify clients only after the transaction commits.
+    appointmentEvents.emit('slotReleased', {
+      slotId: String(result.oldSlotId),
+      appointmentId: String(result.appointment._id),
+      isBooked: false,
+      releasedAt: new Date(),
+    });
+
+    appointmentEvents.emit('slotBooked', {
+      slotId: String(result.newSlotId),
+      appointmentId: String(result.appointment._id),
+      isBooked: true,
+      bookedAt: new Date(),
+    });
+
+    return result;
+  } finally {
+    await session.endSession();
+  }
+}
+
