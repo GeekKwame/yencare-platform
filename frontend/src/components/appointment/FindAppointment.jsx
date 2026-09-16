@@ -7,29 +7,19 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import { isValidGhanaPhone, isValidStudentIndex } from "../../data/bookingOptions";
-import {
-  normalizeReference,
-  patientPhone,
-  REFERENCE_PATTERN,
-} from "../../lib/appointmentView";
-import { phonesMatch } from "../../lib/phones";
+import { normalizeReference, REFERENCE_PATTERN } from "../../lib/appointmentView";
 import { lookupAppointment } from "../../services/appointments";
 import AppointmentCancelled from "./AppointmentCancelled";
 import FoundAppointment from "./FoundAppointment";
 import RescheduleFlow from "./RescheduleFlow";
 
-function validateSearch(method, searchInput, phoneInput) {
+function validateSearch(method, searchInput) {
   if (method === "reference") {
     const reference = normalizeReference(searchInput);
     if (!REFERENCE_PATTERN.test(reference)) {
       return { error: "Enter a valid reference code (e.g. YC-4821)." };
     }
-    if (!isValidGhanaPhone(phoneInput)) {
-      return {
-        error: "Enter the Ghana phone number used for this booking.",
-      };
-    }
-    return { query: { reference }, phone: phoneInput.trim() };
+    return { query: { reference } };
   }
 
   const value = String(searchInput || "").trim();
@@ -56,7 +46,6 @@ function validateSearch(method, searchInput, phoneInput) {
 const FindAppointment = ({ setAppointment }) => {
   const [searchMethod, setSearchMethod] = useState("reference");
   const [searchInput, setSearchInput] = useState("");
-  const [phoneInput, setPhoneInput] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [appointment, setFoundAppointment] = useState(null);
@@ -71,11 +60,7 @@ const FindAppointment = ({ setAppointment }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { error, query, phone } = validateSearch(
-      searchMethod,
-      searchInput,
-      phoneInput,
-    );
+    const { error, query } = validateSearch(searchMethod, searchInput);
     if (error) {
       setErrorMessage(error);
       return;
@@ -86,12 +71,6 @@ const FindAppointment = ({ setAppointment }) => {
 
     try {
       const found = await lookupAppointment(query);
-      if (phone && !phonesMatch(phone, patientPhone(found))) {
-        setErrorMessage(
-          "Appointment not found. Please check your details and try again.",
-        );
-        return;
-      }
       setFoundAppointment(found);
       setFlow("detail");
     } catch (err) {
@@ -177,8 +156,8 @@ const FindAppointment = ({ setAppointment }) => {
       </div>
 
       <p className="mt-3 max-w-xl text-sm leading-6 text-[#607672]">
-        Search with your YC reference and the phone number on the booking, or
-        use your student index.
+        Search with your YC reference, student index, or the phone number on
+        the booking.
       </p>
 
       <div
@@ -195,6 +174,7 @@ const FindAppointment = ({ setAppointment }) => {
               aria-selected={isActive}
               onClick={() => {
                 setSearchMethod(id);
+                setSearchInput("");
                 setErrorMessage("");
               }}
               className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-bold transition sm:text-sm ${
@@ -211,71 +191,50 @@ const FindAppointment = ({ setAppointment }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-        {searchMethod === "reference" ? (
-          <>
-            <div>
-              <label htmlFor="appointment-search" className="text-sm font-bold text-[#173b3a]">
-                Appointment Reference Code
-              </label>
-              <input
-                id="appointment-search"
-                type="text"
-                autoCapitalize="characters"
-                autoComplete="off"
-                value={searchInput}
-                onChange={(e) => {
-                  setSearchInput(e.target.value.toUpperCase());
-                  if (errorMessage) setErrorMessage("");
-                }}
-                className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm tracking-wide text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
-                placeholder="e.g. YC-4821"
-              />
-              <p className="mt-2 text-xs text-[#78908a]">
-                Your 4-digit YC code was sent via SMS (e.g. YC-4821).
-              </p>
-            </div>
-            <div>
-              <label htmlFor="appointment-phone" className="text-sm font-bold text-[#173b3a]">
-                Phone number on the booking
-              </label>
-              <input
-                id="appointment-phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={phoneInput}
-                onChange={(e) => {
-                  setPhoneInput(e.target.value);
-                  if (errorMessage) setErrorMessage("");
-                }}
-                className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
-                placeholder="e.g. 024 123 4567"
-              />
-            </div>
-          </>
-        ) : (
-          <div>
-            <label htmlFor="appointment-search" className="text-sm font-bold text-[#173b3a]">
-              {searchMethod === "studentId"
+        <div>
+          <label htmlFor="appointment-search" className="text-sm font-bold text-[#173b3a]">
+            {searchMethod === "reference"
+              ? "Appointment Reference Code"
+              : searchMethod === "studentId"
                 ? "Student Index Number"
                 : "Ghana Phone Number"}
-            </label>
-            <input
-              id="appointment-search"
-              type="text"
-              inputMode={searchMethod === "studentId" ? "numeric" : "tel"}
-              value={searchInput}
-              onChange={(e) => {
-                setSearchInput(e.target.value);
-                if (errorMessage) setErrorMessage("");
-              }}
-              className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
-              placeholder={
-                searchMethod === "studentId" ? "e.g. 20612345" : "e.g. 024 123 4567"
-              }
-            />
-          </div>
-        )}
+          </label>
+          <input
+            id="appointment-search"
+            type="text"
+            inputMode={
+              searchMethod === "studentId"
+                ? "numeric"
+                : searchMethod === "phone"
+                  ? "tel"
+                  : "text"
+            }
+            autoCapitalize={searchMethod === "reference" ? "characters" : undefined}
+            autoComplete={searchMethod === "phone" ? "tel" : "off"}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(
+                searchMethod === "reference"
+                  ? e.target.value.toUpperCase()
+                  : e.target.value,
+              );
+              if (errorMessage) setErrorMessage("");
+            }}
+            className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+            placeholder={
+              searchMethod === "reference"
+                ? "e.g. YC-4821"
+                : searchMethod === "studentId"
+                  ? "e.g. 20612345"
+                  : "e.g. 024 123 4567"
+            }
+          />
+          {searchMethod === "reference" ? (
+            <p className="mt-2 text-xs text-[#78908a]">
+              Your 4-digit YC code was sent via SMS (e.g. YC-4821).
+            </p>
+          ) : null}
+        </div>
 
         {errorMessage && (
           <p className="text-xs text-red-500" role="alert">
