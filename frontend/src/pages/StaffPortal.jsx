@@ -9,6 +9,10 @@ import {
 import {
   getTodaysAppointments,
   updateAppointmentStatus,
+  callNextPatient,
+  getRooms,
+  advanceQueue,
+  markNoShow,
 } from "../services/appointments";
 
 const STATUS_RANK = {
@@ -70,11 +74,18 @@ function matchesDeskQuery(appt, rawQuery) {
 }
 
 const StaffPortal = () => {
+  const [selectedRoom, setSelectedRoom] = useState("");
   const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [appointments, setAppointments] = useState(() =>
     getMockTodaysAppointments(DEFAULT_CLINIC_SITE, todayIsoDate()),
   );
+  const [rooms, setRooms] = useState([]);
+
+useEffect(() => {
+  getRooms().then(setRooms).catch(() => setRooms([]));
+}, []);
+
   const [usingMock, setUsingMock] = useState(true);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
@@ -83,7 +94,6 @@ const StaffPortal = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [highlightedId, setHighlightedId] = useState(null);
   const [lookupFeedback, setLookupFeedback] = useState("");
-
   useEffect(() => {
     let cancelled = false;
 
@@ -159,6 +169,25 @@ const StaffPortal = () => {
     return applyStatus(id, "CHECKED_IN", "Checked in");
   }
 
+  async function handleCallNext() {
+  try {
+    const result = await callNextPatient({ roomId: selectedRoom });
+
+     if (!result.appointment) {
+      alert(result.message || "No waiting patients for this room.");
+      return;
+    }
+
+    setAppointments((prev) =>
+      prev.map((appt) =>
+        appt.id === result.id ? { ...appt, status: "CALLED", queueToken: result.queueToken } : appt
+      )
+    );
+  } catch (err) {
+    alert(err.response?.data?.message || "Could not call next patient.");
+  }
+}
+
   function handleCheckInToQueue(id) {
     return applyStatus(id, "WAITING", "Checked into queue");
   }
@@ -230,6 +259,14 @@ const StaffPortal = () => {
 
   const arrivedPatients = appointments.filter((a) => a.status === "CHECKED_IN");
 
+const selectedRoomObj = rooms.find((r) => r.id === selectedRoom);
+
+const waitingForRoom = appointments.filter(
+  (appt) =>
+    appt.status === "WAITING" &&
+    (appt.room === selectedRoom || appt.room === selectedRoomObj?.name)
+);
+
   const filteredAppointments = appointments
     .filter((appt) => matchesDeskQuery(appt, deskQuery))
     .filter((appt) => (statusFilter === "all" ? true : appt.status === statusFilter))
@@ -238,6 +275,54 @@ const StaffPortal = () => {
       if (rankDiff !== 0) return rankDiff;
       return String(a.time || "").localeCompare(String(b.time || ""));
     });
+
+    const calledPatient = appointments.find(
+  (a) => a.status === "CALLED" && (a.room === selectedRoom || a.room === selectedRoomObj?.name)
+);
+
+const [consultStartedAt, setConsultStartedAt] = useState(null);
+const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+useEffect(() => {
+  setConsultStartedAt(calledPatient ? Date.now() : null);
+  setElapsedSeconds(0);
+}, [calledPatient?.id]);
+
+useEffect(() => {
+  if (!consultStartedAt) return;
+  const interval = setInterval(() => {
+    setElapsedSeconds(Math.floor((Date.now() - consultStartedAt) / 1000));
+  }, 1000);
+  return () => clearInterval(interval);
+}, [consultStartedAt]);
+
+function formatElapsed(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+async function handleCompleteVisit() {
+  try {
+    await advanceQueue(selectedRoom);
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === calledPatient.id ? { ...a, status: "COMPLETED" } : a))
+    );
+  } catch (err) {
+    alert(err.response?.data?.message || "Could not complete visit.");
+  }
+}
+
+async function handleMarkNoShow() {
+  try {
+    await markNoShow(calledPatient.id);
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === calledPatient.id ? { ...a, status: "NO_SHOW" } : a))
+    );
+  } catch (err) {
+    alert(err.response?.data?.message || "Could not mark no-show.");
+  }
+}
 
   const kpiCards = [
     {
@@ -314,6 +399,34 @@ const StaffPortal = () => {
         </div>
 
         <div className="flex flex-wrap items-end gap-3">
+
+       <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+          <span className="font-semibold">Consultation room</span>
+          <select
+  value={selectedRoom}
+  onChange={(e) => setSelectedRoom(e.target.value)}
+  className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm"
+>
+  <option value="">Select a room</option>
+  {rooms.map((room) => (
+    <option key={room.id} value={room.id}>{room.name}</option>
+  ))}
+</select>
+        </label>
+
+          <div>
+  {waitingForRoom.map((appt) => (
+    <div key={appt.id}>
+      <p>{appt.patientName} — {appt.queueToken}</p>
+      <button onClick={handleCallNext} 
+      className="rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f]">
+        Call Next
+      </button>
+    </div>
+  ))}
+        </div>
+       
+
           <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
             <span className="font-semibold">Clinic site</span>
             <select
@@ -461,6 +574,24 @@ const StaffPortal = () => {
           </div>
         </section>
       )}
+
+      {calledPatient && (
+  <section className="mb-6 rounded-2xl border border-[#176b5f] bg-[#E7F5F1] p-4">
+    <h2 className="text-xs font-bold uppercase tracking-wider text-[#176b5f]">Currently Serving</h2>
+    <p className="mt-1 text-lg font-bold text-[#173b3a]">
+      {calledPatient.patientName} · {calledPatient.queueToken}
+    </p>
+    <p className="text-sm text-gray-500">Elapsed: {formatElapsed(elapsedSeconds)}</p>
+    <div className="mt-3 flex gap-2">
+      <button onClick={handleCompleteVisit} className="rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white">
+        Complete Visit
+      </button>
+      <button onClick={handleMarkNoShow} className="rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-4 py-2 text-sm font-semibold text-[#9B2C2C]">
+        Mark No-Show
+      </button>
+    </div>
+  </section>
+)}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((filter) => {

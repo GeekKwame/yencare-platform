@@ -24,6 +24,7 @@ export const mockAppointments = [
     studentIndex: "20612345",
     phone: "024 111 2233",
     bookingType: "SCHEDULED",
+    room: "Room 1"
   },
   {
     id: "mock-2",
@@ -37,6 +38,7 @@ export const mockAppointments = [
     studentIndex: "20613456",
     phone: "055 222 3344",
     bookingType: "SCHEDULED",
+    room: "Room 2"
   },
   {
     id: "mock-3",
@@ -50,6 +52,7 @@ export const mockAppointments = [
     studentIndex: "20614567",
     phone: "027 333 4455",
     bookingType: "SCHEDULED",
+    room: "Consultation Room GF7",
     queueToken: "#3",
   },
   {
@@ -64,6 +67,7 @@ export const mockAppointments = [
     studentIndex: "20615678",
     phone: "020 444 5566",
     bookingType: "SCHEDULED",
+    room: "Room 2"
   },
   {
     id: "mock-5",
@@ -77,6 +81,7 @@ export const mockAppointments = [
     studentIndex: "20616789",
     phone: "024 555 6677",
     bookingType: "SCHEDULED",
+    room: "Room 1"
   },
   {
     id: "mock-6",
@@ -90,6 +95,7 @@ export const mockAppointments = [
     studentIndex: "20617890",
     phone: "055 666 7788",
     bookingType: "SCHEDULED",
+    room: "Consultation Room GF7",
     queueToken: "#1",
   },
   {
@@ -104,6 +110,7 @@ export const mockAppointments = [
     studentIndex: "20618901",
     phone: "027 777 8899",
     bookingType: "SCHEDULED",
+    room: "Room 2",
     queueToken: "#0",
   },
   {
@@ -118,6 +125,7 @@ export const mockAppointments = [
     studentIndex: "20619012",
     phone: "024 888 9900",
     bookingType: "SCHEDULED",
+    room: "Consultation Room GF7",
   },
   {
     id: "mock-9",
@@ -131,6 +139,7 @@ export const mockAppointments = [
     studentIndex: "20620123",
     phone: "055 999 0011",
     bookingType: "SCHEDULED",
+    room: "Consultation Room GF7"
   },
 ];
 
