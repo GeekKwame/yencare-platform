@@ -1,3 +1,4 @@
+import { logger } from '../../lib/logger.js';
 import { toLocalGhanaPhone, toMsisdnGhanaPhone } from '../normalizePhone.js';
 
 const QUICK_SMS_URL = 'https://api.mnotify.com/api/sms/quick';
@@ -6,8 +7,9 @@ function resolveQuickSmsUrl() {
   const configured = process.env.MNOTIFY_API_URL?.trim();
   if (!configured) return QUICK_SMS_URL;
   if (/\/sms\/group/i.test(configured)) {
-    console.warn(
-      '[sms] MNOTIFY_API_URL points at group SMS; using quick SMS so only the patient is messaged',
+    logger.warn(
+      'MNOTIFY_API_URL points at group SMS; using quick SMS so only the patient is messaged',
+      { subsystem: 'sms', provider: 'mnotify' },
     );
     return QUICK_SMS_URL;
   }

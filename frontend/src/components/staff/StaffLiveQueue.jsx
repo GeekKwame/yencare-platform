@@ -1,5 +1,6 @@
 import ElapsedTimer from "./ElapsedTimer";
 import { sortWaiting } from "./staffUtils";
+import { Button, StatusBadge } from "../ui";
 
 export default function StaffLiveQueue({
   appointments,
@@ -106,7 +107,7 @@ export default function StaffLiveQueue({
                         {appt.roomName || "Room"}
                       </span>
                       {appt.bookingType === "WALK_IN" && (
-                        <span className="text-[9px] font-bold text-[#2B6CB0]">WALK-IN</span>
+                        <StatusBadge status="WALK_IN" size="sm" />
                       )}
                     </div>
                     <p className="mt-2 font-mono text-4xl font-bold text-[#173b3a]">
@@ -170,14 +171,15 @@ export default function StaffLiveQueue({
                   <p className="text-[10px] text-[#66706B]">
                     {appt.reference} · {appt.time}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => onCheckInToQueue(appt.id)}
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    fullWidth
                     disabled={updatingId === appt.id}
-                    className="mt-2 w-full rounded-xl bg-[#176b5f] px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-white disabled:opacity-60"
+                    onClick={() => onCheckInToQueue(appt.id)}
                   >
                     Check In to Queue
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>

@@ -84,6 +84,11 @@ export async function fetchCurrentStaff() {
   return response.data.staff;
 }
 
+export async function refreshStaffToken() {
+  const response = await api.post("/auth/staff-refresh");
+  return response.data;
+}
+
 export function localDemoSession(account) {
   return {
     token: `demo-local.${account.staff.role}`,

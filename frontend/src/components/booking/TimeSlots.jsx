@@ -10,12 +10,14 @@ import { accraTodayIso, isFutureSlot } from "../../lib/accraTime";
 import { mapTimeSlot } from "../../lib/catalogView";
 import { listTimeSlots } from "../../services/catalog";
 import api from "../../services/api";
+import { Button } from "../ui";
 
 const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
   const [tick, setTick] = useState(() => Date.now());
   const arriveBy = getArriveByLabel(formData.appointmentTime);
 
@@ -83,7 +85,7 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
       cancelled = true;
       source?.close();
     };
-  }, [formData.clinicianId]);
+  }, [formData.clinicianId, reloadToken]);
 
   // Only include candidate dates on or after today that have at least one open, future-available consultation slot
   const dates = useMemo(() => {
@@ -182,7 +184,12 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
       {loading ? (
         <p className="mt-8 text-center text-sm text-[#607672]">Loading available times…</p>
       ) : loadError ? (
-        <p className="mt-8 text-center text-sm text-red-500">{loadError}</p>
+        <div className="mt-8 space-y-3 text-center">
+          <p className="text-sm text-error" role="alert">{loadError}</p>
+          <Button variant="secondary" onClick={() => setReloadToken((n) => n + 1)}>
+            Retry
+          </Button>
+        </div>
       ) : dates.length === 0 ? (
         <p className="mt-8 text-center text-sm text-[#607672]">
           No consultation slots are open for this clinician. Try another clinician or ask reception.

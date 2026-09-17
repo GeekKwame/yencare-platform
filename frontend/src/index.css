@@ -1,24 +1,96 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
-:root {
-  color: #173b3a;
-  background: #f6f8f3;
-  font-family: "DM Sans", sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+/* ============================================================================
+   Clinical Brutalism design tokens
+   Ported verbatim from ui/prototype/src/index.css (the locked reference).
+   Tailwind v4 turns every --color-* entry here into utilities, so
+   bg-primary / text-accent / border-clinic-border are available app-wide.
+   ========================================================================= */
+@theme {
+  --color-primary: #111111;
+  --color-clinic-bg: #F7F8F7;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F0F2F1;
+  --color-clinic-border: #D8DCD9;
+  --color-border-input: #C8CDCA;
+  --color-border-divider: #E5E7E6;
+  --color-text-muted: #66706B;
+  --color-accent: #087F6C;
+  --color-accent-soft: #E7F5F1;
+  --color-accent-hover: #066A5A;
+  --color-warning: #B7791F;
+  --color-warning-soft: #FEF7ED;
+  --color-error: #C53030;
+  --color-error-soft: #FDF2F2;
+  --color-success: #087F6C;
+  --color-success-soft: #E7F5F1;
+  --color-noshow: #8B5A2B;
+  --color-noshow-soft: #FFF5EB;
+  --color-walkin: #5B21B6;
+  --color-walkin-soft: #F3EEFF;
+
+  /* --------------------------------------------------------------------
+     Extension tokens.
+     The prototype hard-codes these as arbitrary hex inside its components
+     (borders, hover/active shades, secondary text). They are promoted to
+     tokens here so the shared primitives in src/components/ui can be built
+     with zero arbitrary hex. Values are unchanged from the prototype.
+     -------------------------------------------------------------------- */
+  --color-primary-hover: #262626;
+  --color-primary-active: #000000;
+  --color-text-secondary: #3D4541;
+  --color-text-subtle: #8A948F;
+  --color-border-strong: #B5BBB7;
+  --color-surface-active: #E5E8E6;
+  --color-accent-border: #99D5C8;
+  --color-accent-active: #05584A;
+  --color-warning-border: #FCD34D;
+  --color-error-border: #F8B4B4;
+  --color-error-border-soft: #E5C4C4;
+  --color-error-active: #FCE8E8;
+  --color-noshow-border: #D4A574;
+  --color-walkin-border: #C4B5FD;
+  --color-inverse-border: #333333;
+
+  --font-sans: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+
+  /* Locked letter-spacing steps, from the DESIGN.md type scale. */
+  --tracking-reference: 0.1em;
+  --tracking-micro: 0.08em;
+  --tracking-display: -0.02em;
 }
 
-body {
-  min-width: 320px;
-  margin: 0;
-  background:
-    radial-gradient(
-      circle at 82% 4%,
-      rgba(244, 193, 91, 0.18),
-      transparent 24rem
-    ),
-    #f6f8f3;
+@layer base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, sans-serif;
+    background-color: #F7F8F7;
+    color: #111111;
+    margin: 0;
+    min-width: 320px;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Default accessible focus visible state */
+  :focus-visible {
+    outline: 2px solid #087F6C;
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: #087F6C;
+    color: #FFFFFF;
+  }
 }
 
 button,
@@ -26,10 +98,266 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
-.display-font {
-  font-family: "Space Grotesk", sans-serif;
+html {
+  scrollbar-color: #66706B #F0F2F1;
+  scrollbar-width: thin;
 }
 
+/* ============================================================================
+   Clinical Editorial Brutalism & Hierarchy Utilities
+   ========================================================================= */
+.card-clinical {
+  background-color: #FFFFFF;
+  border: 1px solid #D8DCD9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.card-clinical-secondary {
+  background-color: #F0F2F1;
+  border: 1px solid #D8DCD9;
+}
+
+.card-clinical-accent {
+  background-color: #E7F5F1;
+  border: 1px solid #99D5C8;
+}
+
+.card-featured {
+  background-color: #FFFFFF;
+  border: 2px solid #111111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card-noshow {
+  background-color: #FFF5EB;
+  border: 1px solid #D4A574;
+}
+
+.brutal-border {
+  border: 2px solid #111111;
+}
+
+.brutal-border-thin {
+  border: 1px solid #D8DCD9;
+}
+
+.brutal-divider {
+  border-bottom: 1px solid #E5E7E6;
+}
+
+/* ============================================================================
+   Locked type scale
+   Source: ui/wireframe/y_ncare_structured_wireframe/DESIGN.md (typography block)
+   ========================================================================= */
+
+/* Back-compat: existing markup across the app still uses className="display-font"
+   for headings. It used to select Space Grotesk. It is redefined rather than
+   deleted so unmigrated pages degrade to the correct heading treatment. */
+.display-font {
+  font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.font-reference {
+  font-family: "Hanken Grotesk", ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.font-queue-hero {
+  font-size: 64px;
+  line-height: 72px;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+/* queue-hero: 64px mobile, 72px/80px desktop, 700, -0.02em */
+.type-queue-hero {
+  font-size: 64px;
+  line-height: 72px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .type-queue-hero {
+    font-size: 72px;
+    line-height: 80px;
+  }
+}
+
+/* reference-code: 24px / 32px / 700 / 0.1em */
+.type-reference-code {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.type-headline-lg {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .type-headline-lg {
+    font-size: 32px;
+    line-height: 40px;
+  }
+}
+
+.type-headline-md {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.type-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.type-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.type-label-md {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.type-label-sm {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* Micro-caps label used above every field, card and section header */
+.type-label-micro {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Material symbols vertical alignment */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ============================================================================
+   Connectivity indicator styles
+   ========================================================================= */
+.connectivity-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.connectivity-online {
+  display: none;
+}
+
+.connectivity-poor {
+  background-color: #FEF7ED;
+  border-bottom: 1px solid #FCD34D;
+  color: #B7791F;
+}
+
+.connectivity-offline {
+  background-color: #FDF2F2;
+  border-bottom: 1px solid #F8B4B4;
+  color: #C53030;
+}
+
+.connectivity-restored {
+  background-color: #E7F5F1;
+  border-bottom: 1px solid #99D5C8;
+  color: #087F6C;
+  animation: fadeOut 3s ease 2s forwards;
+}
+
+/* ============================================================================
+   Status badges
+   ========================================================================= */
+.badge-walkin {
+  background-color: #F3EEFF;
+  color: #5B21B6;
+  border: 1px solid #C4B5FD;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+}
+
+.badge-booked {
+  background-color: #F0F2F1;
+  color: #3D4541;
+  border: 1px solid #D8DCD9;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+}
+
+/* ============================================================================
+   Motion
+   ========================================================================= */
+.pulse-gentle {
+  animation: pulseGentle 2s ease-in-out infinite;
+}
+
+.call-flash {
+  animation: callFlash 1.6s ease-out infinite;
+}
+
+@keyframes pulseGentle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes callFlash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(8, 127, 108, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 0 3px rgba(8, 127, 108, 0.85);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+/* Retained: several existing components animate entry with this keyframe. */
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -41,7 +369,18 @@ a {
   }
 }
 
-html {
-  scrollbar-color: #24514d;
-  scrollbar-width: thin;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .connectivity-restored {
+    animation: none;
+  }
 }

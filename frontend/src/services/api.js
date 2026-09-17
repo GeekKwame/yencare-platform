@@ -27,7 +27,7 @@ api.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
     const url = String(error?.config?.url || "");
-    const isLogin = url.includes("/auth/login");
+    const isLogin = url.includes("/auth/staff-login") || url.includes("/auth/staff-refresh");
     if (status === 401 && !isLogin && typeof window !== "undefined") {
       try {
         if (localStorage.getItem(TOKEN_KEY)) {

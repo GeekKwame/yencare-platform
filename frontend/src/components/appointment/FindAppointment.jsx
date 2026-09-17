@@ -166,6 +166,17 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
           onReschedule={() => setFlow("reschedule")}
           onCancelled={() => setFlow("cancelled")}
           onUpdated={(updated) => setFoundAppointment(updated)}
+          onOpenCurrent={async (next) => {
+            const ref = next?.referenceCode;
+            if (!ref) return;
+            try {
+              const fresh = await lookupAppointment({ reference: ref });
+              setFoundAppointment(fresh);
+              setFlow("detail");
+            } catch {
+              setFoundAppointment(next);
+            }
+          }}
         />
       </section>
     );

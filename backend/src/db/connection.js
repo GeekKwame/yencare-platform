@@ -1,6 +1,8 @@
 import dns from 'node:dns';
 import mongoose from 'mongoose';
 
+import { logger } from '../lib/logger.js';
+
 // Many local routers / ISPs on Windows refuse or fail SRV UDP lookups (_mongodb._tcp).
 // Setting public fallback DNS servers ensures mongodb+srv:// resolves smoothly.
 try {
@@ -19,19 +21,19 @@ function bindConnectionListeners() {
   listenersBound = true;
 
   mongoose.connection.on('connected', () => {
-    console.log('[db] connected');
+    logger.info('mongodb connected', { subsystem: 'db' });
   });
 
   mongoose.connection.on('error', (err) => {
-    console.error('[db] connection error', err.message);
+    logger.error('mongodb connection error', { subsystem: 'db', err });
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.warn('[db] disconnected');
+    logger.warn('mongodb disconnected', { subsystem: 'db' });
   });
 
   mongoose.connection.on('reconnected', () => {
-    console.log('[db] reconnected');
+    logger.info('mongodb reconnected', { subsystem: 'db' });
   });
 }
 
@@ -82,7 +84,7 @@ export function registerShutdownHooks() {
   shutdownBound = true;
 
   const shutdown = async (signal) => {
-    console.log(`[db] ${signal} received, closing MongoDB connection`);
+    logger.info('closing MongoDB connection', { subsystem: 'db', signal });
     try {
       await disconnectDb();
     } finally {

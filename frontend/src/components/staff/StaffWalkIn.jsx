@@ -5,6 +5,7 @@ import { bumpClock, mapClinician } from "../../lib/catalogView";
 import { createAppointment, updateAppointmentStatus } from "../../services/appointments";
 import { listClinicians } from "../../services/catalog";
 import { registerPatient } from "../../services/patients";
+import { GhanaPhoneInput, StatusBadge } from "../ui";
 
 const emptyForm = {
   fullName: "",
@@ -184,9 +185,7 @@ export default function StaffWalkIn({ clinicSite, onBack, onQueued }) {
         >
           ← Back to Live Queue
         </button>
-        <span className="rounded-md border border-[#BEE3F8] bg-[#EBF8FF] px-2 py-0.5 text-[11px] font-semibold text-[#2B6CB0]">
-          WALK-IN REGISTRATION
-        </span>
+        <StatusBadge status="WALK_IN" size="sm" />
       </div>
       <h1 className="text-2xl font-bold text-[#173b3a]">Register Walk-In Student</h1>
       <p className="mt-1 text-sm text-[#607672]">
@@ -218,16 +217,11 @@ export default function StaffWalkIn({ clinicSite, onBack, onQueued }) {
             placeholder="e.g. 20689412"
           />
         </label>
-        <label className="block text-sm font-semibold text-[#173b3a]">
-          Mobile phone
-          <input
-            value={form.phoneNumber}
-            onChange={(event) => setForm((prev) => ({ ...prev, phoneNumber: event.target.value }))}
-            className="mt-1.5 w-full rounded-xl border border-[#dce8df] px-3 py-2.5 text-sm outline-none focus:border-[#176b5f]"
-            placeholder="e.g. 024 123 4567"
-            required
-          />
-        </label>
+        <GhanaPhoneInput
+          value={form.phoneNumber}
+          helpText={null}
+          onChange={(nextValue) => setForm((prev) => ({ ...prev, phoneNumber: nextValue }))}
+        />
         <label className="block text-sm font-semibold text-[#173b3a]">
           Visit type
           <select

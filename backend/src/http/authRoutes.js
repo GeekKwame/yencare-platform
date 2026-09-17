@@ -21,6 +21,20 @@ export function createAuthRouter(staffAuth) {
     }),
   );
 
+  // Swaps a still-valid staff token for one with a fresh expiry so a
+  // receptionist is not signed out mid-shift. Expired tokens must sign in again.
+  router.post(
+    '/staff-refresh',
+    staffAuth.authenticate(),
+    asyncHandler(async (req, res) => {
+      const result = await staffAuth.refresh(
+        String(req.headers.authorization || '').replace(/^Bearer\s+/i, ''),
+      );
+
+      res.status(200).json(result);
+    }),
+  );
+
   router.get(
     '/staff-me',
     staffAuth.authenticate(),

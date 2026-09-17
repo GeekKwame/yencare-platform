@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger.js';
 import { normalizeGhanaPhone } from './normalizePhone.js';
 import { sendViaMock } from './providers/mock.js';
 import { sendViaMnotify } from './providers/mnotify.js';
@@ -27,12 +28,17 @@ export function resolveProvider() {
 
   if (requested === 'mnotify') {
     if (process.env.MNOTIFY_API_KEY?.trim()) return 'mnotify';
-    console.warn('[sms] SMS_PROVIDER=mnotify but MNOTIFY_API_KEY is missing; using mock fallback');
+    logger.warn('SMS_PROVIDER=mnotify but MNOTIFY_API_KEY is missing; using mock fallback', {
+      subsystem: 'sms',
+    });
     return 'mock';
   }
 
   if (requested && requested !== 'mock') {
-    console.warn(`[sms] ${requested} is not used; set SMS_PROVIDER=mnotify or mock`);
+    logger.warn('unsupported SMS provider requested; using mock', {
+      subsystem: 'sms',
+      requested,
+    });
   }
 
   return 'mock';
@@ -55,7 +61,7 @@ export async function sendSms(to, message) {
 
   if (String(to).includes(',') || String(to).includes(';')) {
     const error = 'SMS must be sent to a single Ghana phone number';
-    console.error('[sms]', error);
+    logger.error(error, { subsystem: 'sms' });
     return {
       ok: false,
       provider: resolveProvider(),
@@ -69,7 +75,7 @@ export async function sendSms(to, message) {
     phone = normalizeGhanaPhone(to);
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
-    console.error('[sms] invalid destination:', error);
+    logger.error('invalid SMS destination', { subsystem: 'sms', reason: error });
     return {
       ok: false,
       provider: resolveProvider(),
@@ -83,7 +89,7 @@ export async function sendSms(to, message) {
 
   if (isProduction() && !process.env.MNOTIFY_API_KEY?.trim()) {
     const error = 'MNOTIFY_API_KEY is not set';
-    console.error('[sms]', error);
+    logger.error(error, { subsystem: 'sms' });
     return { ok: false, provider: 'mnotify', to: phone, error };
   }
 
@@ -105,7 +111,7 @@ export async function sendSms(to, message) {
       return await attempt();
     } catch (retryErr) {
       const error = retryErr instanceof Error ? retryErr.message : String(retryErr);
-      console.error(`[sms] ${provider} send failed:`, error);
+      logger.error('SMS send failed', { subsystem: 'sms', provider, reason: error });
       return {
         ok: false,
         provider,

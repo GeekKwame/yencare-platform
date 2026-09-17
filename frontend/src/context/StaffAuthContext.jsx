@@ -7,6 +7,7 @@ import {
   loginStaff,
   persistStaffSession,
   readStoredStaffSession,
+  refreshStaffToken,
 } from "../services/staffAuth";
 
 const StaffAuthContext = createContext(null);
@@ -76,6 +77,21 @@ export function StaffAuthProvider({ children }) {
       cancelled = true;
     };
   }, [applySession, logout, token]);
+
+  useEffect(() => {
+    if (!token || String(token).startsWith("demo-local.")) return undefined;
+    const id = window.setInterval(async () => {
+      try {
+        const result = await refreshStaffToken();
+        if (result?.token) {
+          applySession(result.token, result.staff || staff);
+        }
+      } catch {
+        /* expiry is handled by the 401 interceptor */
+      }
+    }, 4 * 60 * 60 * 1000);
+    return () => window.clearInterval(id);
+  }, [applySession, staff, token]);
 
   const login = useCallback(
     async ({ identifier, password }) => {

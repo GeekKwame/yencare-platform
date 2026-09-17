@@ -1,20 +1,17 @@
-import Hero from '../components/Hero'
-import CareFeature from '../components/CareFeature'
-import CampusFacilities from '../components/CampusFacilities'
-import GetStarted from '../components/GetStarted'
-import CareTools from '../components/CareTools'
-
+import CampusFacilities from "../components/CampusFacilities";
+import BookingForm from "../components/booking/BookingForm";
 
 const Home = () => {
   return (
-    <main className='pt-22'>
-      <Hero />
-      <CampusFacilities />
-      <CareFeature />
-      <CareTools />
-      <GetStarted />
+    <main className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-7xl flex-col items-center px-5 pb-16 pt-28 sm:px-8 lg:px-10">
+      <div className="w-full max-w-3xl">
+        <BookingForm />
+      </div>
+      <div id="campus-facilities" className="mt-16 w-full">
+        <CampusFacilities />
+      </div>
     </main>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

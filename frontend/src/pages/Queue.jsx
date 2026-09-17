@@ -143,6 +143,23 @@ const Queue = () => {
   const waitMins = queue?.estimatedWaitMinutes ?? null;
   const position = queue?.position;
 
+  const liveSummary = appointment
+    ? [
+        status === "CALLED"
+          ? "It is your turn."
+          : status === "WAITING"
+            ? `You are ${patientsAhead == null ? "in the queue" : `${patientsAhead} ahead`}.`
+            : status === "COMPLETED"
+              ? "Your visit is finished."
+              : status === "CANCELLED"
+                ? "This appointment was cancelled."
+                : `Status: ${status || "unknown"}.`,
+        token ? `Token ${token}.` : "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+    : "";
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-3xl flex-col px-5 pb-16 pt-28 sm:px-8">
       {!appointment ? (
@@ -233,6 +250,10 @@ const Queue = () => {
             </span>
           </div>
 
+          <p className="sr-only" aria-live="polite" aria-atomic="true">
+            {liveSummary}
+          </p>
+
           <div className="mt-6 flex items-center justify-between">
             {QUEUE_STEPS.map((step, index) => {
               const isActive = index === statusIdx;
@@ -241,7 +262,7 @@ const Queue = () => {
                 <div key={step.key} className="flex flex-1 items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ${
+                      className={`flex h-11 w-11 items-center justify-center text-[10px] font-bold ${
                         isPast
                           ? "bg-[#176b5f] text-white"
                           : isActive

@@ -11,3 +11,18 @@ export function staffGuard(authenticate, roles = []) {
   }
   return authenticate(roles);
 }
+
+/**
+ * Guard for endpoints shared by staff and patients: attaches `req.staff` when a
+ * valid staff token is present and never rejects when it is absent. Callers
+ * branch on `req.staff` themselves.
+ *
+ * @param {((roles?: string[]) => import('express').RequestHandler) | undefined} authenticateOptional
+ * @param {string[]} [roles]
+ */
+export function optionalStaffGuard(authenticateOptional, roles = []) {
+  if (typeof authenticateOptional !== 'function') {
+    return (_req, _res, next) => next();
+  }
+  return authenticateOptional(roles);
+}

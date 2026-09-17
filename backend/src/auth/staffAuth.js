@@ -2,8 +2,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { STAFF_ROLES } from '../db/constants.js';
+import { logger } from '../lib/logger.js';
+import { isProduction } from '../lib/runtime.js';
 import { StaffUser } from '../models/StaffUser.js';
-import { NotFoundError, ValidationError } from '../patients/errors.js';
+import {
+  NotFoundError,
+  ServiceUnavailableError,
+  ValidationError,
+} from '../patients/errors.js';
 
 export const DEMO_STAFF_PASSWORD = process.env.STAFF_DEMO_PASSWORD || 'yencare';
 
@@ -63,6 +69,22 @@ function mongoReady() {
   return mongoose.connection?.readyState === 1;
 }
 
+export const STAFF_AUTH_UNAVAILABLE_MESSAGE =
+  'Staff sign-in is temporarily unavailable. Please try again in a moment.';
+
+/**
+ * In-memory demo accounts exist only for local development and evaluator demos.
+ * They are reachable when the process has no database at all AND demo seeding is
+ * enabled AND this is not production, so a transient Mongo failure in production
+ * can never turn into an authentication bypass.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+export function demoStaffAllowed(env = process.env) {
+  if (isProduction(env)) return false;
+  return env.STAFF_SEED_DEMO !== 'false';
+}
+
 /**
  * Staff authentication: JWT issuance, demo seeding, and role middleware.
  *
@@ -87,6 +109,14 @@ export function createStaffAuthService({
     active: true,
   }));
 
+  function findMemoryStaff(key) {
+    return (
+      memoryStaff.find(
+        (person) => person.email === key || person.staffId.toLowerCase() === key,
+      ) || null
+    );
+  }
+
   async function findStaff(identifier) {
     const key = normalizeIdentifier(identifier);
     if (!key) return null;
@@ -94,22 +124,32 @@ export function createStaffAuthService({
     if (mongoReady()) {
       try {
         const trimmed = String(identifier || '').trim();
-        const doc = await StaffUser.findOne({
+        return await StaffUser.findOne({
           $or: [{ email: key }, { staffId: trimmed }, { staffId: key }],
           active: true,
         });
-        if (doc) return doc;
       } catch (err) {
-        console.warn('[staff-auth] Mongo lookup failed, using demo accounts:', err.message);
+        // Fail closed. Falling back to demo accounts here would let a database
+        // blip hand out staff sessions with a well-known password.
+        logger.error('staff account lookup failed', {
+          subsystem: 'staff-auth',
+          err,
+        });
+        throw new ServiceUnavailableError(STAFF_AUTH_UNAVAILABLE_MESSAGE);
       }
     }
 
-    return (
-      memoryStaff.find(
-        (person) =>
-          person.email === key || person.staffId.toLowerCase() === key,
-      ) || null
-    );
+    // No database connection: only the deliberately seeded demo accounts of a
+    // local/dev environment can answer, and never in production.
+    if (demoStaffAllowed()) {
+      return findMemoryStaff(key);
+    }
+
+    logger.error('staff account lookup attempted without a database connection', {
+      subsystem: 'staff-auth',
+      readyState: mongoose.connection?.readyState ?? 0,
+    });
+    throw new ServiceUnavailableError(STAFF_AUTH_UNAVAILABLE_MESSAGE);
   }
 
   function signToken(staff) {
@@ -209,6 +249,49 @@ export function createStaffAuthService({
   }
 
   /**
+   * Issues a fresh token for a still-valid session so staff are not logged out
+   * mid-shift. An expired token cannot be refreshed — that is a new sign-in.
+   *
+   * @param {string} token
+   */
+  async function refresh(token) {
+    const payload = verifyToken(token);
+    const staff = await findStaff(payload.staffId || payload.email || payload.sub);
+
+    if (!staff) {
+      const err = new Error('Staff account is no longer active');
+      err.status = 401;
+      err.name = 'UnauthorizedError';
+      throw err;
+    }
+
+    return {
+      token: signToken(staff),
+      staff: serializeStaff(staff),
+    };
+  }
+
+  /** @param {import('express').Request} req */
+  function bearerToken(req) {
+    const header = req.headers.authorization || req.headers.Authorization || '';
+    const match = String(header).match(/^Bearer\s+(.+)$/i);
+    return match ? match[1].trim() : null;
+  }
+
+  /** @param {jwt.JwtPayload} payload */
+  function staffFromPayload(payload) {
+    return {
+      id: payload.sub,
+      _id: payload.sub,
+      staffId: payload.staffId,
+      name: payload.name,
+      role: String(payload.role || '').toUpperCase(),
+      assignedRoom: payload.assignedRoom || null,
+      clinicSite: payload.clinicSite,
+    };
+  }
+
+  /**
    * Express middleware factory. Empty `requiredRoles` means any authenticated staff.
    * @param {string[]} [requiredRoles]
    */
@@ -216,32 +299,22 @@ export function createStaffAuthService({
     const allowed = requiredRoles.map((role) => String(role).toUpperCase());
 
     return (req, res, next) => {
-      const header = req.headers.authorization || req.headers.Authorization || '';
-      const match = String(header).match(/^Bearer\s+(.+)$/i);
-      if (!match) {
+      const token = bearerToken(req);
+      if (!token) {
         return res.status(401).json({ error: 'Staff authentication required' });
       }
 
       try {
-        const payload = verifyToken(match[1]);
-        const role = String(payload.role || '').toUpperCase();
+        const staff = staffFromPayload(verifyToken(token));
 
-        if (allowed.length > 0 && !allowed.includes(role)) {
+        if (allowed.length > 0 && !allowed.includes(staff.role)) {
           return res.status(403).json({
             error: `This action requires one of: ${allowed.join(', ')}`,
           });
         }
 
-        req.user = {
-          id: payload.sub,
-          _id: payload.sub,
-          staffId: payload.staffId,
-          name: payload.name,
-          role,
-          assignedRoom: payload.assignedRoom || null,
-          clinicSite: payload.clinicSite,
-        };
-        req.staff = req.user;
+        req.user = staff;
+        req.staff = staff;
         return next();
       } catch (err) {
         return next(err);
@@ -249,11 +322,48 @@ export function createStaffAuthService({
     };
   }
 
+  /**
+   * Optional variant of `authenticate` for endpoints that serve both staff and
+   * patients: it attaches `req.staff` when a valid token is present and
+   * otherwise continues as an anonymous request.
+   *
+   * A malformed or expired token is treated as "no staff session" rather than a
+   * 401, so a patient whose browser still holds a stale staff token can still
+   * use the public (phone-verified) path.
+   *
+   * @param {string[]} [requiredRoles]
+   */
+  function authenticateOptional(requiredRoles = []) {
+    const allowed = requiredRoles.map((role) => String(role).toUpperCase());
+
+    return (req, _res, next) => {
+      const token = bearerToken(req);
+      if (!token) return next();
+
+      let staff;
+      try {
+        staff = staffFromPayload(verifyToken(token));
+      } catch {
+        return next();
+      }
+
+      if (allowed.length > 0 && !allowed.includes(staff.role)) {
+        return next();
+      }
+
+      req.user = staff;
+      req.staff = staff;
+      return next();
+    };
+  }
+
   return {
     login,
+    refresh,
     readStaffFromToken,
     seedDemoStaff,
     authenticate,
+    authenticateOptional,
     verifyToken,
     serializeStaff,
     usingDevSecret,

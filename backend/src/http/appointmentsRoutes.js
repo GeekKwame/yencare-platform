@@ -1,8 +1,16 @@
 import { Router } from 'express';
 
+import { logger } from '../lib/logger.js';
 import { asyncHandler } from './asyncHandler.js';
-import { appointmentEvents } from '../services/appointmentOps.js';
-import { staffGuard } from './staffGuard.js';
+import {
+  appointmentEvents,
+  isHistoricalAppointment,
+} from '../services/appointmentOps.js';
+import { optionalStaffGuard, staffGuard } from './staffGuard.js';
+
+const ALL_STAFF_ROLES = ['RECEPTIONIST', 'DOCTOR', 'ADMIN'];
+
+const passthrough = (_req, _res, next) => next();
 
 function toJson(doc) {
   if (!doc) return null;
@@ -11,10 +19,54 @@ function toJson(doc) {
 }
 
 /**
+ * Serialized appointment plus the two additive reference-lookup fields:
+ *
+ *   isHistorical  — true for CANCELLED / NO_SHOW / COMPLETED
+ *   supersededBy  — the patient's current active appointment in the same
+ *                   serialized shape, or null
+ *
+ * The appointment itself stays at the top level so existing consumers are
+ * unaffected. `supersededBy` is always shallow: its own `supersededBy` is null,
+ * which makes unbounded recursion structurally impossible.
+ *
+ * @param {object} appointmentService
+ * @param {object | null} doc
+ * @param {import('express').Request} [req]
+ */
+async function toLookupJson(appointmentService, doc, req) {
+  const json = toJson(doc);
+  if (!json) return null;
+
+  const isHistorical = isHistoricalAppointment(json);
+  let supersededBy = null;
+
+  if (isHistorical && typeof appointmentService.findActiveAppointmentForPatient === 'function') {
+    try {
+      const active = toJson(await appointmentService.findActiveAppointmentForPatient(doc));
+      if (active) {
+        supersededBy = { ...active, isHistorical: false, supersededBy: null };
+      }
+    } catch (err) {
+      // The historical flag is the load-bearing part of this response; do not
+      // fail the whole lookup because the follow-up query failed.
+      logger.error('could not resolve superseding appointment', {
+        subsystem: 'appointments',
+        requestId: req?.id,
+        referenceCode: json.referenceCode,
+        err,
+      });
+    }
+  }
+
+  return { ...json, isHistorical, supersededBy };
+}
+
+/**
  * @param {{
  *   createAppointment: (data: object) => Promise<{ appointment: object, sms: object }>,
  *   findByReference?: (referenceCode: string) => Promise<object | null>,
  *   lookupAppointment?: (query: object) => Promise<object>,
+ *   findActiveAppointmentForPatient?: (appointment: object) => Promise<object | null>,
  *   listAppointments?: (filters: object) => Promise<object[]>,
  *   updateStatus?: (idOrReference: string, status: string) => Promise<object>,
  *   markPatientArrived?: (reference: string, options: object) => Promise<object>,
@@ -24,12 +76,28 @@ function toJson(doc) {
  * }} appointmentService
  * @param {{
  *   authenticate?: (roles?: string[]) => import('express').RequestHandler,
+ *   authenticateOptional?: (roles?: string[]) => import('express').RequestHandler,
+ *   publicLookupLimiter?: import('express').RequestHandler | import('express').RequestHandler[],
+ *   queueStatusLimiter?: import('express').RequestHandler | import('express').RequestHandler[],
  * }} [options]
  */
-export function createAppointmentsRouter(appointmentService, { authenticate } = {}) {
+export function createAppointmentsRouter(
+  appointmentService,
+  {
+    authenticate,
+    authenticateOptional,
+    // Reference-code endpoints are enumerable, so the app wires strict per-IP
+    // limiters here. Unlimited by default to keep the router self-contained.
+    publicLookupLimiter = passthrough,
+    queueStatusLimiter = passthrough,
+  } = {},
+) {
   const router = Router();
   const anyStaff = staffGuard(authenticate);
   const deskStaff = staffGuard(authenticate, ['RECEPTIONIST', 'ADMIN']);
+  // Cancel/reschedule serve both reception and patients: staff are recognised
+  // here, everyone else has to prove ownership with their phone number.
+  const maybeStaff = optionalStaffGuard(authenticateOptional, ALL_STAFF_ROLES);
 
   // GET /api/appointments
   router.get(
@@ -144,6 +212,7 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
   // Public patient search by YC reference, student index, or Ghana phone.
   router.get(
     '/lookup',
+    publicLookupLimiter,
     asyncHandler(async (req, res) => {
       if (!appointmentService.lookupAppointment) {
         return res.status(501).json({
@@ -163,7 +232,9 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
         });
       }
 
-      res.status(200).json(toJson(appointment));
+      res.status(200).json(
+        await toLookupJson(appointmentService, appointment, req),
+      );
     }),
   );
 
@@ -212,8 +283,14 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
   );
 
   // PATCH /api/appointments/:id/cancel
+  //
+  // Staff (valid JWT) may cancel without a phone number. Patients must send the
+  // phone number the appointment was booked with; the service verifies it
+  // against the appointment's patient and answers 403 otherwise.
   router.patch(
     '/:id/cancel',
+    publicLookupLimiter,
+    maybeStaff,
     asyncHandler(async (req, res) => {
       if (!appointmentService.cancelAppointment) {
         return res.status(501).json({
@@ -227,6 +304,11 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
           req.params.id,
           {
             cancelReason: req.body?.cancelReason,
+            actorIsStaff: Boolean(req.staff),
+            phone:
+              req.body?.phone ||
+              req.body?.phoneNumber ||
+              null,
             performedBy:
               req.user?._id ||
               req.user?.id ||
@@ -245,8 +327,12 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
   );
 
   // PATCH /api/appointments/:id/reschedule
+  //
+  // Same ownership rule as cancel: staff token, or the booking phone number.
   router.patch(
     '/:id/reschedule',
+    publicLookupLimiter,
+    maybeStaff,
     asyncHandler(async (req, res) => {
       if (!appointmentService.rescheduleAppointment) {
         return res.status(501).json({
@@ -261,6 +347,11 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
           {
             newSlotId: req.body?.newSlotId,
             staffChangeReason: req.body?.staffChangeReason,
+            actorIsStaff: Boolean(req.staff),
+            phone:
+              req.body?.phone ||
+              req.body?.phoneNumber ||
+              null,
             performedBy:
               req.user?._id ||
               req.user?.id ||
@@ -281,6 +372,7 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
   // GET /api/appointments/:reference/queue-status
   router.get(
     '/:reference/queue-status',
+    queueStatusLimiter,
     asyncHandler(async (req, res) => {
       if (!appointmentService.getQueueStatus) {
         return res.status(501).json({
@@ -300,6 +392,7 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
   // GET /api/appointments/:reference
   router.get(
     '/:reference',
+    publicLookupLimiter,
     asyncHandler(async (req, res) => {
       const ref = req.params.reference;
 
@@ -315,7 +408,7 @@ export function createAppointmentsRouter(appointmentService, { authenticate } = 
       }
 
       res.status(200).json(
-        toJson(appointment),
+        await toLookupJson(appointmentService, appointment, req),
       );
     }),
   );

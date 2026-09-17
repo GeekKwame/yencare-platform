@@ -61,6 +61,15 @@ export function mapAppointment(appointment) {
     queueToken: appointment?.queueToken || null,
     staffChangedTime: appointment?.staffChangedTime || "",
     staffChangeReason: appointment?.staffChangeReason || "",
+    isHistorical: Boolean(appointment?.isHistorical),
+    supersededBy: appointment?.supersededBy
+      ? {
+          referenceCode: appointment.supersededBy.referenceCode,
+          status: appointment.supersededBy.status,
+          appointmentDate: appointment.supersededBy.appointmentDate,
+          appointmentTime: appointment.supersededBy.appointmentTime,
+        }
+      : null,
   };
 }
 

@@ -1,40 +1,114 @@
-const buckets = new Map();
+import helmet from 'helmet';
+
+import { logger } from '../lib/logger.js';
+import { isProduction, isTestRun } from '../lib/runtime.js';
+import { getRateLimitStore } from './rateLimitStore.js';
+
+const HSTS_MAX_AGE_SECONDS = 31_536_000; // 1 year
 
 /**
- * Minimal production headers without extra dependencies.
+ * Helmet is configured twice so the HSTS-in-production behaviour of the old
+ * hand-rolled headers is preserved even when NODE_ENV changes after import.
+ *
+ * @param {boolean} withHsts
  */
-export function securityHeaders(_req, res, next) {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('X-DNS-Prefetch-Control', 'off');
+function buildHelmet(withHsts) {
+  return helmet({
+    // JSON API: there is no HTML for a CSP or COEP to protect, and both break
+    // nothing here but add noise to every response.
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    // Browser clients live on other origins (Vercel) and read this API through
+    // CORS, so an opt-in resource policy would only be a footgun.
+    crossOriginResourcePolicy: false,
+    frameguard: { action: 'deny' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    dnsPrefetchControl: { allow: false },
+    hsts: withHsts ? { maxAge: HSTS_MAX_AGE_SECONDS, includeSubDomains: true } : false,
+  });
+}
+
+const helmetProduction = buildHelmet(true);
+const helmetDefault = buildHelmet(false);
+
+/**
+ * Baseline response headers: Helmet plus the Permissions-Policy Helmet does
+ * not manage. Keeps X-Content-Type-Options: nosniff, X-Frame-Options: DENY,
+ * and production-only HSTS exactly as before.
+ */
+export function securityHeaders(req, res, next) {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  if (process.env.NODE_ENV === 'production') {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  }
-  next();
+  const apply = isProduction() ? helmetProduction : helmetDefault;
+  return apply(req, res, next);
+}
+
+export const TOO_MANY_REQUESTS_MESSAGE =
+  'Too many requests. Please wait a moment and try again.';
+
+/**
+ * Rate limiting is on everywhere except test runs, where deterministic
+ * request counts matter more than throttling. `RATE_LIMIT_DISABLED=true`
+ * is an explicit escape hatch for load testing.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+export function rateLimitEnabled(env = process.env) {
+  if (String(env.RATE_LIMIT_DISABLED || '').toLowerCase() === 'true') return false;
+  return !isTestRun(env);
+}
+
+function clientKey(req) {
+  return String(req.ip || req.socket?.remoteAddress || 'unknown');
 }
 
 /**
- * In-memory IP rate limiter for public booking/lookup routes.
+ * Per-IP rate limiter backed by the swappable store in `rateLimitStore.js`.
  *
- * @param {{ windowMs?: number, max?: number }} [options]
+ * @param {{
+ *   windowMs?: number,
+ *   max?: number,
+ *   name?: string,
+ *   keyGenerator?: (req: import('express').Request) => string,
+ *   store?: import('./rateLimitStore.js').RateLimitStore,
+ * }} [options]
  */
-export function rateLimit({ windowMs = 60_000, max = 40 } = {}) {
-  return (req, res, next) => {
-    const key = String(req.ip || req.socket?.remoteAddress || 'unknown');
-    const now = Date.now();
-    const recent = (buckets.get(key) || []).filter((stamp) => now - stamp < windowMs);
+export function rateLimit({
+  windowMs = 60_000,
+  max = 40,
+  name = 'general',
+  keyGenerator = clientKey,
+  store = null,
+} = {}) {
+  return async (req, res, next) => {
+    const activeStore = store || getRateLimitStore();
+    const key = `${name}:${keyGenerator(req)}`;
 
-    if (recent.length >= max) {
-      res.setHeader('Retry-After', String(Math.ceil(windowMs / 1000)));
-      return res.status(429).json({
-        error: 'Too many requests. Please wait a moment and try again.',
+    let hit;
+    try {
+      hit = await activeStore.hit(key, { windowMs, max });
+    } catch (err) {
+      // A limiter outage must not become an API outage: fail open and shout.
+      logger.error('rate limit store unavailable; allowing request', {
+        subsystem: 'rate-limit',
+        limiter: name,
+        err,
       });
+      return next();
     }
 
-    recent.push(now);
-    buckets.set(key, recent);
-    next();
+    if (!hit.allowed) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((hit.retryAfterMs || windowMs) / 1000));
+      res.setHeader('Retry-After', String(retryAfterSeconds));
+      logger.warn('rate limit exceeded', {
+        subsystem: 'rate-limit',
+        limiter: name,
+        requestId: req.id,
+        method: req.method,
+        path: req.originalUrl || req.url,
+      });
+      return res.status(429).json({ error: TOO_MANY_REQUESTS_MESSAGE });
+    }
+
+    return next();
   };
 }

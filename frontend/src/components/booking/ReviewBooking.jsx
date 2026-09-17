@@ -19,6 +19,7 @@ import {
   visitTypeLabel,
 } from "../../data/bookingOptions";
 import { createAppointment } from "../../services/appointments";
+import { Button, ReferenceBlock } from "../ui";
 
 const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointment }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,17 +102,7 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointme
             You do not have a queue number yet — reception check-in assigns your live queue token.
           </p>
 
-          <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-[#176b5f]/40 bg-[#f5faf7] p-5 text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c37d32]">
-              Booking Reference
-            </p>
-            <p className="display-font mt-1 text-3xl font-extrabold tracking-wider text-[#176b5f]">
-              {bookingRef}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Show this code to the receptionist upon arrival
-            </p>
-          </div>
+          <ReferenceBlock code={bookingRef} />
 
           <div className="mx-auto mt-6 max-w-md divide-y divide-gray-100 rounded-2xl border border-[#dce8df] bg-white text-left text-sm">
             <div className="flex justify-between p-3.5">

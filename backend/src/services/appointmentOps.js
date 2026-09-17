@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { EventEmitter } from 'node:events';
 
 import {
   APPOINTMENT_STATUSES,
@@ -16,17 +15,21 @@ import { AuditLog } from '../models/AuditLog.js';
 import { normalizeGhanaPhone } from '../sms/normalizePhone.js';
 
 import {
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from '../patients/errors.js';
 
+import { createEventBusFacade } from '../lib/eventBus.js';
+import { logger } from '../lib/logger.js';
 import { resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
 
 // Used by the real-time layer to notify clients after a successful
-// cancellation/reschedule transaction.
-export const appointmentEvents = new EventEmitter();
+// cancellation/reschedule transaction. Backed by the pluggable event bus so a
+// shared (cross-replica) implementation can be installed at boot.
+export const appointmentEvents = createEventBusFacade();
 
 function clinicSiteLabel(clinicSite) {
   return clinicSite === 'knust-hospital'
@@ -54,7 +57,10 @@ function notifyQuiet(phone, message) {
   if (!phone || !message) return;
   void sendSms(phone, message).then((result) => {
     if (!result?.ok) {
-      console.error('[sms] notification failed:', result?.error || 'unknown error');
+      logger.error('appointment notification SMS failed', {
+        subsystem: 'sms',
+        reason: result?.error || 'unknown error',
+      });
     }
   });
 }
@@ -67,6 +73,68 @@ function phonesMatch(left, right) {
     const a = digits(left);
     const b = digits(right);
     return a.length === 9 && a === b;
+  }
+}
+
+/**
+ * Deliberately identical for "no such reference" and "wrong phone" so the
+ * 4-digit YC-XXXX space cannot be probed for real appointments.
+ */
+export const OWNERSHIP_CHECK_FAILED_MESSAGE =
+  'We could not verify this appointment with that phone number. Check the reference code and the phone number used to book, or speak to reception.';
+
+export const PHONE_REQUIRED_MESSAGE =
+  'Enter the phone number used to book this appointment to change it.';
+
+export const LIVE_QUEUE_LOCKED_MESSAGE =
+  'You are already in the live queue for today. Please speak to reception to cancel or change this appointment.';
+
+/**
+ * Proof of ownership for patient-initiated changes.
+ *
+ * Authenticated staff skip the check: reception is physically present and
+ * authoritative. Everyone else must supply the phone number the appointment was
+ * booked with.
+ *
+ * @param {object | null} appointment Appointment with a populated `patientId`.
+ * @param {{ actorIsStaff?: boolean, phone?: unknown }} [context]
+ * @throws {ForbiddenError}
+ */
+export function assertAppointmentOwnership(appointment, { actorIsStaff = false, phone = null } = {}) {
+  if (actorIsStaff) return;
+
+  const supplied = String(phone ?? '').trim();
+  if (!supplied) {
+    throw new ForbiddenError(PHONE_REQUIRED_MESSAGE);
+  }
+
+  let normalized;
+  try {
+    normalized = normalizeGhanaPhone(supplied);
+  } catch {
+    throw new ForbiddenError(OWNERSHIP_CHECK_FAILED_MESSAGE);
+  }
+
+  // A missing appointment is reported exactly like a wrong phone number.
+  const stored = appointment ? patientPhone(appointment) : null;
+  if (!stored || !phonesMatch(stored, normalized)) {
+    throw new ForbiddenError(OWNERSHIP_CHECK_FAILED_MESSAGE);
+  }
+}
+
+/**
+ * Once a queue token has been handed out the patient is standing in the live
+ * queue, so self-service cancel/reschedule would strand that token. Reception
+ * can still fix mistakes.
+ *
+ * @param {{ status?: string }} appointment
+ * @param {{ actorIsStaff?: boolean }} [context]
+ * @throws {ValidationError}
+ */
+export function assertNotInLiveQueue(appointment, { actorIsStaff = false } = {}) {
+  if (actorIsStaff) return;
+  if (appointment?.status === 'WAITING') {
+    throw new ValidationError(LIVE_QUEUE_LOCKED_MESSAGE);
   }
 }
 
@@ -99,12 +167,29 @@ export async function listAppointments(filters = {}) {
   return Appointment.populateQueue(query);
 }
 
-const ACTIVE_PATIENT_LOOKUP_STATUSES = [
+/** Statuses a patient can still turn up for. */
+export const ACTIVE_PATIENT_LOOKUP_STATUSES = Object.freeze([
   'BOOKED',
   'CHECKED_IN',
   'WAITING',
   'CALLED',
-];
+]);
+
+/**
+ * Statuses that make a reference a historical record rather than a live
+ * appointment. Kept retrievable (cancellation history is legitimate) but
+ * flagged so no client can present a dead reference as if it were live.
+ */
+export const HISTORICAL_APPOINTMENT_STATUSES = Object.freeze([
+  'CANCELLED',
+  'NO_SHOW',
+  'COMPLETED',
+]);
+
+/** @param {{ status?: string } | null | undefined} appointment */
+export function isHistoricalAppointment(appointment) {
+  return HISTORICAL_APPOINTMENT_STATUSES.includes(String(appointment?.status || ''));
+}
 
 function normalizeReferenceCode(raw) {
   const compact = String(raw || '').replace(/\s+/g, '').toUpperCase();
@@ -191,18 +276,67 @@ export async function lookupAppointment({
     throw new NotFoundError('Appointment not found');
   }
 
-  const appointment = await populatedAppointment(
-    Appointment.findOne({
-      patientId: patient._id,
-      status: { $in: ACTIVE_PATIENT_LOOKUP_STATUSES },
-    }).sort({ appointmentDate: 1, appointmentTime: 1 }),
-  );
+  const appointment = await findActiveAppointmentForPatient(patient);
 
   if (!appointment) {
     throw new NotFoundError('Appointment not found');
   }
 
   return appointment;
+}
+
+/**
+ * @param {unknown} value Patient id, patient document, or appointment document.
+ * @returns {{ patientId: unknown, excludeAppointmentId: unknown }}
+ */
+function resolvePatientRef(value) {
+  if (!value) return { patientId: null, excludeAppointmentId: null };
+
+  if (typeof value === 'string' || value instanceof mongoose.Types.ObjectId) {
+    return { patientId: value, excludeAppointmentId: null };
+  }
+
+  if (typeof value !== 'object') {
+    return { patientId: null, excludeAppointmentId: null };
+  }
+
+  // Appointment document (patientId may be populated or a raw id).
+  if (value.patientId) {
+    const raw = value.patientId;
+    return {
+      patientId: typeof raw === 'object' ? raw._id ?? null : raw,
+      excludeAppointmentId: value._id ?? null,
+    };
+  }
+
+  // Patient document.
+  return { patientId: value._id ?? null, excludeAppointmentId: null };
+}
+
+/**
+ * The patient's current live appointment: the earliest active one by date then
+ * time. Used both by the phone/student-index lookup and by the `supersededBy`
+ * field on historical references.
+ *
+ * @param {unknown} patientOrAppointment Patient id, patient doc, or appointment doc.
+ * @returns {Promise<object | null>}
+ */
+export async function findActiveAppointmentForPatient(patientOrAppointment) {
+  const { patientId, excludeAppointmentId } = resolvePatientRef(patientOrAppointment);
+  if (!patientId) return null;
+
+  const filter = {
+    patientId,
+    status: { $in: [...ACTIVE_PATIENT_LOOKUP_STATUSES] },
+  };
+
+  if (excludeAppointmentId) {
+    filter._id = { $ne: excludeAppointmentId };
+  }
+
+  return populatedAppointment(
+    Appointment.findOne(filter).sort({ appointmentDate: 1, appointmentTime: 1 }),
+  );
 }
 
 /**
@@ -366,11 +500,21 @@ export async function markPatientArrived(referenceCode, { phone } = {}) {
  * Cancel an appointment and release its slot atomically.
  *
  * @param {string} idOrReference
- * @param {{ cancelReason?: string, performedBy?: string|null }} options
+ * @param {{
+ *   cancelReason?: string,
+ *   performedBy?: string|null,
+ *   actorIsStaff?: boolean,
+ *   phone?: string|null,
+ * }} options
  */
 export async function cancelAppointment(
   idOrReference,
-  { cancelReason = '', performedBy = null } = {},
+  {
+    cancelReason = '',
+    performedBy = null,
+    actorIsStaff = false,
+    phone = null,
+  } = {},
 ) {
   const key = String(idOrReference || '').trim();
 
@@ -390,13 +534,21 @@ export async function cancelAppointment(
         ? { _id: key }
         : { referenceCode: key.toUpperCase() };
 
-      // Lock the appointment for this transaction.
+      // Lock the appointment for this transaction. The patient is populated so
+      // ownership can be proven against the phone on record.
       const appointment = await Appointment.findOne(query)
+        .populate('patientId', 'fullName phone studentIndex')
         .session(session);
+
+      // Runs before the 404 so an unauthenticated caller cannot tell a wrong
+      // phone number apart from a reference that does not exist.
+      assertAppointmentOwnership(appointment, { actorIsStaff, phone });
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');
       }
+
+      assertNotInLiveQueue(appointment, { actorIsStaff });
 
       if (
         appointment.status === 'CHECKED_IN' ||
@@ -464,6 +616,14 @@ export async function cancelAppointment(
               cancelReason: cancelReason
                 ? String(cancelReason).trim()
                 : null,
+              estimatedWaitMinutes: 0,
+            },
+            // Releasing the slot must also drop any queue token, otherwise the
+            // live queue keeps a phantom entry for a cancelled patient.
+            $unset: {
+              queueToken: '',
+              queueDate: '',
+              queueSequence: '',
             },
           },
           {
@@ -562,11 +722,23 @@ export async function cancelAppointment(
  * with a new available slot.
  *
  * @param {string} idOrReference
- * @param {{ newSlotId: string, performedBy?: string|null, staffChangeReason?: string }} options
+ * @param {{
+ *   newSlotId: string,
+ *   performedBy?: string|null,
+ *   staffChangeReason?: string,
+ *   actorIsStaff?: boolean,
+ *   phone?: string|null,
+ * }} options
  */
 export async function rescheduleAppointment(
   idOrReference,
-  { newSlotId, performedBy = null, staffChangeReason = '' } = {},
+  {
+    newSlotId,
+    performedBy = null,
+    staffChangeReason = '',
+    actorIsStaff = false,
+    phone = null,
+  } = {},
 ) {
   const key = String(idOrReference || '').trim();
 
@@ -592,13 +764,19 @@ export async function rescheduleAppointment(
         ? { _id: key }
         : { referenceCode: key.toUpperCase() };
 
-      // Lock appointment.
+      // Lock appointment. Patient is populated for the ownership check.
       const appointment = await Appointment.findOne(query)
+        .populate('patientId', 'fullName phone studentIndex')
         .session(session);
+
+      // Before the 404, so a wrong phone and an unknown reference look identical.
+      assertAppointmentOwnership(appointment, { actorIsStaff, phone });
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');
       }
+
+      assertNotInLiveQueue(appointment, { actorIsStaff });
 
       if (
         appointment.status === 'CHECKED_IN' ||
@@ -717,6 +895,10 @@ export async function rescheduleAppointment(
         );
       }
 
+      // A queued patient who is moved to another slot is no longer standing in
+      // today's queue, so reception's override also takes them out of it.
+      const wasQueued = appointment.status === 'WAITING';
+
       // Move the appointment to the new slot.
       const updatedAppointment =
         await Appointment.findOneAndUpdate(
@@ -739,12 +921,24 @@ export async function rescheduleAppointment(
               appointmentTime: newSlot.startTime,
               roomId: newSlot.roomId,
               clinicSite: newSlot.clinicSite,
+              estimatedWaitMinutes: 0,
+              // Deliberate staff override of the WAITING → * state machine:
+              // the patient is expected on the new date, not in today's queue.
+              ...(wasQueued ? { status: 'BOOKED', checkInTime: null } : {}),
               ...(staffChangeReason
                 ? {
                     staffChangeReason: String(staffChangeReason).trim(),
                     staffChangedTime: appointment.appointmentTime,
                   }
                 : {}),
+            },
+            // A moved appointment must not keep today's queue token: the old
+            // token would otherwise sit in the live queue for a patient who is
+            // no longer expected today.
+            $unset: {
+              queueToken: '',
+              queueDate: '',
+              queueSequence: '',
             },
           },
           {

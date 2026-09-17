@@ -39,18 +39,116 @@ export function accraParts(date = new Date()) {
 }
 
 /**
+ * Single source of truth for clinic opening hours, in Accra time.
+ * `openDays` uses JS day numbers (0 = Sunday).
+ */
+export const CLINIC_OPENING_HOURS = Object.freeze({
+  'students-clinic': Object.freeze({
+    allDay: false,
+    openDays: Object.freeze([1, 2, 3, 4, 5]),
+    openHour: 8,
+    closeHour: 16,
+    label: 'Monday to Friday, 08:00–16:00',
+  }),
+  'knust-hospital': Object.freeze({
+    allDay: true,
+    openDays: Object.freeze([0, 1, 2, 3, 4, 5, 6]),
+    openHour: 0,
+    closeHour: 24,
+    label: '24 hours, every day',
+  }),
+});
+
+const DEFAULT_CLINIC_SITE = 'students-clinic';
+
+const WEEKDAY_NUMBERS = Object.freeze({
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+});
+
+function withinHours(hours, minutesOfDay) {
+  return minutesOfDay >= hours.openHour * 60 && minutesOfDay < hours.closeHour * 60;
+}
+
+/**
+ * @param {string} [clinicSite]
+ * @returns {typeof CLINIC_OPENING_HOURS['students-clinic']}
+ */
+export function clinicOpeningHours(clinicSite = DEFAULT_CLINIC_SITE) {
+  return CLINIC_OPENING_HOURS[clinicSite] || CLINIC_OPENING_HOURS[DEFAULT_CLINIC_SITE];
+}
+
+/**
+ * Human-readable hours for error messages and UI copy.
+ *
+ * @param {string} [clinicSite]
+ */
+export function clinicHoursLabel(clinicSite = DEFAULT_CLINIC_SITE) {
+  return clinicOpeningHours(clinicSite).label;
+}
+
+/**
  * Students' Clinic: Monday–Friday, 08:00–16:00 Accra.
  * KNUST Hospital OPD bookings remain available 24 hours.
  *
  * @param {string} [clinicSite]
  * @param {Date} [date]
  */
-export function isClinicOpen(clinicSite = 'students-clinic', date = new Date()) {
-  if (clinicSite === 'knust-hospital') return true;
+export function isClinicOpen(clinicSite = DEFAULT_CLINIC_SITE, date = new Date()) {
+  const hours = clinicOpeningHours(clinicSite);
+  if (hours.allDay) return true;
 
-  const { weekday, hour } = accraParts(date);
-  const weekdayOpen = !['Sat', 'Sun'].includes(weekday);
-  return weekdayOpen && hour >= 8 && hour < 16;
+  const { weekday, hour, minute } = accraParts(date);
+  const weekdayNumber = WEEKDAY_NUMBERS[weekday];
+  if (weekdayNumber === undefined || !hours.openDays.includes(weekdayNumber)) {
+    return false;
+  }
+
+  return withinHours(hours, hour * 60 + minute);
+}
+
+/**
+ * Day of week for a calendar date. Ghana has no DST and sits on UTC+0 all year,
+ * so a plain YYYY-MM-DD maps straight onto a UTC day.
+ *
+ * @param {string} dateIso YYYY-MM-DD
+ * @returns {number | null} 0 = Sunday, or null when the date is unparseable.
+ */
+export function accraWeekday(dateIso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateIso || ''));
+  if (!match) return null;
+
+  const [, year, month, day] = match.map(Number);
+  const stamp = Date.UTC(year, month - 1, day);
+  if (Number.isNaN(stamp)) return null;
+
+  return new Date(stamp).getUTCDay();
+}
+
+/**
+ * Whether a *scheduled* appointment date/time falls inside opening hours.
+ * Unlike `isClinicOpen`, this asks about a calendar slot rather than "now".
+ *
+ * @param {string} clinicSite
+ * @param {string} dateIso YYYY-MM-DD
+ * @param {string} timeHm HH:mm
+ */
+export function isClinicOpenAt(clinicSite, dateIso, timeHm) {
+  const hours = clinicOpeningHours(clinicSite);
+  if (hours.allDay) return true;
+
+  const weekday = accraWeekday(dateIso);
+  if (weekday === null || !hours.openDays.includes(weekday)) return false;
+
+  const time = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(timeHm || ''));
+  if (!time) return false;
+
+  return withinHours(hours, Number(time[1]) * 60 + Number(time[2]));
 }
 
 /**

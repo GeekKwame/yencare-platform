@@ -7,6 +7,7 @@ import {
   isValidGhanaPhone,
   isValidStudentIndex,
 } from "../../data/bookingOptions";
+import { Button, GhanaPhoneInput } from "../ui";
 
 const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
   const [errors, setErrors] = useState({});
@@ -104,16 +105,11 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
 
   return (
     <main>
-      <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
+      <section className="card-clinical w-full p-6 sm:p-8">
         <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-between">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[#dce8df] px-5 py-3 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
-          >
-            <FaArrowLeft size={12} />
-            <span>Back</span>
-          </button>
+          <Button variant="secondary" onClick={onBack} icon={<FaArrowLeft size={12} />}>
+            Back
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center text-center">
@@ -192,30 +188,17 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
           </div>
 
           <div>
-            <label
-              htmlFor="phoneNumber"
-              className="mb-1.5 block text-sm font-semibold text-[#173b3a]"
-            >
-              Phone Number <span className="text-red-500">*</span>
-            </label>
-
-            <input
-              id="phoneNumber"
-              name="phoneNumber"
-              type="tel"
+            <GhanaPhoneInput
               value={formData.phoneNumber}
-              onChange={handleChange}
-              placeholder="e.g. 024 123 4567"
-              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#176b5f]/20 ${
-                errors.phoneNumber
-                  ? "border-red-400"
-                  : "border-gray-200 focus:border-[#176b5f]"
-              }`}
+              error={errors.phoneNumber}
+              onChange={(nextValue) => {
+                updateFormData({ phoneNumber: nextValue });
+                if (apiError) setApiError("");
+                if (errors.phoneNumber) {
+                  setErrors((prev) => ({ ...prev, phoneNumber: "" }));
+                }
+              }}
             />
-
-            {errors.phoneNumber && (
-              <p className="mt-1 text-xs text-red-500">{errors.phoneNumber}</p>
-            )}
           </div>
 
           <div>
@@ -242,14 +225,17 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
             <p className="text-sm text-red-500 text-center">{apiError}</p>
           )}
 
-          <button
+          <Button
             type="submit"
-            disabled={status === "loading"}
-            className="relative flex w-full items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#14594f] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            variant="accent"
+            fullWidth
+            loading={status === "loading"}
+            loadingText="Saving..."
+            icon={<FaArrowRight size={12} />}
+            iconPosition="right"
           >
-            <span>{status === "loading" ? "Saving..." : "Continue"}</span>
-            <FaArrowRight size={12} className="absolute right-6" />
-          </button>
+            Continue
+          </Button>
         </form>
       </section>
     </main>

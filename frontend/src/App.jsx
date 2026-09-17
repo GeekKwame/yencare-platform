@@ -31,7 +31,7 @@ const App = () => {
         <Route
           path="/staff/display"
           element={
-            <RequireStaffAuth roles={['ADMIN']}>
+            <RequireStaffAuth>
               <CorridorDisplay />
             </RequireStaffAuth>
           }

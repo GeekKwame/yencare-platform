@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import { Button } from "./ui";
 
 export default function ConnectivityBanner() {
   const [state, setState] = useState(navigator.onLine ? "online" : "offline");
 
   useEffect(() => {
+    let restoredTimer;
     function goOnline() {
       setState("restored");
-      const timer = window.setTimeout(() => setState("online"), 2500);
-      return () => window.clearTimeout(timer);
+      restoredTimer = window.setTimeout(() => setState("online"), 2500);
     }
     function goOffline() {
       setState("offline");
@@ -16,6 +17,7 @@ export default function ConnectivityBanner() {
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
     return () => {
+      window.clearTimeout(restoredTimer);
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
     };
@@ -30,16 +32,15 @@ export default function ConnectivityBanner() {
 
   return (
     <div
-      className={`fixed top-0 z-[60] w-full px-4 py-2 text-center text-xs font-medium ${
-        state === "offline"
-          ? "bg-[#173b3a] text-white"
-          : "bg-[#E7F5F1] text-[#176b5f]"
-      }`}
+      role="status"
+      aria-live="assertive"
+      className={`connectivity-bar connectivity-${state} fixed top-0 z-[60] w-full justify-center`}
     >
       <span>{copy}</span>
       {state === "offline" ? (
-        <button
-          type="button"
+        <Button
+          variant="tertiary"
+          className="ml-3 text-inherit"
           onClick={() => {
             if (navigator.onLine) {
               setState("restored");
@@ -48,10 +49,9 @@ export default function ConnectivityBanner() {
               window.location.reload();
             }
           }}
-          className="ml-3 underline underline-offset-2"
         >
           Try again
-        </button>
+        </Button>
       ) : null}
     </div>
   );

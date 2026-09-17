@@ -283,6 +283,7 @@ const RescheduleFlow = ({ appointment, onBack, onSuccess }) => {
                   const result = await rescheduleAppointment(
                     view.referenceCode || view.id,
                     slotId(selectedSlot),
+                    { phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined },
                   );
                   setConfirmed(result);
                 } catch (err) {

@@ -1,9 +1,17 @@
+import { logger } from '../../lib/logger.js';
+
 /**
  * Offline / local fallback. Logs the message; never calls a paid API.
  */
 export async function sendViaMock(to, message) {
   const messageId = `mock-${Date.now()}`;
-  console.log(`[SMS mock] id=${messageId} to=${to}\n${message}\n`);
+  logger.info('mock SMS dispatched', {
+    subsystem: 'sms',
+    provider: 'mock',
+    messageId,
+    to,
+    body: message,
+  });
   return {
     ok: true,
     provider: 'mock',

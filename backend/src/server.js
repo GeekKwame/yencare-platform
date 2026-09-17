@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { connectDb, disconnectDb } from "./db/connection.js";
 import { createApp } from "./http/app.js";
 import { createMongoCatalog } from "./http/mongoCatalog.js";
+import { assertEventBusFitsDeployment } from "./lib/eventBus.js";
+import { logger } from "./lib/logger.js";
 import { Appointment } from "./models/Appointment.js";
 import { createMongoPatientStore } from "./patients/mongoStore.js";
 import { createPatientService } from "./patients/service.js";
@@ -12,6 +14,7 @@ import { createPatientService } from "./patients/service.js";
 import {
   listAppointments,
   lookupAppointment,
+  findActiveAppointmentForPatient,
   updateAppointmentStatus,
   markPatientArrived,
   cancelAppointment,
@@ -43,11 +46,31 @@ dotenv.config({
 
 const port = Number(process.env.PORT || 4000);
 
+// Last-resort handlers: a rejected promise or a thrown error that reaches the
+// top of the stack must be logged with context instead of vanishing.
+process.on("unhandledRejection", (reason) => {
+  logger.error("unhandled promise rejection", {
+    subsystem: "process",
+    err: reason instanceof Error ? reason : new Error(String(reason)),
+  });
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error("uncaught exception; exiting", { subsystem: "process", err });
+  // The process state is undefined after an uncaught exception; let the
+  // supervisor restart us rather than serve requests from a broken process.
+  process.exit(1);
+});
+
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET must be set in production");
 }
 
 assertProductionSmsConfig();
+
+// Refuses to boot in production when this deployment runs several instances on
+// the process-local real-time bus; warns loudly everywhere else.
+assertEventBusFitsDeployment();
 
 await connectDb();
 
@@ -59,9 +82,9 @@ if (staffAuth.usingDevSecret) {
   if (process.env.NODE_ENV === "production") {
     throw new Error("JWT_SECRET must be set in production");
   }
-  console.warn(
-    "[staff-auth] JWT_SECRET is unset; using the local development secret",
-  );
+  logger.warn("JWT_SECRET is unset; using the local development secret", {
+    subsystem: "staff-auth",
+  });
 }
 
 const shouldSeedDemo =
@@ -72,10 +95,13 @@ if (shouldSeedDemo) {
   try {
     const seeded = await staffAuth.seedDemoStaff();
     if (!seeded.skipped) {
-      console.log(`[staff-auth] demo staff ready (${seeded.seeded} accounts)`);
+      logger.info("demo staff ready", {
+        subsystem: "staff-auth",
+        accounts: seeded.seeded,
+      });
     }
   } catch (err) {
-    console.warn("[staff-auth] demo seed skipped:", err.message);
+    logger.warn("demo staff seed skipped", { subsystem: "staff-auth", err });
   }
 }
 
@@ -91,6 +117,8 @@ const app = createApp({
     findByReference: (ref) => Appointment.findByReference(ref),
 
     lookupAppointment,
+
+    findActiveAppointmentForPatient,
 
     listAppointments,
 
@@ -120,23 +148,26 @@ const app = createApp({
 });
 
 const server = app.listen(port, () => {
-  console.log(`[yencare] API listening on http://localhost:${port}`);
+  logger.info("API listening", { subsystem: "yencare", port });
 });
 
 void ensureOpenSlots({ days: 14 })
   .then((result) => {
     if (result.created > 0) {
-      console.log(`[yencare] open slots ready (${result.created} created)`);
+      logger.info("open slots ready", {
+        subsystem: "yencare",
+        created: result.created,
+      });
     }
   })
   .catch((err) => {
-    console.warn("[yencare] slot generation skipped:", err.message);
+    logger.warn("slot generation skipped", { subsystem: "yencare", err });
   });
 
 const SLOT_GEN_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const slotTimer = setInterval(() => {
   ensureOpenSlots({ days: 14 }).catch((err) => {
-    console.warn("[yencare] rolling slot generation error:", err.message);
+    logger.warn("rolling slot generation error", { subsystem: "yencare", err });
   });
 }, SLOT_GEN_INTERVAL_MS);
 
@@ -144,13 +175,16 @@ function runReminders() {
   sendAppointmentReminders()
     .then((result) => {
       if (result.sent > 0 || result.failed > 0) {
-        console.log(
-          `[yencare] reminders ${result.appointmentDate}: sent ${result.sent}, failed ${result.failed}`,
-        );
+        logger.info("appointment reminders processed", {
+          subsystem: "yencare",
+          appointmentDate: result.appointmentDate,
+          sent: result.sent,
+          failed: result.failed,
+        });
       }
     })
     .catch((err) => {
-      console.warn("[yencare] reminder send skipped:", err.message);
+      logger.warn("reminder send skipped", { subsystem: "yencare", err });
     });
 }
 
@@ -159,7 +193,7 @@ const REMINDER_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const reminderTimer = setInterval(runReminders, REMINDER_INTERVAL_MS);
 
 async function shutdown(signal) {
-  console.log(`[yencare] ${signal} received, shutting down`);
+  logger.info("shutting down", { subsystem: "yencare", signal });
 
   clearInterval(slotTimer);
   clearInterval(reminderTimer);

@@ -15,7 +15,7 @@ const Hero = () => {
             Your Health, <span className="text-[#176b5f]">scheduled</span> with care
           </h1>
           <p className="mt-7 max-w-lg text-base leading-7 text-[#607672] sm:text-lg">
-            Book appointments, track your queue position in real time and manage your health records, all from your browser or phone. Works on USSD.
+            Book appointments, track your queue position in real time and manage your health records, all from your browser or phone.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link

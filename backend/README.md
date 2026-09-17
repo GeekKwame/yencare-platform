@@ -12,14 +12,18 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 |---|---|---|
 | `GET` | `/health` | Readiness. **200** when Mongo pings; **503** if the database is down. Body includes `db` and `latencyMs`. |
 | `POST` | `/api/auth/staff-login` | Staff JWT login (email or Staff ID + password) |
+| `POST` | `/api/auth/staff-refresh` | Exchange a still-valid staff token for a fresh 12h one (**Bearer token**) |
 | `GET` | `/api/auth/staff-me` | Current staff profile (**Bearer token**) |
 | `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
 | `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
 | `GET` | `/api/appointments` | List appointments — **staff JWT** (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
 | `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
 | `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
+| `GET` | `/api/appointments/lookup` | Patient search by `reference`, `studentIndex`, or `phone` (exactly one) |
 | `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, and room token |
 | `PATCH` | `/api/appointments/:id/status` | Desk status change — **receptionist/admin JWT** |
+| `PATCH` | `/api/appointments/:id/cancel` | Cancel — **staff JWT, or the booking `phone` in the body** |
+| `PATCH` | `/api/appointments/:id/reschedule` | Move to `newSlotId` — **staff JWT, or the booking `phone` in the body** |
 | `POST` | `/api/queue/call-next` | Call next patient — **doctor/admin JWT** |
 | `POST` | `/api/queue/advance` | Complete consultation — **doctor JWT** |
 | `POST` | `/api/queue/no-show` | Mark no-show — **staff JWT** |
@@ -27,7 +31,20 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
 
-No auth on **patient** booking, lookup, cancel/reschedule, or catalog routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+No auth on **patient** booking, lookup, or catalog routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+
+**Cancel and reschedule need proof of ownership.** A valid staff token (receptionist / doctor / admin) is enough on its own. Without one, the request body must carry `phone` (any Ghana format) matching the phone the appointment was booked with, otherwise the API answers **403**:
+
+- no phone supplied → `Enter the phone number used to book this appointment to change it.`
+- wrong phone, unusable phone, **or an unknown reference** → `We could not verify this appointment with that phone number. Check the reference code and the phone number used to book, or speak to reception.` (deliberately identical so the 4-digit reference space cannot be probed)
+
+Patients also cannot cancel or reschedule once they are `WAITING` in the live queue (**400**, `You are already in the live queue for today. Please speak to reception to cancel or change this appointment.`); reception still can, and doing so clears the queue token.
+
+**Rate limits.** The reference-code endpoints (`GET /api/appointments/:reference`, `GET /api/appointments/lookup`, both mutations) allow 30 requests/minute/IP; `queue-status` allows 120/minute/IP plus 30/minute per IP+reference. Over the limit is **429** with `Retry-After`. Limits are active in every environment except test runs (`PUBLIC_LOOKUP_RATE_MAX`, `QUEUE_STATUS_RATE_MAX`, `QUEUE_STATUS_REFERENCE_RATE_MAX`, `RATE_LIMIT_DISABLED`).
+
+**Opening hours are enforced server-side.** Scheduled bookings outside the target clinic's hours are **400**: Students' Clinic is Monday–Friday 08:00–16:00 Accra, KNUST Hospital is 24h. Staff walk-ins (`bookingType: "WALK_IN"`) are exempt.
+
+Every response carries an `X-Request-Id` header, and error bodies repeat it as `requestId` for end-to-end tracing.
 
 Staff workstation routes require `Authorization: Bearer <token>` from `POST /api/auth/staff-login`. Demo accounts (password `yencare`): `abena.osei@yencare.gh` (receptionist), `kwame.boateng@yencare.gh` (doctor), `kojo.mensah@yencare.gh` (admin).
 
@@ -284,6 +301,28 @@ curl -s http://localhost:4000/api/appointments/YC-4821
 
 Returns **200** with populated `patientId`, `clinicianId`, `roomId`, and `timeSlotId`, or **404** if not found.
 
+Both this endpoint and `GET /api/appointments/lookup` add two fields on top of the serialized appointment, so a reference that is no longer live cannot be mistaken for one that is:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `isHistorical` | boolean | `true` when status is `CANCELLED`, `NO_SHOW`, or `COMPLETED` |
+| `supersededBy` | object \| null | When `isHistorical`, the patient's current active appointment (`BOOKED`/`CHECKED_IN`/`WAITING`/`CALLED`, earliest by date then time) in the same serialized shape, else `null`. Its own `supersededBy` is always `null`. |
+
+```json
+{
+  "referenceCode": "YC-4821",
+  "status": "CANCELLED",
+  "isHistorical": true,
+  "supersededBy": {
+    "referenceCode": "YC-7734",
+    "status": "BOOKED",
+    "appointmentDate": "2026-09-18",
+    "isHistorical": false,
+    "supersededBy": null
+  }
+}
+```
+
 ---
 
 ## Virtual Queue Engine & Token Progression
@@ -298,7 +337,7 @@ BOOKED ──(reception check-in)──> CHECKED_IN ──(enter queue)──> W
   └───(no-show/cancel)────────────────┴───────(no-show)───────────┴───────(no-show)────────┴───────(no-show)──> NO_SHOW
 ```
 
-- **Daily Non-Colliding Tokens**: When an appointment transitions to `CHECKED_IN`, an incremental daily token is assigned (e.g. `A-01` for Room 1, `B-04` for Room 2). Sequence numbers reset at 00:00 UTC daily via atomic MongoDB `$inc` on `QueueCounter`.
+- **Daily Non-Colliding Tokens**: When an appointment transitions to `CHECKED_IN`, an incremental daily token is assigned (e.g. `A-01` for Room 1, `B-04` for Room 2). Sequence numbers reset at 00:00 **Africa/Accra** daily via atomic MongoDB `$inc` on `QueueCounter`.
 - **Dynamic Estimated Wait Time**: Calculated dynamically as:
   $$\text{Estimated Wait (min)} = (\text{Remaining patients ahead in room}) \times 15\text{ min}$$
 - **Automated Call SMS Alert**: When a patient is called (`call-next`), a notification SMS is immediately dispatched alerting them to proceed to their consultation room.

@@ -7,6 +7,7 @@
 // directly, the same way bookAppointment.js wraps creation.
 
 import mongoose from 'mongoose';
+import { logger } from '../lib/logger.js';
 import { Appointment } from '../models/Appointment.js';
 import { Room } from '../models/Room.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
@@ -56,23 +57,25 @@ export async function notifyPatientCalled(appointment, room) {
     const phone = resolveSmsDestination(patient);
     if (!phone) {
       const error = 'Patient has no phone number on record';
-      console.error('[call]', error, appointment?.referenceCode || appointment?._id);
+      logger.error('cannot send called SMS: no phone on record', {
+        subsystem: 'queue-call',
+        referenceCode: appointment?.referenceCode || String(appointment?._id || ''),
+      });
       return { ok: false, error };
     }
 
     const sms = await sendSms(phone, buildCalledSms(appointment, room));
     if (!sms.ok) {
-      console.error(
-        '[call] SMS not delivered for',
-        appointment?.referenceCode,
-        ':',
-        sms.error,
-      );
+      logger.error('called SMS not delivered', {
+        subsystem: 'queue-call',
+        referenceCode: appointment?.referenceCode,
+        reason: sms.error,
+      });
     }
     return sms;
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
-    console.error('[call] Failed to dispatch call SMS:', error);
+    logger.error('failed to dispatch called SMS', { subsystem: 'queue-call', err });
     return { ok: false, error };
   }
 }

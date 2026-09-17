@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import WelcomeForm from "./WelcomeForm";
 import PersonalDetails from "./PersonalDetails";
@@ -9,6 +9,8 @@ import TimeSlots from "./TimeSlots";
 import ReviewBooking from "./ReviewBooking";
 import SlotTaken from "./SlotTaken";
 import { normalizeReference } from "../../lib/appointmentView";
+
+const DRAFT_KEY = "yencare.booking.draft";
 
 const initialFormData = {
   fullName: "",
@@ -27,14 +29,57 @@ const initialFormData = {
   appointmentTime: "",
 };
 
+function readDraft() {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistDraft(step, formData) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step, formData }));
+  } catch {
+    /* private mode / quota — wizard still works in memory */
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 const BookingForm = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState(initialFormData);
+  const [step, setStep] = useState(() => {
+    const draft = readDraft();
+    const saved = Number(draft?.step);
+    return saved >= 1 && saved <= 7 ? saved : 1;
+  });
+  const [formData, setFormData] = useState(() => ({
+    ...initialFormData,
+    ...(readDraft()?.formData || {}),
+  }));
   const [slotTaken, setSlotTaken] = useState(false);
   const [findReference, setFindReference] = useState(
     () => normalizeReference(searchParams.get("ref") || ""),
   );
+
+  useEffect(() => {
+    if (step === 1) {
+      clearDraft();
+      return;
+    }
+    persistDraft(step, formData);
+  }, [step, formData]);
 
   const updateFormData = (changes) => {
     setFormData((prev) => ({
@@ -62,6 +107,7 @@ const BookingForm = () => {
   };
 
   const handleReset = () => {
+    clearDraft();
     setFormData(initialFormData);
     setSlotTaken(false);
     setFindReference("");
@@ -71,6 +117,7 @@ const BookingForm = () => {
 
   const handleViewAppointment = (reference) => {
     const ref = normalizeReference(reference);
+    clearDraft();
     setFormData(initialFormData);
     setSlotTaken(false);
     setFindReference(ref);

@@ -6,7 +6,7 @@ import { Room } from '../models/Room.js';
 import { Clinician } from '../models/Clinician.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
 import { notifyPatientCalled } from './callPatient.js';
-import { isClinicOpen } from '../lib/accraTime.js';
+import { accraTodayIso, isClinicOpen } from '../lib/accraTime.js';
 
 export const AVERAGE_CONSULT_DURATION_MINUTES = 15;
 
@@ -38,25 +38,27 @@ export function getRoomTokenPrefix(room) {
 }
 
 /**
- * Returns the UTC date string formatted as YYYY-MM-DD.
- * Naturally rolls over and resets at 00:00:00 UTC.
+ * Returns the current clinic day as YYYY-MM-DD in Africa/Accra, so queue
+ * numbering rolls over at Accra midnight rather than at 00:00 UTC. Ghana is
+ * UTC+0 all year, so this is a clarity change today and correct if the platform
+ * is ever run from another timezone.
  *
  * @param {string} [overrideDate]
  * @returns {string}
  */
-export function getUtcQueueDate(overrideDate = null) {
+export function getAccraQueueDate(overrideDate = null) {
   if (overrideDate) {
     if (!DATE_PATTERN.test(String(overrideDate))) {
       throw new ValidationError('overrideDate must be YYYY-MM-DD');
     }
     return String(overrideDate);
   }
-  return new Date().toISOString().slice(0, 10);
+  return accraTodayIso();
 }
 
 /**
  * Atomically generates and assigns an incremental daily queue token (e.g. A-01, B-04).
- * Non-colliding tokens reset every day at 00:00 UTC per room.
+ * Non-colliding tokens reset every Accra calendar day per room.
  *
  * @param {import('../models/Appointment.js').Appointment} appointment
  * @param {{ dateOverride?: string }} [options]
@@ -82,7 +84,7 @@ export async function assignDailyQueueToken(appointment, { dateOverride = null }
   }
 
   const tokenPrefix = getRoomTokenPrefix(room);
-  const queueDate = getUtcQueueDate(dateOverride);
+  const queueDate = getAccraQueueDate(dateOverride);
 
   // Atomically increment the sequence for (roomId, queueDate)
   const counter = await QueueCounter.findOneAndUpdate(
@@ -188,7 +190,7 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
   await nextAppointment.save();
 
   // Track active appointment on QueueCounter
-  const queueDate = nextAppointment.queueDate || getUtcQueueDate();
+  const queueDate = nextAppointment.queueDate || getAccraQueueDate();
   await QueueCounter.updateOne(
     { roomId: room._id, queueDate },
     { $set: { activeAppointmentId: nextAppointment._id } },
@@ -252,7 +254,7 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
         appointment.status = 'CALLED';
         await appointment.save();
         await QueueCounter.updateOne(
-          { roomId: appointment.roomId, queueDate: appointment.queueDate || getUtcQueueDate() },
+          { roomId: appointment.roomId, queueDate: appointment.queueDate || getAccraQueueDate() },
           { $set: { activeAppointmentId: appointment._id } },
           { upsert: true },
         );

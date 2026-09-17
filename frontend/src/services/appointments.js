@@ -53,7 +53,11 @@ export async function lookupAppointment(query) {
 export async function cancelAppointment(idOrReference, options = {}) {
   const response = await api.patch(
     `/appointments/${encodeURIComponent(idOrReference)}/cancel`,
-    { cancelReason: options.cancelReason },
+    {
+      cancelReason: options.cancelReason,
+      phone: options.phone,
+      phoneNumber: options.phone,
+    },
   );
   return response.data;
 }
@@ -68,6 +72,8 @@ export async function rescheduleAppointment(idOrReference, newSlotId, options = 
     {
       newSlotId,
       staffChangeReason: options.staffChangeReason,
+      phone: options.phone,
+      phoneNumber: options.phone,
     },
   );
   return response.data;

@@ -12,6 +12,7 @@ import { accraClockLabel, isStudentsClinicOpen } from "../../lib/accraTime";
 import FindAppointment from "../appointment/FindAppointment";
 import AfterHours from "./AfterHours";
 import { getClinicActivity } from "../../services/queue";
+import { Button } from "../ui";
 
 const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
   const [clock, setClock] = useState(() => accraClockLabel());
@@ -22,6 +23,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
     waitingCount: "—",
     estimatedWaitMinutes: null,
   });
+  const [activityError, setActivityError] = useState("");
 
   useEffect(() => {
     setClock(accraClockLabel());
@@ -41,13 +43,10 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
           waitingCount: data.waitingCount ?? 0,
           estimatedWaitMinutes: data.estimatedWaitMinutes ?? 0,
         });
+        setActivityError("");
       } catch {
         if (!cancelled) {
-          setActivity({
-            nowServingToken: "—",
-            waitingCount: "—",
-            estimatedWaitMinutes: null,
-          });
+          setActivityError("Live clinic numbers could not be loaded.");
         }
       }
     }
@@ -83,13 +82,22 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
   }
 
   return (
-    <section className="w-full rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
+    <section className="card-clinical w-full p-6 sm:p-8">
       <div className="flex flex-col items-center justify-center text-center">
-        <img src={Logo} alt="YenCare Logo" className="mt-3 w-14" />
+        <img src={Logo} alt="YɛnCare Logo" className="mt-3 w-14" />
 
-        <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400">
-          <FaClock size={10} className="text-[#176b5f]" />
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-text-muted">
+          <FaClock size={10} className="text-accent" />
           <span>{clock} Accra</span>
+          <span
+            className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+              isStudentsClinicOpen()
+                ? "border-accent-border bg-accent-soft text-accent"
+                : "border-warning-border bg-warning-soft text-warning"
+            }`}
+          >
+            Students' Clinic {isStudentsClinicOpen() ? "open" : "closed"}
+          </span>
         </div>
 
         <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
@@ -129,7 +137,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
             <p className="text-center text-[10px] font-medium uppercase tracking-wider text-gray-400 sm:text-xs">
               Estimated wait
             </p>
-            <p className="mt-1 text-xl font-bold text-[#173b3a] sm:text-2xl">
+            <p className="mt-1 text-xl font-bold text-primary sm:text-2xl">
               {activity.estimatedWaitMinutes == null
                 ? "—"
                 : activity.estimatedWaitMinutes === 0
@@ -138,9 +146,20 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
             </p>
           </div>
         </div>
+        {activityError && (
+          <div className="flex items-center justify-between gap-3 border border-warning-border bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
+            <span>{activityError}</span>
+            <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
+        )}
 
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          fullWidth
+          icon={<FaCalendarAlt size={13} />}
+          iconPosition="left"
           onClick={() => {
             if (!isStudentsClinicOpen()) {
               setAfterHours(true);
@@ -148,36 +167,13 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
             }
             onStartBooking();
           }}
-          className="group flex w-full cursor-pointer items-center gap-3 rounded-full bg-[#176b5f] px-5 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(23,107,95,0.15)] transition duration-300 hover:bg-[#12584f]"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
-            <FaCalendarAlt size={13} />
-          </span>
+          Book an available appointment
+        </Button>
 
-          <span>Book an available appointment</span>
-
-          <FaArrowRight
-            size={12}
-            className="ml-auto transition-transform duration-300 group-hover:translate-x-1"
-          />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setFindAppointment(true)}
-          className="group flex w-full cursor-pointer items-center gap-3 rounded-full border border-[#d5dfda] bg-white px-5 py-3.5 text-sm font-bold text-[#173b3a] transition duration-300 hover:border-[#176b5f] hover:bg-[#f5faf7] hover:text-[#176b5f]"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#edf5ed] text-[#176b5f]">
-            <FaSearch size={13} />
-          </span>
-
-          <span>Find my appointment</span>
-
-          <FaArrowRight
-            size={12}
-            className="ml-auto opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100"
-          />
-        </button>
+        <Button variant="secondary" fullWidth icon={<FaSearch size={13} />} onClick={() => setFindAppointment(true)}>
+          Find my appointment
+        </Button>
 
         <div className="flex items-center gap-4 py-2">
           <div className="h-px flex-1 bg-[#e6eee9]" />
@@ -203,7 +199,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
 
             <Link
               to="/clinic-activity"
-              className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-[#176b5f] px-4 py-2.5 text-[10px] font-bold text-[#176b5f] transition duration-300 hover:bg-[#176b5f] hover:text-white"
+              className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 border border-accent px-4 py-2.5 text-xs font-bold text-accent hover:bg-accent hover:text-white"
             >
               View
               <FaArrowRight size={9} />
@@ -231,7 +227,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
 
             <Link
               to="/queue"
-              className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-[#173b3a] px-4 py-2.5 text-[10px] font-bold text-white transition duration-300 hover:bg-[#176b5f]"
+              className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 bg-primary px-4 py-2.5 text-xs font-bold text-white hover:bg-accent"
             >
               Check
               <FaArrowRight size={9} />

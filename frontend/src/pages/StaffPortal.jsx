@@ -7,8 +7,9 @@ import StaffAppointmentDetail from "../components/staff/StaffAppointmentDetail";
 import StaffChangeAppointment from "../components/staff/StaffChangeAppointment";
 import StaffNoShowConfirm from "../components/staff/StaffNoShowConfirm";
 import { matchesDeskQuery } from "../components/staff/staffUtils";
-import StaffWorkstationBar from "../components/StaffWorkstationBar";
+import StaffLayout from "../components/staff/StaffLayout";
 import { useStaffAuth } from "../context/StaffAuthContext";
+import { useToast } from "../components/ui";
 import {
   CLINIC_SITE_LABELS,
   DEFAULT_CLINIC_SITE,
@@ -25,9 +26,10 @@ const SEED_DATE = "2026-09-15";
 
 const StaffPortal = () => {
   const { staff, logout } = useStaffAuth();
+  const toast = useToast();
   const [clinicSite, setClinicSite] = useState(staff?.clinicSite || DEFAULT_CLINIC_SITE);
   const [selectedDate, setSelectedDate] = useState(() => accraTodayIso());
-  const [view, setView] = useState("today");
+  const [view, setView] = useState(staff?.role === "DOCTOR" ? "queue" : "today");
   const [deskQuery, setDeskQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [highlightedId, setHighlightedId] = useState(null);
@@ -82,9 +84,12 @@ const StaffPortal = () => {
         prev.map((appt) => (appt.id === id ? { ...appt, ...card, status: card.status || nextStatus } : appt)),
       );
       setMessage(`${successLabel}.`);
+      toast.success(`${successLabel}.`);
       await reload();
     } catch (err) {
-      setMessage(err.response?.data?.error || `Could not ${successLabel.toLowerCase()}.`);
+      const fail = err.response?.data?.error || `Could not ${successLabel.toLowerCase()}.`;
+      setMessage(fail);
+      toast.error(fail);
     } finally {
       setUpdatingId(null);
     }
@@ -130,9 +135,16 @@ const StaffPortal = () => {
           ? result.message || `Called next patient to ${room.name}.`
           : result.message || `No waiting patients for ${room.name}.`,
       );
+      toast.success(
+        result.appointment
+          ? result.message || `Called next patient to ${room.name}.`
+          : result.message || `No waiting patients for ${room.name}.`,
+      );
       await reload();
     } catch (err) {
-      setMessage(err.response?.data?.error || `Could not call next for ${room.name}.`);
+      const fail = err.response?.data?.error || `Could not call next for ${room.name}.`;
+      setMessage(fail);
+      toast.error(fail);
     } finally {
       setBusyRoomId("");
     }
@@ -144,8 +156,11 @@ const StaffPortal = () => {
       await advanceQueue({ appointmentId: id });
       await reload();
       setMessage("Visit completed.");
+      toast.success("Visit completed.");
     } catch (err) {
-      setMessage(err.response?.data?.error || "Could not complete this visit.");
+      const fail = err.response?.data?.error || "Could not complete this visit.";
+      setMessage(fail);
+      toast.error(fail);
     } finally {
       setUpdatingId(null);
     }
@@ -157,10 +172,13 @@ const StaffPortal = () => {
     try {
       await markQueueNoShow({ appointmentId: id });
       setMessage("Marked no-show. Slot released.");
+      toast.success("Marked no-show. Slot released.");
       await reload();
       return true;
     } catch (err) {
-      setMessage(err.response?.data?.error || "Could not mark no-show.");
+      const fail = err.response?.data?.error || "Could not mark no-show.";
+      setMessage(fail);
+      toast.error(fail);
       return false;
     } finally {
       setUpdatingId(null);
@@ -177,28 +195,18 @@ const StaffPortal = () => {
       return appt.status === statusFilter;
     });
 
-  if (staff?.role === "DOCTOR") {
-    return (
-      <>
-        <StaffWorkstationBar staff={staff} onSignOut={logout} />
-        <DoctorWorkstation staff={staff} />
-      </>
-    );
-  }
-
   const canCallNext = staff?.role === "ADMIN" || staff?.role === "DOCTOR";
+  const arrivedCount = appointments.filter((appt) => appt.status === "CHECKED_IN").length;
 
   return (
-    <>
-      <StaffWorkstationBar
-        staff={staff}
-        onSignOut={logout}
-        view={view}
-        onViewChange={setView}
-        arrivedCount={appointments.filter((appt) => appt.status === "CHECKED_IN").length}
-      />
-      <main className="mx-auto max-w-6xl px-5 pt-8 pb-16 sm:px-8 lg:px-10">
-        {view !== "walkin" && (
+    <StaffLayout
+      staff={staff}
+      view={view}
+      onViewChange={setView}
+      arrivedCount={arrivedCount}
+      onSignOut={logout}
+    >
+      {view !== "walkin" && view !== "room" && (
           <div className="mb-5 flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
               <span className="font-semibold">Clinic site</span>
@@ -249,18 +257,29 @@ const StaffPortal = () => {
         )}
 
         {(error || message) && (
-          <p
-            className={`mb-4 rounded-xl px-4 py-3 text-sm ${
+          <div
+            className={`mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm ${
               error && !usingLive
-                ? "bg-[#fff6e8] text-[#8a5a12]"
-                : "bg-[#E7F5F1] text-[#176b5f]"
+                ? "border border-warning-border bg-warning-soft text-warning"
+                : "border border-accent-border bg-accent-soft text-accent"
             }`}
+            role="status"
+            aria-live="polite"
           >
-            {error && !usingLive ? error : message}
-          </p>
+            <p>{error && !usingLive ? error : message}</p>
+            {error && !usingLive && (
+              <button
+                type="button"
+                onClick={() => void reload()}
+                className="min-h-11 border border-clinic-border bg-surface px-3 py-2 text-xs font-semibold text-primary"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         )}
 
-        {view !== "walkin" && (
+        {view !== "walkin" && view !== "room" && (
           <>
             <form
               onSubmit={handleDeskLookup}
@@ -299,7 +318,7 @@ const StaffPortal = () => {
             onOpenWalkIn={() => setView("walkin")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             updatingId={updatingId}
-            showCorridor={staff?.role === "ADMIN"}
+            showCorridor
           />
         )}
 
@@ -373,9 +392,11 @@ const StaffPortal = () => {
             onComplete={handleComplete}
             onOpenRoster={() => setView("roster")}
             onOpenWalkIn={() => setView("walkin")}
-            showCorridor={staff?.role === "ADMIN"}
+            showCorridor
           />
         )}
+
+        {view === "room" && <DoctorWorkstation staff={staff} />}
 
         {view === "walkin" && (
           <StaffWalkIn
@@ -387,8 +408,7 @@ const StaffPortal = () => {
             }}
           />
         )}
-      </main>
-    </>
+    </StaffLayout>
   );
 };
 

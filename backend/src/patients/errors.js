@@ -20,11 +20,29 @@ export class NotFoundError extends Error {
   }
 }
 
+export class ForbiddenError extends Error {
+  /** @param {string} message */
+  constructor(message) {
+    super(message);
+    this.name = 'ForbiddenError';
+    this.status = 403;
+  }
+}
+
 export class ConflictError extends Error {
   /** @param {string} message */
   constructor(message) {
     super(message);
     this.name = 'ConflictError';
     this.status = 409;
+  }
+}
+
+export class ServiceUnavailableError extends Error {
+  /** @param {string} message */
+  constructor(message) {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+    this.status = 503;
   }
 }

@@ -6,10 +6,11 @@ import {
   STATUS_TRANSITIONS,
 } from '../src/db/constants.js';
 import { Appointment, QueueCounter, Room } from '../src/models/index.js';
+import { accraTodayIso } from '../src/lib/accraTime.js';
 import {
   AVERAGE_CONSULT_DURATION_MINUTES,
   getRoomTokenPrefix,
-  getUtcQueueDate,
+  getAccraQueueDate,
 } from '../src/services/queueEngine.js';
 
 const oid = () => new mongoose.Types.ObjectId();
@@ -36,15 +37,14 @@ describe('queueEngine room prefix and date logic', () => {
     assert.equal(getRoomTokenPrefix({}), 'A');
   });
 
-  it('getUtcQueueDate returns YYYY-MM-DD resetting at 00:00 UTC', () => {
-    const todayUtc = new Date().toISOString().slice(0, 10);
-    assert.equal(getUtcQueueDate(), todayUtc);
-    assert.match(getUtcQueueDate(), /^\d{4}-\d{2}-\d{2}$/);
-    assert.equal(getUtcQueueDate('2026-09-15'), '2026-09-15');
+  it('getAccraQueueDate returns YYYY-MM-DD resetting at Accra midnight', () => {
+    assert.equal(getAccraQueueDate(), accraTodayIso());
+    assert.match(getAccraQueueDate(), /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(getAccraQueueDate('2026-09-15'), '2026-09-15');
   });
 
-  it('getUtcQueueDate rejects invalid date pattern', () => {
-    assert.throws(() => getUtcQueueDate('15-09-2026'), /overrideDate must be YYYY-MM-DD/);
+  it('getAccraQueueDate rejects invalid date pattern', () => {
+    assert.throws(() => getAccraQueueDate('15-09-2026'), /overrideDate must be YYYY-MM-DD/);
   });
 });
 

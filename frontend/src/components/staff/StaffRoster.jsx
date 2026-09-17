@@ -1,4 +1,5 @@
-import { ROSTER_FILTERS, sortRoster, statusBadgeClass } from "./staffUtils";
+import { ROSTER_FILTERS, sortRoster } from "./staffUtils";
+import { StatusBadge } from "../ui";
 
 export default function StaffRoster({
   appointments,
@@ -85,10 +86,11 @@ export default function StaffRoster({
                 <span className="text-xs font-bold uppercase tracking-wide text-[#c37d32]">
                   {appt.reference}
                 </span>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(appt.status)}`}>
-                  {appt.status}
-                  {appt.queueToken ? ` · ${appt.queueToken}` : ""}
-                </span>
+                <StatusBadge
+                  status={appt.status}
+                  token={appt.queueToken}
+                  size="sm"
+                />
               </div>
               <h3 className="mt-3 text-lg font-bold text-[#173b3a]">{appt.patientName}</h3>
               <p className="mt-1 text-sm text-gray-500">
@@ -105,8 +107,8 @@ export default function StaffRoster({
                 </p>
               )}
               {appt.bookingType === "WALK_IN" && (
-                <span className="mt-2 inline-block rounded-md border border-[#BEE3F8] bg-[#EBF8FF] px-1.5 py-0.5 text-[10px] font-bold text-[#2B6CB0]">
-                  WALK-IN
+                <span className="mt-2">
+                  <StatusBadge status="WALK_IN" size="sm" />
                 </span>
               )}
 

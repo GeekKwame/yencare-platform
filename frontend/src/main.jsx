@@ -4,12 +4,15 @@ import "./index.css";
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
 import { StaffAuthProvider } from "./context/StaffAuthContext.jsx";
+import { ToastProvider } from "./components/ui";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <StaffAuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </StaffAuthProvider>
     </BrowserRouter>
   </StrictMode>,

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaCheck } from "react-icons/fa";
-import { GoDotFill } from "react-icons/go";
 import { mapClinician } from "../../lib/catalogView";
 import { listClinicians } from "../../services/catalog";
+import { Button, StatusBadge } from "../ui";
 
 const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
   const [error, setError] = useState("");
   const [clinicians, setClinicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +44,7 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
     return () => {
       cancelled = true;
     };
-  }, [formData.clinicSite]);
+  }, [formData.clinicSite, reloadToken]);
 
   const handleSelect = (doctor) => {
     updateFormData({
@@ -100,7 +101,12 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
         {loading ? (
           <p className="text-center text-sm text-[#607672]">Loading clinicians…</p>
         ) : loadError ? (
-          <p className="text-center text-sm text-red-500">{loadError}</p>
+          <div className="space-y-3 text-center">
+            <p className="text-sm text-error" role="alert">{loadError}</p>
+            <Button variant="secondary" onClick={() => setReloadToken((n) => n + 1)}>
+              Retry
+            </Button>
+          </div>
         ) : clinicians.length === 0 ? (
           <p className="text-center text-sm text-[#607672]">
             No clinicians are available at this clinic site right now.
@@ -133,9 +139,8 @@ const ClinicianSelection = ({ formData, updateFormData, onNext, onBack }) => {
                   <p className="mt-1.5 text-xs font-semibold text-[#176b5f] sm:text-sm">
                     {doctor.position}
                   </p>
-                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 sm:text-sm">
-                    <GoDotFill className="text-green-600" size={10} />
-                    Available for booking
+                  <p className="mt-2">
+                    <StatusBadge status="AVAILABLE" size="sm" />
                   </p>
                 </div>
                 <div
