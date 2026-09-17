@@ -3,6 +3,27 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { connectDb, disconnectDb } from '../src/db/connection.js';
 import { COLLECTION_SPECS, findConflictingIndexes } from '../src/db/collections.js';
+import { ACTIVE_SLOT_STATUSES } from '../src/db/constants.js';
+
+const SLOT_STATUS_RANK = Object.freeze({
+  CALLED: 4,
+  WAITING: 3,
+  CHECKED_IN: 2,
+  BOOKED: 1,
+  COMPLETED: 0,
+});
+
+const DUPLICATE_SLOT_CANCEL_REASON = 'Duplicate clinician slot resolved by migration';
+
+export function pickActiveSlotKeeper(docs) {
+  return [...docs].sort((a, b) => {
+    const rankDiff = (SLOT_STATUS_RANK[b.status] ?? -1) - (SLOT_STATUS_RANK[a.status] ?? -1);
+    if (rankDiff !== 0) return rankDiff;
+    const createdDiff = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    if (createdDiff !== 0) return createdDiff;
+    return String(a._id).localeCompare(String(b._id));
+  })[0];
+}
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(backendRoot, '.env') });
@@ -51,6 +72,78 @@ async function ensureIndexes(db, spec, { dryRun }) {
   }
 }
 
+export async function resolveDuplicateActiveSlots(db, { dryRun = false } = {}) {
+  const existing = await db.listCollections({ name: 'appointments' }).toArray();
+  if (existing.length === 0) {
+    return { groups: 0, cancelled: 0 };
+  }
+
+  const collection = db.collection('appointments');
+  const groups = await collection
+    .aggregate([
+      { $match: { status: { $in: [...ACTIVE_SLOT_STATUSES] } } },
+      {
+        $group: {
+          _id: {
+            clinicianId: '$clinicianId',
+            appointmentDate: '$appointmentDate',
+            appointmentTime: '$appointmentTime',
+          },
+          count: { $sum: 1 },
+          docs: {
+            $push: {
+              _id: '$_id',
+              referenceCode: '$referenceCode',
+              status: '$status',
+              createdAt: '$createdAt',
+            },
+          },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ])
+    .toArray();
+
+  if (groups.length === 0) {
+    return { groups: 0, cancelled: 0 };
+  }
+
+  let cancelled = 0;
+  const now = new Date();
+
+  for (const group of groups) {
+    const keeper = pickActiveSlotKeeper(group.docs);
+    const extras = group.docs.filter((doc) => String(doc._id) !== String(keeper._id));
+    const extraIds = extras.map((doc) => doc._id);
+    const extraRefs = extras.map((doc) => doc.referenceCode || String(doc._id)).join(', ');
+
+    if (dryRun) {
+      console.log(
+        `[migrate] would cancel duplicate slots ${extraRefs} (kept ${keeper.referenceCode || keeper._id})`,
+      );
+      cancelled += extraIds.length;
+      continue;
+    }
+
+    const result = await collection.updateMany(
+      { _id: { $in: extraIds }, status: { $in: [...ACTIVE_SLOT_STATUSES] } },
+      {
+        $set: {
+          status: 'CANCELLED',
+          cancelReason: DUPLICATE_SLOT_CANCEL_REASON,
+          cancelledTime: now,
+        },
+      },
+    );
+    cancelled += result.modifiedCount;
+    console.log(
+      `[migrate] cancelled ${result.modifiedCount} duplicate slot(s) ${extraRefs} (kept ${keeper.referenceCode || keeper._id})`,
+    );
+  }
+
+  return { groups: groups.length, cancelled };
+}
+
 export async function migrate({ dryRun = false } = {}) {
   const conflicts = findConflictingIndexes(COLLECTION_SPECS);
   if (conflicts.length > 0) {
@@ -69,6 +162,13 @@ export async function migrate({ dryRun = false } = {}) {
 
   const connection = await connectDb();
   const db = connection.db;
+
+  const duplicates = await resolveDuplicateActiveSlots(db, { dryRun: false });
+  if (duplicates.cancelled > 0) {
+    console.log(
+      `[migrate] resolved ${duplicates.cancelled} duplicate active slot(s) across ${duplicates.groups} group(s)`,
+    );
+  }
 
   for (const spec of COLLECTION_SPECS) {
     await ensureCollection(db, spec, { dryRun: false });

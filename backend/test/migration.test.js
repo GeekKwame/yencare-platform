@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { COLLECTION_SPECS, findConflictingIndexes, migrate } from '../scripts/migrate.js';
+import { COLLECTION_SPECS, findConflictingIndexes, migrate, pickActiveSlotKeeper } from '../scripts/migrate.js';
 import { Appointment, Patient, TimeSlot } from '../src/models/index.js';
 
 function spec(name) {
@@ -63,5 +63,31 @@ describe('migrate dry-run', () => {
     assert.equal(first.ok, true);
     assert.equal(second.ok, true);
     assert.deepEqual(first.collections, second.collections);
+  });
+});
+
+describe('duplicate active slot keeper', () => {
+  it('keeps the most progressed appointment, then the earliest created', () => {
+    const checkedIn = {
+      _id: '2',
+      referenceCode: 'YC-7043',
+      status: 'CHECKED_IN',
+      createdAt: '2026-09-10T07:30:00.000Z',
+    };
+    const laterBooked = {
+      _id: '3',
+      referenceCode: 'YC-8166',
+      status: 'BOOKED',
+      createdAt: '2026-09-10T07:39:00.000Z',
+    };
+    const earlierBooked = {
+      _id: '1',
+      referenceCode: 'YC-6288',
+      status: 'BOOKED',
+      createdAt: '2026-09-09T18:08:00.000Z',
+    };
+
+    assert.equal(pickActiveSlotKeeper([laterBooked, checkedIn, earlierBooked]).referenceCode, 'YC-7043');
+    assert.equal(pickActiveSlotKeeper([laterBooked, earlierBooked]).referenceCode, 'YC-6288');
   });
 });
