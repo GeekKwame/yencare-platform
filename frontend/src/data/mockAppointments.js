@@ -92,6 +92,7 @@ export const mockAppointments = [
     phone: "055 666 7788",
     bookingType: "SCHEDULED",
     queueToken: "#1",
+    roomName: "Room 1",
   },
   {
     id: "mock-7",

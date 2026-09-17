@@ -1,3 +1,4 @@
+import ElapsedTimer from "./ElapsedTimer";
 import { sortWaiting } from "./staffUtils";
 
 export default function StaffLiveQueue({
@@ -107,6 +108,7 @@ export default function StaffLiveQueue({
                       Ref: {appt.reference}
                       {appt.studentIndex ? ` · Idx: ${appt.studentIndex}` : ""}
                     </p>
+                    <ElapsedTimer resetKey={appt.id} className="mt-1 text-xs font-semibold text-[#176b5f]" />
                     {canComplete && (
                       <button
                         type="button"
@@ -125,13 +127,15 @@ export default function StaffLiveQueue({
             )}
           </div>
 
-          {canCallNext && waiting.length > 0 && rooms.length > 0 && (
+          {canCallNext && rooms.length > 0 && (
             <div className="rounded-2xl border border-[#dce8df] bg-white p-4">
               <p className="text-xs font-bold text-[#173b3a]">
-                Call next patient ({waiting[0].patientName})
+                {waiting[0]
+                  ? `Call next patient (${waiting[0].patientName})`
+                  : "Call next patient"}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {rooms.slice(0, 2).map((room) => (
+                {rooms.map((room) => (
                   <button
                     key={room.id}
                     type="button"

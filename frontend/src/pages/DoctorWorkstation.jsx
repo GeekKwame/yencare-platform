@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ElapsedTimer from "../components/staff/ElapsedTimer";
 import {
   CLINIC_SITE_LABELS,
   DEFAULT_CLINIC_SITE,
@@ -80,14 +81,17 @@ export default function DoctorWorkstation({ staff }) {
         completePrevious,
       });
       const calledAppt = result.appointment;
-      if (calledAppt) {
-        const name = calledAppt.patientId?.fullName || calledAppt.patientName || "Patient";
-        announcePatientCall(
-          name,
-          selectedName,
-          calledAppt.queueToken || result.queueToken,
-        );
+      if (!calledAppt) {
+        setMessage(result.message || `No waiting patients for ${selectedName}.`);
+        await reload();
+        return;
       }
+      const name = calledAppt.patientId?.fullName || calledAppt.patientName || "Patient";
+      announcePatientCall(
+        name,
+        selectedName,
+        calledAppt.queueToken || result.queueToken,
+      );
       setMessage(result.message || `Called next patient to ${selectedName}.`);
       await reload();
     } catch (err) {
@@ -226,6 +230,7 @@ export default function DoctorWorkstation({ staff }) {
                     {called.reference} · {called.service}
                     {called.studentIndex ? ` · Index ${called.studentIndex}` : ""}
                   </p>
+                  <ElapsedTimer resetKey={called.id} className="mt-2 text-sm text-[#176b5f]" />
                 </div>
                 <span className="rounded-full bg-[#E7F5F1] px-3 py-1 text-xs font-semibold text-[#176b5f]">
                   CALLED
@@ -256,7 +261,7 @@ export default function DoctorWorkstation({ staff }) {
               <button
                 type="button"
                 onClick={() => handleCallNext()}
-                disabled={busy || waiting.length === 0}
+                disabled={busy || !selectedRoom}
                 className="mt-4 rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
               >
                 {busy ? "Calling…" : "Call next patient"}

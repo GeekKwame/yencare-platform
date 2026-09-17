@@ -125,7 +125,11 @@ const StaffPortal = () => {
     setMessage("");
     try {
       const result = await callNextPatient({ roomId: room.id || room._id });
-      setMessage(result.message || `Called next patient to ${room.name}.`);
+      setMessage(
+        result.appointment
+          ? result.message || `Called next patient to ${room.name}.`
+          : result.message || `No waiting patients for ${room.name}.`,
+      );
       await reload();
     } catch (err) {
       setMessage(err.response?.data?.error || `Could not call next for ${room.name}.`);
