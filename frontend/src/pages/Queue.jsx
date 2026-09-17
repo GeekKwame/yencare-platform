@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaSearch, FaUsers } from "react-icons/fa";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { isValidGhanaPhone } from "../data/bookingOptions";
 import {
   mapAppointment,
@@ -10,6 +10,7 @@ import {
 } from "../lib/appointmentView";
 import { arriveAppointment, getQueueStatus, lookupAppointment } from "../services/appointments";
 import { announcePatientCall } from "../lib/clinicSpeech";
+import { ReferenceBlock } from "../components/ui";
 
 const POLL_MS = 15000;
 
@@ -151,6 +152,8 @@ const Queue = () => {
             ? `You are ${patientsAhead == null ? "in the queue" : `${patientsAhead} ahead`}.`
             : status === "COMPLETED"
               ? "Your visit is finished."
+              : status === "CHECKED_IN"
+              ? "You have arrived. Reception will add you to the queue."
               : status === "CANCELLED"
                 ? "This appointment was cancelled."
                 : `Status: ${status || "unknown"}.`,
@@ -374,15 +377,37 @@ const Queue = () => {
             </div>
           ) : status === "CHECKED_IN" ? (
             <div className="mt-3 rounded-2xl border border-[#99d5c8] bg-[#e7f5f1] p-6 text-center">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#176b5f]">
+              <p className="inline-flex items-center gap-1.5 border border-[#99d5c8] bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#176b5f]">
+                <span className="h-2 w-2 rounded-full bg-[#176b5f]" />
                 Arrived · awaiting reception
               </p>
-              <h2 className="mt-2 text-lg font-bold text-[#173b3a]">
+              <h2 className="mt-3 text-lg font-bold text-[#173b3a]">
                 Reception will add you to the queue
               </h2>
-              <p className="mt-2 text-sm text-[#607672]">
-                Present {view.referenceCode} at the desk. Staff check-in assigns your live token.
+              <p className="mx-auto mt-2 max-w-sm text-sm text-[#607672]">
+                You&apos;ve told YɛnCare you&apos;re here. Present this reference at the desk.
+                Staff check-in assigns your live queue token.
               </p>
+              <div className="mt-4">
+                <ReferenceBlock
+                  code={view.referenceCode}
+                  subtext="Show this code to the receptionist."
+                />
+              </div>
+              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+                <Link
+                  to={`/clinic-activity?ref=${encodeURIComponent(view.referenceCode)}`}
+                  className="flex flex-1 items-center justify-center rounded-xl border border-[#dce8df] bg-white px-4 py-3 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
+                >
+                  Clinic activity
+                </Link>
+                <Link
+                  to={`/appointments?ref=${encodeURIComponent(view.referenceCode)}`}
+                  className="flex flex-1 items-center justify-center rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f]"
+                >
+                  Appointment details
+                </Link>
+              </div>
             </div>
           ) : status === "COMPLETED" ? (
             <div className="mt-3 rounded-2xl border border-[#99d5c8] bg-[#e7f5f1] p-6 text-center">

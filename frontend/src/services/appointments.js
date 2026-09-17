@@ -85,10 +85,12 @@ export async function rescheduleAppointment(idOrReference, newSlotId, options = 
  * @param {{ phone?: string }} [options]
  */
 export async function arriveAppointment(reference, options = {}) {
-  const response = await api.post(
-    `/appointments/${encodeURIComponent(reference)}/arrive`,
-    { phone: options.phone },
-  );
+  const response = await api.post("/appointments/arrive", {
+    reference,
+    referenceCode: reference,
+    phone: options.phone,
+    phoneNumber: options.phone,
+  });
   return response.data;
 }
 

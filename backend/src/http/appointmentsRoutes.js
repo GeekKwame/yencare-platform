@@ -238,25 +238,33 @@ export function createAppointmentsRouter(
     }),
   );
 
+  // POST /api/appointments/arrive  (body: { reference, phone })
   // POST /api/appointments/:reference/arrive
   // Public patient arrival — BOOKED → CHECKED_IN, no queue token.
-  router.post(
-    '/:reference/arrive',
-    asyncHandler(async (req, res) => {
-      if (!appointmentService.markPatientArrived) {
-        return res.status(501).json({
-          error: 'Arrival check-in is not available',
-        });
-      }
+  // The static /arrive path is registered first so a missing trailing segment
+  // cannot fall through the catch-all as `{ error: 'Not found' }`.
+  const recordArrival = asyncHandler(async (req, res) => {
+    if (!appointmentService.markPatientArrived) {
+      return res.status(501).json({
+        error: 'Arrival check-in is not available',
+      });
+    }
 
-      const appointment = await appointmentService.markPatientArrived(
-        req.params.reference,
-        { phone: req.body?.phone || req.body?.phoneNumber },
-      );
+    const reference =
+      req.body?.reference ||
+      req.body?.referenceCode ||
+      req.params?.reference;
 
-      res.status(200).json(toJson(appointment));
-    }),
-  );
+    const appointment = await appointmentService.markPatientArrived(
+      reference,
+      { phone: req.body?.phone || req.body?.phoneNumber },
+    );
+
+    res.status(200).json(toJson(appointment));
+  });
+
+  router.post('/arrive', recordArrival);
+  router.post('/:reference/arrive', recordArrival);
 
   // PATCH /api/appointments/:id/status
   router.patch(

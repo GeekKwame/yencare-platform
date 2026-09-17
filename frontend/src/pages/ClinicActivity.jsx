@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getArriveByLabel } from "../data/bookingOptions";
 import { CLINIC_SITE_LABELS } from "../data/mockAppointments";
 import { mapAppointment } from "../lib/appointmentView";
@@ -14,6 +14,7 @@ function waitText(minutes) {
 
 export default function ClinicActivity() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const initialRef = params.get("ref") || "";
   const [clinicSite, setClinicSite] = useState("students-clinic");
   const [activity, setActivity] = useState(null);
@@ -77,6 +78,8 @@ export default function ClinicActivity() {
       setAppointment(updated);
       setJustArrived(true);
       await loadActivity(true);
+      const ref = updated?.referenceCode || view.referenceCode;
+      if (ref) navigate(`/queue?ref=${encodeURIComponent(ref)}`);
     } catch (err) {
       setError(err.response?.data?.error || "Could not record arrival. Please tell reception.");
     } finally {

@@ -34,7 +34,12 @@ export function entityName(value, keys = ["name", "fullName"]) {
 
 export function patientPhone(appointment) {
   const patient = appointment?.patientId;
-  return entityName(patient, ["phoneNumber", "phone"]);
+  return (
+    entityName(patient, ["phoneNumber", "phone"]) ||
+    appointment?.phoneNumber ||
+    appointment?.phone ||
+    ""
+  );
 }
 
 export function mapAppointment(appointment) {

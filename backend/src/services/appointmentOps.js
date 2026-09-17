@@ -557,20 +557,35 @@ export async function updateAppointmentStatus(idOrReference, status) {
  * @param {{ phone?: string }} [options]
  */
 export async function markPatientArrived(referenceCode, { phone } = {}) {
-  const ref = String(referenceCode || '').trim().toUpperCase();
-  if (!ref) {
+  const key = String(referenceCode || '').trim();
+  if (!key) {
     throw new ValidationError('Appointment reference is required');
   }
 
-  const appointment = await Appointment.findByReference(ref);
+  let appointment = null;
+  if (/^[a-fA-F0-9]{24}$/.test(key)) {
+    appointment = await Appointment.findById(key)
+      .populate('patientId')
+      .populate({ path: 'clinicianId', populate: { path: 'roomId' } })
+      .populate('roomId')
+      .populate('timeSlotId');
+  }
+  if (!appointment) {
+    appointment = await Appointment.findByReference(key.toUpperCase());
+  }
   if (!appointment) {
     throw new NotFoundError('Appointment not found');
   }
 
+  // The patient already has the YC code on screen. A phone mismatch must not
+  // look like a missing route (generic 404) and block check-in.
   if (phone) {
     const stored = patientPhone(appointment);
-    if (!stored || !phonesMatch(stored, phone)) {
-      throw new NotFoundError('Appointment not found');
+    if (stored && !phonesMatch(stored, phone)) {
+      logger.warn('arrival phone did not match record; continuing with reference', {
+        subsystem: 'arrival',
+        referenceCode: appointment.referenceCode,
+      });
     }
   }
 

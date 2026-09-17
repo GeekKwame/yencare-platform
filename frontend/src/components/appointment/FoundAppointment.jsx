@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { mapAppointment } from "../../lib/appointmentView";
 import { arriveAppointment, cancelAppointment } from "../../services/appointments";
 import { Button, ReferenceBlock, StatusBadge } from "../ui";
@@ -24,6 +24,7 @@ export default function FoundAppointment({
   const [cancelError, setCancelError] = useState("");
   const [arriving, setArriving] = useState(false);
   const [arriveError, setArriveError] = useState("");
+  const navigate = useNavigate();
 
   const rows = [
     { label: "Patient", value: view.fullName },
@@ -51,6 +52,10 @@ export default function FoundAppointment({
         phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
       });
       onUpdated?.(updated);
+      const ref = updated?.referenceCode || view.referenceCode;
+      if (ref && ref !== "—") {
+        navigate(`/queue?ref=${encodeURIComponent(ref)}`);
+      }
     } catch (err) {
       setArriveError(
         err.response?.data?.error ||

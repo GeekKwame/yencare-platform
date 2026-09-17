@@ -260,4 +260,31 @@ describe('queue HTTP endpoints', () => {
     assert.equal(body.status, 'CHECKED_IN');
     assert.equal(body.queueToken, null);
   });
+
+  it('POST /api/appointments/arrive records arrival from the request body', async () => {
+    const mockAppointmentService = {
+      markPatientArrived: async (reference, { phone } = {}) => {
+        assert.equal(reference, 'YC-4821');
+        assert.equal(phone, '0241234567');
+        return {
+          referenceCode: reference,
+          status: 'CHECKED_IN',
+          queueToken: null,
+        };
+      },
+    };
+
+    const { url } = await client({ mockAppointmentService });
+    const res = await fetch(`${url}/api/appointments/arrive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reference: 'YC-4821',
+        phone: '0241234567',
+      }),
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.status, 'CHECKED_IN');
+  });
 });
