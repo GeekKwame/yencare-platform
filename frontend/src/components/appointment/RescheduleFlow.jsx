@@ -101,10 +101,23 @@ const RescheduleFlow = ({ appointment, onBack, onSuccess }) => {
             <span className="font-semibold text-[#173b3a]">{updated.clinician}</span>
           </div>
         </div>
-        <div className="mt-6 rounded-2xl border border-[#dce8df] bg-[#f5faf7] p-4 text-left text-sm leading-6 text-[#607672]">
-          An updated confirmation text has been sent to{" "}
-          <strong className="text-[#173b3a]">{updated.phoneNumber}</strong>.
-        </div>
+        {confirmed.sms?.ok === false ? (
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left text-sm leading-6 text-amber-800">
+            Your new time is confirmed. We could not send the update text
+            {updated.phoneNumber !== "—" ? (
+              <>
+                {" "}
+                to <strong>{updated.phoneNumber}</strong>
+              </>
+            ) : null}
+            . Please save your reference and new time.
+          </div>
+        ) : (
+          <div className="mt-6 rounded-2xl border border-[#dce8df] bg-[#f5faf7] p-4 text-left text-sm leading-6 text-[#607672]">
+            An updated confirmation text has been sent to{" "}
+            <strong className="text-[#173b3a]">{updated.phoneNumber}</strong>.
+          </div>
+        )}
         <button
           type="button"
           onClick={() => onSuccess(confirmed.appointment || confirmed)}

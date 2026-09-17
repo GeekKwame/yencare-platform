@@ -49,7 +49,7 @@ export async function sendAppointmentReminders({ date } = {}) {
 
     const clinicianName = appointment.clinicianId?.name || 'your clinician';
     const message = [
-      'YɛnCare reminder',
+      'YenCare Health',
       '',
       `Appointment ${appointment.referenceCode} is tomorrow, ${appointmentDate} at ${formatHm(appointment.appointmentTime)}.`,
       `${clinicianName} · ${siteLabel(appointment.clinicSite)}`,

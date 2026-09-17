@@ -322,6 +322,7 @@ export function createAppointmentsRouter(
         appointment: toJson(result.appointment),
         releasedSlotId: result.releasedSlotId,
         cancelledTime: result.cancelledTime,
+        sms: result.sms,
       });
     }),
   );
@@ -365,6 +366,7 @@ export function createAppointmentsRouter(
         appointment: toJson(result.appointment),
         oldSlotId: result.oldSlotId,
         newSlotId: result.newSlotId,
+        sms: result.sms,
       });
     }),
   );

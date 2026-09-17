@@ -13,6 +13,7 @@ export default function StaffChangeAppointment({ appointment, onBack, onDone }) 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [smsResult, setSmsResult] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,9 +62,10 @@ export default function StaffChangeAppointment({ appointment, onBack, onDone }) 
     setSaving(true);
     setError("");
     try {
-      await rescheduleAppointment(appointment.id, selectedId, {
+      const result = await rescheduleAppointment(appointment.id, selectedId, {
         staffChangeReason: reason.trim(),
       });
+      setSmsResult(result?.sms ?? null);
       setSubmitted(true);
       onDone?.();
     } catch (err) {
@@ -92,7 +94,9 @@ export default function StaffChangeAppointment({ appointment, onBack, onDone }) 
           <p className="mx-auto mt-2 max-w-sm text-xs text-[#66706B]">
             {appointment.patientName}&apos;s appointment ({appointment.reference}) has been updated
             {chosen ? ` to ${formatDateLabel(chosen.date)} at ${formatTimeLabel(chosen.startTime)}` : ""}.
-            An SMS notification has been sent.
+            {smsResult?.ok === false
+              ? " The time is saved, but the update SMS could not be sent."
+              : " An SMS notification has been sent."}
           </p>
           <button
             type="button"

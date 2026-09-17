@@ -22,7 +22,7 @@ import {
 
 import { createEventBusFacade } from '../lib/eventBus.js';
 import { logger } from '../lib/logger.js';
-import { resolveSmsDestination } from '../patients/fields.js';
+import { bookingSmsDestinations, resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
 
@@ -45,23 +45,150 @@ function formatHm(hhmm) {
   return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
 }
 
-function patientPhone(appointment) {
-  const patient =
-    appointment?.patientId && typeof appointment.patientId === 'object'
-      ? appointment.patientId
-      : null;
-  return resolveSmsDestination(patient);
+function asPatientDoc(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (value instanceof mongoose.Types.ObjectId) return null;
+  if (value._bsontype === 'ObjectId') return null;
+  return value;
 }
 
-function notifyQuiet(phone, message) {
-  if (!phone || !message) return;
-  void sendSms(phone, message).then((result) => {
-    if (!result?.ok) {
-      logger.error('appointment notification SMS failed', {
+function patientPhone(appointment) {
+  return resolveSmsDestination(asPatientDoc(appointment?.patientId));
+}
+
+export function buildWaitingSms(appointment) {
+  return [
+    'YenCare Health',
+    '',
+    `You are in the live queue at ${clinicSiteLabel(appointment.clinicSite)}.`,
+    appointment.queueToken ? `Token: ${appointment.queueToken}` : null,
+    appointment.estimatedWaitMinutes
+      ? `Estimated wait: about ${appointment.estimatedWaitMinutes} minutes.`
+      : null,
+    `Booking ID: ${appointment.referenceCode}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function buildArrivalSms(appointment) {
+  return [
+    'YenCare Health',
+    '',
+    `We've noted your arrival at ${clinicSiteLabel(appointment.clinicSite)}.`,
+    `Present Booking ID ${appointment.referenceCode} at reception.`,
+    'Reception will add you to the live queue.',
+  ].join('\n');
+}
+
+export function buildCancelSms(appointment) {
+  return [
+    'YenCare Health',
+    '',
+    `Your appointment ${appointment.referenceCode} on ${appointment.appointmentDate} at ${formatHm(appointment.appointmentTime)} has been cancelled.`,
+    clinicSiteLabel(appointment.clinicSite),
+    'You can book again when you need care.',
+  ].join('\n');
+}
+
+export function buildRescheduleSms(appointment) {
+  const reason = appointment.staffChangeReason
+    ? `Reason: ${appointment.staffChangeReason}`
+    : null;
+  return [
+    'YenCare Health',
+    '',
+    'Appointment updated',
+    `New: ${appointment.appointmentDate}, ${formatHm(appointment.appointmentTime)}`,
+    `Booking ID: ${appointment.referenceCode}`,
+    reason,
+    clinicSiteLabel(appointment.clinicSite),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function patientIdOf(appointment) {
+  const raw = appointment?.patientId;
+  if (!raw) return null;
+  if (raw instanceof mongoose.Types.ObjectId || raw._bsontype === 'ObjectId') {
+    return raw;
+  }
+  if (typeof raw === 'object') return raw._id || null;
+  return raw;
+}
+
+async function smsDestinationsForAppointment(appointment, requestedPhone) {
+  let patient = asPatientDoc(appointment?.patientId);
+  if (!resolveSmsDestination(patient, requestedPhone)) {
+    const id = patientIdOf(appointment);
+    if (id) {
+      try {
+        patient = await Patient.findById(id).select('fullName phone studentIndex');
+      } catch (err) {
+        logger.warn('could not reload patient for SMS', {
+          subsystem: 'sms',
+          referenceCode: appointment?.referenceCode,
+          err,
+        });
+      }
+    }
+  }
+  return bookingSmsDestinations(patient, requestedPhone);
+}
+
+/**
+ * Booking confirmation already awaits SMS; cancel/reschedule used to fire-and-forget
+ * a Unicode body that mNotify often drops. Same GSM-safe copy and destination
+ * fallback as createAppointment: try the proven request phone, then the record.
+ *
+ * Delivery failure never undoes the appointment change.
+ *
+ * @returns {Promise<{ ok: boolean, error?: string }>}
+ */
+export async function sendAppointmentSms({
+  appointment,
+  requestedPhone,
+  message,
+  kind,
+}) {
+  try {
+    const destinations = await smsDestinationsForAppointment(
+      appointment,
+      requestedPhone,
+    );
+    if (destinations.length === 0) {
+      const error = 'Patient has no phone number on record';
+      logger.error(`cannot send ${kind} SMS: no phone on record`, {
         subsystem: 'sms',
-        reason: result?.error || 'unknown error',
+        referenceCode: appointment?.referenceCode || String(appointment?._id || ''),
+      });
+      return { ok: false, error };
+    }
+
+    let sms = { ok: false, error: 'SMS was not sent' };
+    for (const destination of destinations) {
+      sms = await sendSms(destination, message);
+      if (sms.ok) return sms;
+      logger.error(`${kind} SMS not delivered`, {
+        subsystem: 'sms',
+        referenceCode: appointment?.referenceCode,
+        reason: sms.error,
       });
     }
+    return sms;
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    logger.error(`failed to dispatch ${kind} SMS`, { subsystem: 'sms', err });
+    return { ok: false, error };
+  }
+}
+
+function notifyQuiet(appointment, message, kind) {
+  void sendAppointmentSms({
+    appointment,
+    message,
+    kind,
   });
 }
 
@@ -416,22 +543,7 @@ export async function updateAppointmentStatus(idOrReference, status) {
   }
 
   if (status === 'WAITING') {
-    const phone = patientPhone(appointment);
-    notifyQuiet(
-      phone,
-      [
-        'YɛnCare',
-        '',
-        `You are in the live queue at ${clinicSiteLabel(appointment.clinicSite)}.`,
-        appointment.queueToken ? `Token: ${appointment.queueToken}` : null,
-        appointment.estimatedWaitMinutes
-          ? `Estimated wait: about ${appointment.estimatedWaitMinutes} minutes.`
-          : null,
-        `Ref: ${appointment.referenceCode}`,
-      ]
-        .filter(Boolean)
-        .join('\n'),
-    );
+    notifyQuiet(appointment, buildWaitingSms(appointment), 'queue');
   }
 
   return appointment;
@@ -482,16 +594,7 @@ export async function markPatientArrived(referenceCode, { phone } = {}) {
     throw err;
   }
 
-  notifyQuiet(
-    patientPhone(appointment),
-    [
-      'YɛnCare',
-      '',
-      `We've noted your arrival at ${clinicSiteLabel(appointment.clinicSite)}.`,
-      `Present Ref ${appointment.referenceCode} at reception.`,
-      'Reception will add you to the live queue.',
-    ].join('\n'),
-  );
+  notifyQuiet(appointment, buildArrivalSms(appointment), 'arrival');
 
   return appointment;
 }
@@ -700,18 +803,14 @@ export async function cancelAppointment(
     });
 
     const cancelled = result.appointment;
-    notifyQuiet(
-      patientPhone(cancelled),
-      [
-        'YɛnCare',
-        '',
-        `Your appointment ${cancelled.referenceCode} on ${cancelled.appointmentDate} at ${formatHm(cancelled.appointmentTime)} has been cancelled.`,
-        `KNUST ${clinicSiteLabel(cancelled.clinicSite)}`,
-        'You can book again when you need care.',
-      ].join('\n'),
-    );
+    const sms = await sendAppointmentSms({
+      appointment: cancelled,
+      requestedPhone: phone,
+      message: buildCancelSms(cancelled),
+      kind: 'cancel',
+    });
 
-    return result;
+    return { ...result, sms };
   } finally {
     await session.endSession();
   }
@@ -999,22 +1098,14 @@ export async function rescheduleAppointment(
     });
 
     const moved = result.appointment;
-    const reason = moved.staffChangeReason
-      ? `\nReason: ${moved.staffChangeReason}`
-      : '';
-    notifyQuiet(
-      patientPhone(moved),
-      [
-        'YɛnCare Update',
-        '',
-        'Your appointment has been updated.',
-        `New: ${moved.appointmentDate}, ${formatHm(moved.appointmentTime)}`,
-        `Ref: ${moved.referenceCode}${reason}`,
-        clinicSiteLabel(moved.clinicSite),
-      ].join('\n'),
-    );
+    const sms = await sendAppointmentSms({
+      appointment: moved,
+      requestedPhone: phone,
+      message: buildRescheduleSms(moved),
+      kind: 'reschedule',
+    });
 
-    return result;
+    return { ...result, sms };
   } finally {
     await session.endSession();
   }

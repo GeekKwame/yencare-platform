@@ -615,6 +615,7 @@ describe('appointments HTTP', () => {
           },
           oldSlotId: '68bf2c0e9c1a2b0088888888',
           newSlotId: '68bf2c0e9c1a2b0099999999',
+          sms: { ok: true, provider: 'mock', to: '+233241234567' },
         };
       },
     };
@@ -658,6 +659,8 @@ describe('appointments HTTP', () => {
       body.appointment.timeSlotId,
       '68bf2c0e9c1a2b0099999999',
     );
+
+    assert.equal(body.sms.ok, true);
   });
 
   it('PATCH /api/appointments/:id/reschedule returns 400 when new slot is already booked', async () => {
