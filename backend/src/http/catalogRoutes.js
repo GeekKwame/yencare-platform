@@ -31,6 +31,7 @@ export function createCatalogRouter(catalog) {
   router.get('/time-slots', asyncHandler(async (req, res) => {
     const filters = {};
     if (typeof req.query.date === 'string') filters.date = req.query.date;
+    if (typeof req.query.fromDate === 'string') filters.fromDate = req.query.fromDate;
     if (typeof req.query.clinicSite === 'string') filters.clinicSite = req.query.clinicSite;
     if (typeof req.query.clinicianId === 'string') filters.clinicianId = req.query.clinicianId;
     if (typeof req.query.available === 'string') filters.available = req.query.available;

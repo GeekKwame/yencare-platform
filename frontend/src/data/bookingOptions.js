@@ -1,4 +1,7 @@
+import { accraTodayIso, upcomingWeekdays } from "../lib/accraTime";
+
 /** Official KNUST health facilities used by the public booking wizard. */
+
 
 export const CLINIC_SITES = [
   {
@@ -64,31 +67,35 @@ export const CLINICIANS = [
   },
 ];
 
-/** Demo clinic days matching the prototype bookable window. */
-export const AVAILABLE_DATES = [
-  { iso: "2026-09-15", day: "Tuesday", label: "15 Sep 2026" },
-  { iso: "2026-09-16", day: "Wednesday", label: "16 Sep 2026" },
-  { iso: "2026-09-17", day: "Thursday", label: "17 Sep 2026" },
-  { iso: "2026-09-18", day: "Friday", label: "18 Sep 2026" },
-];
-
-/** Include today so a booking can appear on Staff Portal's "today" roster. */
-export function getAvailableDates() {
-  const now = new Date();
-  const iso = now.toISOString().slice(0, 10);
-  const day = now.toLocaleDateString("en-GB", { weekday: "long" });
-  const label = now.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-
-  const dates = [...AVAILABLE_DATES];
-  if (!dates.some((date) => date.iso === iso)) {
-    dates.unshift({ iso, day, label });
-  }
-  return dates;
+/** Split an ISO date string (YYYY-MM-DD) into weekday and UK short date without string-split artifacts. */
+export function formatDayAndDate(iso) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return { day: "", label: iso || "—" };
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (Number.isNaN(date.getTime())) return { day: "", label: iso };
+  return {
+    day: date.toLocaleDateString("en-GB", { weekday: "long", timeZone: "UTC" }),
+    label: date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+  };
 }
+
+/** Dynamic clinic booking window (upcoming weekdays from live Accra date). */
+export function getAvailableDates(count = 14) {
+  const today = accraTodayIso();
+  const isos = upcomingWeekdays(today, count);
+  return isos.map((iso) => {
+    const { day, label } = formatDayAndDate(iso);
+    return { iso, day, label };
+  });
+}
+
+export const AVAILABLE_DATES = getAvailableDates(14);
+
 
 /** Prototype 30-minute consultation slots (display + 24h value). */
 export const TIME_SLOTS = [
@@ -131,18 +138,11 @@ export function visitTypeLabel(id) {
 }
 
 export function formatDateLabel(iso) {
-  const found = getAvailableDates().find((date) => date.iso === iso);
-  if (found) return `${found.day} ${found.label}`;
   if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || "—";
-  const date = new Date(`${iso}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const { day, label } = formatDayAndDate(iso);
+  return day ? `${day} ${label}` : label;
 }
+
 
 export function formatTimeLabel(value) {
   return getTimeSlot(value)?.label || value || "—";

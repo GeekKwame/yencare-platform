@@ -51,3 +51,29 @@ export function isFutureSlot(dateIso, startTime, now = new Date()) {
   if (dateIso < today) return false;
   return String(startTime || "") > accraNowHm(now);
 }
+
+export function upcomingWeekdays(fromIso, count = 14) {
+  const [year, month, day] = String(fromIso)
+    .split("-")
+    .map(Number);
+  const cursor = new Date(Date.UTC(year, month - 1, day));
+  const dates = [];
+
+  while (dates.length < count) {
+    const dow = cursor.getUTCDay();
+    if (dow !== 0 && dow !== 6) {
+      dates.push(cursor.toISOString().slice(0, 10));
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return dates;
+}
+
+export function accraTomorrowIso(date = new Date()) {
+  const today = accraTodayIso(date);
+  const [year, month, day] = today.split("-").map(Number);
+  const next = new Date(Date.UTC(year, month - 1, day + 1));
+  return next.toISOString().slice(0, 10);
+}
+

@@ -127,13 +127,23 @@ void ensureOpenSlots({ days: 14 })
     console.warn("[yencare] slot generation skipped:", err.message);
   });
 
+const SLOT_GEN_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const slotTimer = setInterval(() => {
+  ensureOpenSlots({ days: 14 }).catch((err) => {
+    console.warn("[yencare] rolling slot generation error:", err.message);
+  });
+}, SLOT_GEN_INTERVAL_MS);
+
+
 async function shutdown(signal) {
   console.log(`[yencare] ${signal} received, shutting down`);
 
+  clearInterval(slotTimer);
   await new Promise((resolve) => server.close(resolve));
 
   await disconnectDb();
 }
+
 
 process.on("SIGINT", () => {
   shutdown("SIGINT").finally(() => process.exit(0));

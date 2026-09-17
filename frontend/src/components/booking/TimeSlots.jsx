@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaCalendarAlt, FaClock } from "react-icons/fa";
 import {
   formatDateLabel,
+  formatDayAndDate,
   formatTimeLabel,
   getArriveByLabel,
 } from "../../data/bookingOptions";
-import { isFutureSlot } from "../../lib/accraTime";
+import { accraTodayIso, isFutureSlot } from "../../lib/accraTime";
 import { mapTimeSlot } from "../../lib/catalogView";
 import { listTimeSlots } from "../../services/catalog";
 import api from "../../services/api";
@@ -15,7 +16,16 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [tick, setTick] = useState(() => Date.now());
   const arriveBy = getArriveByLabel(formData.appointmentTime);
+
+  // Periodically refresh the live clock ticker every 60s so passed slots/dates update in real time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick(Date.now());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +45,7 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
       try {
         const rows = await listTimeSlots({
           clinicianId: formData.clinicianId,
+          fromDate: accraTodayIso(),
         });
         const mapped = (Array.isArray(rows) ? rows : [])
           .map(mapTimeSlot)
@@ -74,16 +85,48 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
     };
   }, [formData.clinicianId]);
 
+  // Only include candidate dates on or after today that have at least one open, future-available consultation slot
   const dates = useMemo(() => {
-    return [...new Set(slots.map((slot) => slot.date))].sort();
-  }, [slots]);
+    const today = accraTodayIso();
+    const candidates = [...new Set(slots.map((slot) => slot.date))]
+      .filter((iso) => iso >= today)
+      .sort();
+
+    return candidates.filter((iso) => {
+      return slots.some(
+        (slot) =>
+          slot.date === iso &&
+          !slot.isBooked &&
+          isFutureSlot(slot.date, slot.startTime),
+      );
+    });
+  }, [slots, tick]);
+
+  // Ensure selected date stays in sync with currently available dates
+  useEffect(() => {
+    if (dates.length > 0) {
+      if (!formData.appointmentDate || !dates.includes(formData.appointmentDate)) {
+        updateFormData({
+          appointmentDate: dates[0],
+          appointmentTime: "",
+          timeSlotId: "",
+        });
+      }
+    } else if (formData.appointmentDate) {
+      updateFormData({
+        appointmentDate: "",
+        appointmentTime: "",
+        timeSlotId: "",
+      });
+    }
+  }, [dates, formData.appointmentDate]);
 
   const times = useMemo(
     () =>
       slots
         .filter((slot) => slot.date === formData.appointmentDate)
         .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
-    [slots, formData.appointmentDate],
+    [slots, formData.appointmentDate, tick],
   );
 
   const handleContinue = () => {
@@ -96,8 +139,8 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
       return;
     }
     const selected = slots.find((slot) => slot.id === formData.timeSlotId);
-    if (!selected || selected.isBooked) {
-      setError("That time was taken. Please choose another slot.");
+    if (!selected || selected.isBooked || !isFutureSlot(selected.date, selected.startTime)) {
+      setError("That consultation time has passed or was taken. Please choose another slot.");
       return;
     }
     onNext();
@@ -154,8 +197,12 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {dates.map((iso) => {
                 const openCount = slots.filter(
-                  (slot) => slot.date === iso && !slot.isBooked,
+                  (slot) =>
+                    slot.date === iso &&
+                    !slot.isBooked &&
+                    isFutureSlot(slot.date, slot.startTime),
                 ).length;
+                const { day, label } = formatDayAndDate(iso);
                 return (
                   <button
                     key={iso}
@@ -175,10 +222,10 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
                     }`}
                   >
                     <span className="block text-xs font-semibold text-gray-500">
-                      {formatDateLabel(iso).split(" ")[0]}
+                      {day}
                     </span>
                     <span className="mt-1 block text-sm font-bold">
-                      {formatDateLabel(iso).replace(/^\w+\s/, "")}
+                      {label}
                     </span>
                     <span className="mt-1 block text-[10px] font-medium text-[#607672]">
                       {openCount} open
