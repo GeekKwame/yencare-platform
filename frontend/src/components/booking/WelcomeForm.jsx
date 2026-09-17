@@ -8,24 +8,26 @@ import {
   FaFacebookMessenger,
 } from "react-icons/fa";
 import Logo from "../../assets/Yencare Logo.png";
-import { isStudentsClinicOpen } from "../../lib/accraTime";
+import { accraClockLabel, isStudentsClinicOpen } from "../../lib/accraTime";
 import FindAppointment from "../appointment/FindAppointment";
 import AfterHours from "./AfterHours";
 import { getClinicActivity } from "../../services/queue";
 
-const WelcomeForm = ({ onStartBooking }) => {
-  const time = new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const [findAppointment, setFindAppointment] = useState(false);
-  const [afterHours, setAfterHours] = useState(false);
+const WelcomeForm = ({ onStartBooking, initialReference = "" }) => {
+  const [clock, setClock] = useState(() => accraClockLabel());
+  const [findAppointment, setFindAppointment] = useState(() => Boolean(initialReference));
+  const [afterHours, setAfterHours] = useState(() => !isStudentsClinicOpen());
   const [activity, setActivity] = useState({
     nowServingToken: "—",
     waitingCount: "—",
     estimatedWaitMinutes: null,
   });
+
+  useEffect(() => {
+    setClock(accraClockLabel());
+    const clockId = window.setInterval(() => setClock(accraClockLabel()), 30000);
+    return () => window.clearInterval(clockId);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +61,12 @@ const WelcomeForm = ({ onStartBooking }) => {
   }, []);
 
   if (findAppointment) {
-    return <FindAppointment setAppointment={setFindAppointment} />;
+    return (
+      <FindAppointment
+        setAppointment={setFindAppointment}
+        initialReference={initialReference}
+      />
+    );
   }
 
   if (afterHours) {
@@ -82,7 +89,7 @@ const WelcomeForm = ({ onStartBooking }) => {
 
         <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400">
           <FaClock size={10} className="text-[#176b5f]" />
-          <span>{time}</span>
+          <span>{clock} Accra</span>
         </div>
 
         <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">

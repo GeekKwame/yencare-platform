@@ -101,6 +101,16 @@ const appointmentSchema = new mongoose.Schema(
 
 appointmentSchema.index({ referenceCode: 1 }, { unique: true, name: 'appointments_reference_unique' });
 appointmentSchema.index(
+  { clinicianId: 1, appointmentDate: 1, appointmentTime: 1 },
+  {
+    unique: true,
+    name: 'appointments_clinician_active_slot_unique',
+    partialFilterExpression: {
+      status: { $in: ['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED', 'COMPLETED'] },
+    },
+  },
+);
+appointmentSchema.index(
   { appointmentDate: 1, clinicSite: 1, status: 1 },
   { name: 'appointments_day_site_status' },
 );

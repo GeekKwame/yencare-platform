@@ -29,6 +29,14 @@ describe('collection specs', () => {
   it('registers unique double-booking guards on time_slots', () => {
     assert.equal(hasIndex('time_slots', { clinicianId: 1, date: 1, startTime: 1 }, { unique: true }), true);
     assert.equal(hasIndex('time_slots', { roomId: 1, date: 1, startTime: 1 }, { unique: true }), true);
+    assert.equal(
+      hasIndex(
+        'appointments',
+        { clinicianId: 1, appointmentDate: 1, appointmentTime: 1 },
+        { unique: true },
+      ),
+      true,
+    );
   });
 
   it('registers unique patient phone, room pair, and YC reference indexes', () => {

@@ -88,7 +88,11 @@ export function createApp({
   );
 
   if (staffAuth) {
-    app.use('/api/auth', createAuthRouter(staffAuth));
+    app.use(
+      '/api/auth',
+      maybeRateLimit({ windowMs: 60_000, max: 20 }),
+      createAuthRouter(staffAuth),
+    );
   }
 
   const staffHttp = {

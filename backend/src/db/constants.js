@@ -14,6 +14,15 @@ export const APPOINTMENT_STATUSES = Object.freeze([
   'NO_SHOW',
 ]);
 
+/** Statuses that still occupy a clinician/date/time slot. */
+export const ACTIVE_SLOT_STATUSES = Object.freeze([
+  'BOOKED',
+  'CHECKED_IN',
+  'WAITING',
+  'CALLED',
+  'COMPLETED',
+]);
+
 export const ROOM_STATUSES = Object.freeze(['active', 'maintenance', 'inactive']);
 
 export const STAFF_ROLES = Object.freeze(['RECEPTIONIST', 'DOCTOR', 'ADMIN']);

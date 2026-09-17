@@ -1,10 +1,29 @@
 import { normalizeGhanaPhone } from './normalizePhone.js';
 import { sendViaMock } from './providers/mock.js';
-import { sendViaAfricasTalking } from './providers/africastalking.js';
 import { sendViaMnotify } from './providers/mnotify.js';
 
-function resolveProvider() {
+function isProduction() {
+  return process.env.NODE_ENV === 'production';
+}
+
+export function assertProductionSmsConfig(env = process.env) {
+  if (env.NODE_ENV !== 'production') return;
+
+  const requested = (env.SMS_PROVIDER || 'mnotify').toLowerCase().trim();
+  if (requested !== 'mnotify') {
+    throw new Error('SMS_PROVIDER must be mnotify in production');
+  }
+  if (!env.MNOTIFY_API_KEY?.trim()) {
+    throw new Error('MNOTIFY_API_KEY must be set in production');
+  }
+}
+
+export function resolveProvider() {
   const requested = (process.env.SMS_PROVIDER || 'mock').toLowerCase().trim();
+
+  if (isProduction()) {
+    return 'mnotify';
+  }
 
   if (requested === 'mnotify') {
     if (process.env.MNOTIFY_API_KEY?.trim()) return 'mnotify';
@@ -12,25 +31,18 @@ function resolveProvider() {
     return 'mock';
   }
 
-  if (requested === 'africastalking') {
-    if (process.env.AT_API_KEY?.trim()) return 'africastalking';
-    console.warn(
-      '[sms] SMS_PROVIDER=africastalking but AT_API_KEY is missing; using mock fallback',
-    );
-    return 'mock';
+  if (requested && requested !== 'mock') {
+    console.warn(`[sms] ${requested} is not used; set SMS_PROVIDER=mnotify or mock`);
   }
 
   return 'mock';
 }
 
 /**
- * Send an SMS. Able & Emmanuella should import this and nothing else.
+ * Send an SMS via mNotify (live) or mock (local).
  *
- * Default is mock (offline). Set SMS_PROVIDER=mnotify and MNOTIFY_API_KEY
- * to deliver to a real Ghana number (uses mNotify credits / signup bonus).
- *
- * Invalid numbers and provider failures return `{ ok: false }` so a
- * booking can still succeed if SMS delivery fails.
+ * Production requires SMS_PROVIDER=mnotify and MNOTIFY_API_KEY.
+ * Local default is mock so bookings still work without credits.
  *
  * @param {string} to Ghana phone (024…, 241234567, or +233…)
  * @param {string} message SMS body
@@ -69,12 +81,15 @@ export async function sendSms(to, message) {
   const body = String(message);
   const provider = resolveProvider();
 
+  if (isProduction() && !process.env.MNOTIFY_API_KEY?.trim()) {
+    const error = 'MNOTIFY_API_KEY is not set';
+    console.error('[sms]', error);
+    return { ok: false, provider: 'mnotify', to: phone, error };
+  }
+
   const attempt = async () => {
     if (provider === 'mnotify') {
       return await sendViaMnotify(phone, body);
-    }
-    if (provider === 'africastalking') {
-      return await sendViaAfricasTalking(phone, body);
     }
     return await sendViaMock(phone, body);
   };

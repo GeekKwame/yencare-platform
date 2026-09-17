@@ -22,6 +22,7 @@ import { createStaffAuthService } from "./auth/staffAuth.js";
 import { createAppointment } from "./services/bookAppointment.js";
 import { ensureOpenSlots } from "./services/generateSlots.js";
 import { sendAppointmentReminders } from "./services/sendReminders.js";
+import { assertProductionSmsConfig } from "./sms/sendSms.js";
 
 import {
   advanceQueue,
@@ -46,6 +47,8 @@ if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET must be set in production");
 }
 
+assertProductionSmsConfig();
+
 await connectDb();
 
 const staffAuth = createStaffAuthService({
@@ -61,7 +64,10 @@ if (staffAuth.usingDevSecret) {
   );
 }
 
-const shouldSeedDemo = process.env.STAFF_SEED_DEMO !== "false";
+const shouldSeedDemo =
+  process.env.NODE_ENV === "production"
+    ? process.env.STAFF_SEED_DEMO === "true"
+    : process.env.STAFF_SEED_DEMO !== "false";
 if (shouldSeedDemo) {
   try {
     const seeded = await staffAuth.seedDemoStaff();
@@ -134,11 +140,29 @@ const slotTimer = setInterval(() => {
   });
 }, SLOT_GEN_INTERVAL_MS);
 
+function runReminders() {
+  sendAppointmentReminders()
+    .then((result) => {
+      if (result.sent > 0 || result.failed > 0) {
+        console.log(
+          `[yencare] reminders ${result.appointmentDate}: sent ${result.sent}, failed ${result.failed}`,
+        );
+      }
+    })
+    .catch((err) => {
+      console.warn("[yencare] reminder send skipped:", err.message);
+    });
+}
+
+void runReminders();
+const REMINDER_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const reminderTimer = setInterval(runReminders, REMINDER_INTERVAL_MS);
 
 async function shutdown(signal) {
   console.log(`[yencare] ${signal} received, shutting down`);
 
   clearInterval(slotTimer);
+  clearInterval(reminderTimer);
   await new Promise((resolve) => server.close(resolve));
 
   await disconnectDb();

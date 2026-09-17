@@ -36,7 +36,23 @@ export default function ConnectivityBanner() {
           : "bg-[#E7F5F1] text-[#176b5f]"
       }`}
     >
-      {copy}
+      <span>{copy}</span>
+      {state === "offline" ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (navigator.onLine) {
+              setState("restored");
+              window.setTimeout(() => setState("online"), 2500);
+            } else {
+              window.location.reload();
+            }
+          }}
+          className="ml-3 underline underline-offset-2"
+        >
+          Try again
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -299,6 +299,7 @@ const StaffPortal = () => {
             onOpenWalkIn={() => setView("walkin")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             updatingId={updatingId}
+            showCorridor={staff?.role === "ADMIN"}
           />
         )}
 
@@ -372,6 +373,7 @@ const StaffPortal = () => {
             onComplete={handleComplete}
             onOpenRoster={() => setView("roster")}
             onOpenWalkIn={() => setView("walkin")}
+            showCorridor={staff?.role === "ADMIN"}
           />
         )}
 

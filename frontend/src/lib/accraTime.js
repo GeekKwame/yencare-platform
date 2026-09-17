@@ -77,3 +77,12 @@ export function accraTomorrowIso(date = new Date()) {
   return next.toISOString().slice(0, 10);
 }
 
+export function accraClockLabel(date = new Date()) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: ACCRA,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}
+

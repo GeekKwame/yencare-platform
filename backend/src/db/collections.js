@@ -152,6 +152,16 @@ export const COLLECTION_SPECS = [
     indexes: [
       { keys: { referenceCode: 1 }, options: { unique: true, name: 'appointments_reference_unique' } },
       {
+        keys: { clinicianId: 1, appointmentDate: 1, appointmentTime: 1 },
+        options: {
+          unique: true,
+          name: 'appointments_clinician_active_slot_unique',
+          partialFilterExpression: {
+            status: { $in: ['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED', 'COMPLETED'] },
+          },
+        },
+      },
+      {
         keys: { appointmentDate: 1, clinicSite: 1, status: 1 },
         options: { name: 'appointments_day_site_status' },
       },

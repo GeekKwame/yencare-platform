@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -21,7 +20,7 @@ import {
 } from "../../data/bookingOptions";
 import { createAppointment } from "../../services/appointments";
 
-const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
+const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointment }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
@@ -174,12 +173,17 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
           )}
 
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <Link
-              to={`/queue?ref=${encodeURIComponent(bookingRef)}`}
+            <button
+              type="button"
+              onClick={() =>
+                typeof onViewAppointment === "function"
+                  ? onViewAppointment(bookingRef)
+                  : onReset?.()
+              }
               className="flex flex-1 items-center justify-center rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f]"
             >
-              Track Live Queue
-            </Link>
+              View appointment
+            </button>
             {onReset && (
               <button
                 type="button"
@@ -297,7 +301,13 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-xs leading-relaxed text-[#76551f] sm:text-sm">
+      <div className="mt-6 rounded-xl border border-[#dce8df] bg-[#f5faf7] p-4 text-xs leading-relaxed text-[#173b3a] sm:text-sm">
+        A confirmation SMS with your reference code will be sent to{" "}
+        <strong>{formData.phoneNumber || "the number on this booking"}</strong>.
+        Booking success does not depend on SMS delivery.
+      </div>
+
+      <div className="mt-4 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-xs leading-relaxed text-[#76551f] sm:text-sm">
         <strong>Important:</strong> Please arrive{" "}
         <strong>{arriveBy ? `by ${arriveBy}` : "15 minutes prior"}</strong> to your scheduled time at{" "}
         {clinicLabel || "the clinic"}. If you cannot make it, please cancel or reschedule via the portal so your slot can be released.
@@ -313,7 +323,7 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken }) => {
         onClick={handleConfirm}
         className="relative mt-7 flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#176b5f] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span>{isSubmitting ? "Confirming Booking..." : "Confirm & Book Appointment"}</span>
+        <span>{isSubmitting ? "Confirming booking…" : "Confirm booking"}</span>
       </button>
     </section>
   );

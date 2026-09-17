@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaArrowLeft,
   FaHashtag,
@@ -43,9 +43,11 @@ function validateSearch(method, searchInput) {
   return { query: { phone: value } };
 }
 
-const FindAppointment = ({ setAppointment }) => {
+const FindAppointment = ({ setAppointment, initialReference = "" }) => {
   const [searchMethod, setSearchMethod] = useState("reference");
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState(() =>
+    initialReference ? String(initialReference).toUpperCase() : "",
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [appointment, setFoundAppointment] = useState(null);
@@ -90,6 +92,40 @@ const FindAppointment = ({ setAppointment }) => {
       setIsSearching(false);
     }
   };
+
+  useEffect(() => {
+    if (!initialReference) return undefined;
+    let cancelled = false;
+
+    async function loadRef() {
+      const { error, query } = validateSearch("reference", initialReference);
+      if (error) {
+        setErrorMessage(error);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const found = await lookupAppointment(query);
+        if (!cancelled) {
+          setFoundAppointment(found);
+          setFlow("detail");
+        }
+      } catch {
+        if (!cancelled) {
+          setErrorMessage(
+            "Appointment not found. Please check your details and try again.",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsSearching(false);
+      }
+    }
+
+    void loadRef();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialReference]);
 
   if (appointment && flow === "reschedule") {
     return (

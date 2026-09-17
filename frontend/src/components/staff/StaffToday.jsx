@@ -10,6 +10,7 @@ export default function StaffToday({
   onOpenWalkIn,
   onCheckInToQueue,
   updatingId,
+  showCorridor = false,
 }) {
   const metrics = rosterMetrics(appointments);
   const arrivedPatients = appointments.filter((a) => a.status === "CHECKED_IN");
@@ -62,6 +63,14 @@ export default function StaffToday({
           >
             Live Queue →
           </button>
+          {showCorridor ? (
+            <a
+              href="/staff/display"
+              className="rounded-xl border border-[#dce8df] bg-white px-4 py-2.5 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
+            >
+              Corridor TV
+            </a>
+          ) : null}
         </div>
       </div>
 

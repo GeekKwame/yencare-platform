@@ -9,6 +9,7 @@ import {
   REFERENCE_PATTERN,
 } from "../lib/appointmentView";
 import { arriveAppointment, getQueueStatus, lookupAppointment } from "../services/appointments";
+import { announcePatientCall } from "../lib/clinicSpeech";
 
 const POLL_MS = 15000;
 
@@ -293,6 +294,15 @@ const Queue = () => {
               <p className="mt-1 text-xs text-[#607672]">
                 {clinicianName} is ready for you.
               </p>
+              <button
+                type="button"
+                onClick={() =>
+                  announcePatientCall(view.fullName || "Patient", roomLabel, token)
+                }
+                className="mt-4 rounded-xl border border-[#176b5f] bg-white px-4 py-2 text-xs font-semibold text-[#176b5f] hover:bg-[#e7f5f1]"
+              >
+                Replay call
+              </button>
             </div>
           ) : status === "WAITING" ? (
             <div className="mt-3 rounded-2xl border border-[#fcd34d] bg-[#fef7ed] p-6 text-center">

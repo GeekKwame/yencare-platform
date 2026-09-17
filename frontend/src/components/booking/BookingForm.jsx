@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import WelcomeForm from "./WelcomeForm";
 import PersonalDetails from "./PersonalDetails";
 import ClinicSelection from "./ClinicSelection";
@@ -7,6 +8,7 @@ import ServiceSelection from "./ServiceSelection";
 import TimeSlots from "./TimeSlots";
 import ReviewBooking from "./ReviewBooking";
 import SlotTaken from "./SlotTaken";
+import { normalizeReference } from "../../lib/appointmentView";
 
 const initialFormData = {
   fullName: "",
@@ -26,9 +28,13 @@ const initialFormData = {
 };
 
 const BookingForm = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialFormData);
   const [slotTaken, setSlotTaken] = useState(false);
+  const [findReference, setFindReference] = useState(
+    () => normalizeReference(searchParams.get("ref") || ""),
+  );
 
   const updateFormData = (changes) => {
     setFormData((prev) => ({
@@ -58,6 +64,17 @@ const BookingForm = () => {
   const handleReset = () => {
     setFormData(initialFormData);
     setSlotTaken(false);
+    setFindReference("");
+    setSearchParams({});
+    setStep(1);
+  };
+
+  const handleViewAppointment = (reference) => {
+    const ref = normalizeReference(reference);
+    setFormData(initialFormData);
+    setSlotTaken(false);
+    setFindReference(ref);
+    setSearchParams(ref ? { ref } : {});
     setStep(1);
   };
 
@@ -81,7 +98,7 @@ const BookingForm = () => {
 
   const renderStep = () => {
     if (step === 1) {
-      return <WelcomeForm onStartBooking={handleStartBooking} />;
+      return <WelcomeForm onStartBooking={handleStartBooking} initialReference={findReference} />;
     }
 
     if (step === 2) {
@@ -145,6 +162,7 @@ const BookingForm = () => {
           formData={formData}
           onBack={goToPreviousStep}
           onReset={handleReset}
+          onViewAppointment={handleViewAppointment}
           onSlotTaken={() => setSlotTaken(true)}
         />
       );

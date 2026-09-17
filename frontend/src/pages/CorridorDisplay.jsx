@@ -5,8 +5,8 @@ import {
   CLINIC_SITE_LABELS,
   DEFAULT_CLINIC_SITE,
   mapAppointmentToCard,
-  todayIsoDate,
 } from "../data/mockAppointments";
+import { accraClockLabel, accraTodayIso, isClinicOpen } from "../lib/accraTime";
 import { getTodaysAppointments } from "../services/appointments";
 
 const ROOM_DOCTORS = {
@@ -44,13 +44,11 @@ function NowServingCard({ room, doctor, token, serving }) {
 export default function CorridorDisplay() {
   const [clinicSite, setClinicSite] = useState(DEFAULT_CLINIC_SITE);
   const [appointments, setAppointments] = useState([]);
-  const [clock, setClock] = useState(() =>
-    new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-  );
+  const [clock, setClock] = useState(() => accraClockLabel());
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setClock(new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }));
+      setClock(accraClockLabel());
     }, 15000);
     return () => clearInterval(timer);
   }, []);
@@ -60,7 +58,7 @@ export default function CorridorDisplay() {
 
     async function load() {
       try {
-        const data = await getTodaysAppointments(clinicSite, todayIsoDate());
+        const data = await getTodaysAppointments(clinicSite, accraTodayIso());
         if (cancelled) return;
         setAppointments(Array.isArray(data) ? data.map(mapAppointmentToCard) : []);
       } catch {
@@ -94,6 +92,7 @@ export default function CorridorDisplay() {
   const room1 = calledByRoom["Room 1"] || calledByRoom["OPD Room 1"];
   const room2 = calledByRoom["Room 2"] || calledByRoom["OPD Room 2"];
   const siteLabel = CLINIC_SITE_LABELS[clinicSite] || clinicSite;
+  const siteOpen = isClinicOpen(clinicSite);
   const isHospital = clinicSite === "knust-hospital";
   const leftRoom = isHospital ? "OPD Room 1" : "Room 1";
   const rightRoom = isHospital ? "OPD Room 2" : "Room 2";
@@ -125,7 +124,14 @@ export default function CorridorDisplay() {
               </button>
             ))}
           </div>
-          <div className="px-3 py-1.5 font-mono text-lg tabular-nums">{clock}</div>
+          <div className="px-3 py-1.5 font-mono text-lg tabular-nums">{clock} Accra</div>
+          <span
+            className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider ${
+              siteOpen ? "bg-[#087F6C] text-white" : "border border-[#333333] text-[#8A948F]"
+            }`}
+          >
+            {siteOpen ? "Open" : "Closed"}
+          </span>
           <Link
             to="/staff"
             className="border border-[#333333] px-3 py-1.5 text-[11px] font-semibold text-[#8A948F] hover:border-white hover:text-white"

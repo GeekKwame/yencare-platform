@@ -151,6 +151,9 @@ describe('Appointment', () => {
     const keys = indexes.map(([key]) => JSON.stringify(key));
     assert.ok(keys.includes(JSON.stringify({ referenceCode: 1 })));
     assert.ok(keys.includes(JSON.stringify({ appointmentDate: 1, clinicSite: 1, status: 1 })));
+    assert.ok(
+      keys.includes(JSON.stringify({ clinicianId: 1, appointmentDate: 1, appointmentTime: 1 })),
+    );
     assert.equal(typeof Appointment.findByReference, 'function');
     assert.equal(typeof Appointment.populateQueue, 'function');
   });

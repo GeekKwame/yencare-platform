@@ -14,6 +14,7 @@ export default function StaffLiveQueue({
   onComplete,
   onOpenRoster,
   onOpenWalkIn,
+  showCorridor = false,
 }) {
   const called = appointments.filter((appt) => appt.status === "CALLED");
   const waiting = sortWaiting(appointments.filter((appt) => appt.status === "WAITING"));
@@ -65,6 +66,14 @@ export default function StaffLiveQueue({
           >
             + Add Walk-In
           </button>
+          {showCorridor ? (
+            <a
+              href="/staff/display"
+              className="rounded-xl border border-[#dce8df] px-3 py-2 text-xs font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
+            >
+              Corridor TV
+            </a>
+          ) : null}
           <span className="rounded-xl border border-[#FCD34D] bg-[#FEF7ED] px-3 py-1.5 text-xs font-semibold text-[#B7791F]">
             {waiting.length} Waiting
           </span>
