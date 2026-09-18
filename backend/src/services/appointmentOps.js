@@ -22,6 +22,7 @@ import {
 
 import { createEventBusFacade } from '../lib/eventBus.js';
 import { logger } from '../lib/logger.js';
+import { accraTodayIso } from '../lib/accraTime.js';
 import { bookingSmsDestinations, resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
@@ -266,20 +267,32 @@ export function assertNotInLiveQueue(appointment, { actorIsStaff = false } = {})
 }
 
 /**
- * @param {{ date?: string, clinicSite?: string, clinic?: string }} filters
+ * Staff roster date: the visit day (`appointmentDate`), never createdAt.
+ * Omitting date defaults to Accra today so the dashboard cannot dump every
+ * historical booking onto one board.
+ *
+ * @param {string | undefined} date
+ * @param {Date} [now]
+ * @returns {string}
  */
-export async function listAppointments(filters = {}) {
-  const clinicSite = filters.clinicSite || filters.clinic;
-  const { date } = filters;
-  const query = {};
-
+export function resolveRosterDate(date, now = new Date()) {
   if (date != null && date !== '') {
     if (!DATE_PATTERN.test(String(date))) {
       throw new ValidationError('date must be YYYY-MM-DD');
     }
-
-    query.appointmentDate = String(date);
+    return String(date);
   }
+  return accraTodayIso(now);
+}
+
+/**
+ * @param {{ date?: string, clinicSite?: string, clinic?: string }} filters
+ */
+export async function listAppointments(filters = {}) {
+  const clinicSite = filters.clinicSite || filters.clinic;
+  const query = {
+    appointmentDate: resolveRosterDate(filters.date),
+  };
 
   if (clinicSite != null && clinicSite !== '') {
     if (!CLINIC_SITES.includes(clinicSite)) {

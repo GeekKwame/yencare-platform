@@ -9,7 +9,7 @@ export default function AfterHours({ onFindAppointment, onBookHospital, onHome }
       </h2>
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#66706B]">
         New Students&apos; Clinic bookings are unavailable right now. The clinic
-        operates Monday to Friday, 8:00 AM – 4:00 PM (Accra).
+        operates Monday to Friday, 8:00 AM – 4:00 PM.
       </p>
 
       <div className="mt-6 rounded-2xl border border-[#F8B4B4] bg-[#FDF2F2] p-4 text-left text-xs leading-5 text-[#C53030]">

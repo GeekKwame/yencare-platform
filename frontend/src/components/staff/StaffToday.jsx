@@ -39,6 +39,8 @@ export default function StaffToday({
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             {clinicLabel} · {selectedDateLabel}
+            {" "}
+            · visits for this date
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -25,6 +25,9 @@ export default function StaffRoster({
             Clinical Roster
           </p>
           <h2 className="text-2xl font-bold text-[#173b3a]">Appointments Roster</h2>
+          <p className="mt-1 text-sm text-[#66706B]">
+            Visits scheduled for this date — not the day the booking was created.
+          </p>
         </div>
         <button
           type="button"

@@ -20,6 +20,7 @@
     "db:seed:dry": "node scripts/seed.js --dry-run",
     "ops:slots": "node scripts/ensure-slots.js",
     "ops:reminders": "node scripts/send-reminders.js",
+    "ops:close-missed": "node scripts/close-missed-appointments.js",
     "test": "node --test ./test/*.test.js"
   },
   "engines": {

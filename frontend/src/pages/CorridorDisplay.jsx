@@ -124,7 +124,7 @@ export default function CorridorDisplay() {
               </button>
             ))}
           </div>
-          <div className="px-3 py-1.5 font-mono text-lg tabular-nums">{clock} Accra</div>
+          <div className="px-3 py-1.5 font-mono text-lg tabular-nums">{clock}</div>
           <span
             className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider ${
               siteOpen ? "bg-[#087F6C] text-white" : "border border-[#333333] text-[#8A948F]"

@@ -49,7 +49,7 @@ export function assertWithinClinicHours(payload) {
   const site = clinicLabels[clinicSite] || 'This clinic';
 
   throw new ValidationError(
-    `${site} is open ${clinicHoursLabel(clinicSite)} (Accra time). Please choose a time within opening hours.`,
+    `${site} is open ${clinicHoursLabel(clinicSite)}. Please choose a time within opening hours.`,
   );
 }
 

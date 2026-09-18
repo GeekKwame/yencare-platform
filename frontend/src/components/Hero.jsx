@@ -103,7 +103,7 @@ export default function Hero() {
 
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
             <FaClock size={11} className="text-accent" aria-hidden="true" />
-            <span>{clock} Accra</span>
+            <span>{clock}</span>
             <span
               className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
                 clinicOpen

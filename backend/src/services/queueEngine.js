@@ -57,6 +57,17 @@ export function getAccraQueueDate(overrideDate = null) {
 }
 
 /**
+ * Live queue, call-next, and corridor boards are scoped to the visit day
+ * (`appointmentDate`), not createdAt. A booking made Monday for Tuesday only
+ * appears on Tuesday's hospital board.
+ *
+ * @param {string} [clinicDay] YYYY-MM-DD
+ */
+export function liveClinicDayFilter(clinicDay = getAccraQueueDate()) {
+  return { appointmentDate: clinicDay };
+}
+
+/**
  * Atomically generates and assigns an incremental daily queue token (e.g. A-01, B-04).
  * Non-colliding tokens reset every Accra calendar day per room.
  *
@@ -147,10 +158,13 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
     throw new NotFoundError(`Room not found: ${targetRoomId}`);
   }
 
-  // Check if a patient is currently CALLED in this room
+  const clinicDay = getAccraQueueDate();
+
+  // Check if a patient is currently CALLED in this room today
   const activeAppointment = await Appointment.findOne({
     roomId: room._id,
     status: 'CALLED',
+    ...liveClinicDayFilter(clinicDay),
   });
 
   if (activeAppointment) {
@@ -167,10 +181,11 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
     }
   }
 
-  // Strict FIFO ordering: earliest queueSequence, checkInTime, createdAt
+  // Strict FIFO for today's visit day only — yesterday's waiters are closed out
   const nextAppointment = await Appointment.findOne({
     roomId: room._id,
     status: 'WAITING',
+    ...liveClinicDayFilter(clinicDay),
   })
     .sort({ queueSequence: 1, checkInTime: 1, createdAt: 1 })
     .populate('patientId')
@@ -242,6 +257,7 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
           roomId: appointment.roomId,
           status: 'CALLED',
           _id: { $ne: appointment._id },
+          ...liveClinicDayFilter(appointment.appointmentDate || getAccraQueueDate()),
         });
         if (active) {
           const err = new Error(
@@ -290,7 +306,11 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
       throw new NotFoundError(`Room not found: ${roomId}`);
     }
 
-    const active = await Appointment.findOne({ roomId: room._id, status: 'CALLED' })
+    const active = await Appointment.findOne({
+      roomId: room._id,
+      status: 'CALLED',
+      ...liveClinicDayFilter(),
+    })
       .populate('patientId')
       .populate('clinicianId')
       .populate('roomId');
@@ -334,7 +354,11 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason 
   if (key) {
     appointment = await findAppointment(key);
   } else if (roomId) {
-    appointment = await Appointment.findOne({ roomId, status: 'CALLED' })
+    appointment = await Appointment.findOne({
+      roomId,
+      status: 'CALLED',
+      ...liveClinicDayFilter(),
+    })
       .populate('patientId')
       .populate('clinicianId')
       .populate('roomId');
@@ -386,11 +410,13 @@ export async function getQueueStatus(referenceCode) {
   }
 
   const roomId = appointment.roomId?._id || appointment.roomId;
+  const clinicDay = appointment.appointmentDate || getAccraQueueDate();
 
-  // Identify the currently serving token in this room
+  // Identify the currently serving token in this room on the visit day
   const nowServing = await Appointment.findOne({
     roomId,
     status: 'CALLED',
+    ...liveClinicDayFilter(clinicDay),
   });
 
   const roomToken = nowServing?.queueToken || (appointment.status === 'CALLED' ? appointment.queueToken : null);
@@ -405,6 +431,7 @@ export async function getQueueStatus(referenceCode) {
       roomId,
       status: 'WAITING',
       _id: { $ne: appointment._id },
+      ...liveClinicDayFilter(clinicDay),
     };
 
     if (appointment.queueSequence) {
@@ -424,6 +451,7 @@ export async function getQueueStatus(referenceCode) {
     const totalWaiting = await Appointment.countDocuments({
       roomId,
       status: 'WAITING',
+      ...liveClinicDayFilter(clinicDay),
     });
     const hasActiveConsultation = Boolean(nowServing);
     patientsAhead = totalWaiting + (hasActiveConsultation ? 1 : 0);
@@ -480,9 +508,12 @@ export async function getClinicActivity(clinicSite = 'students-clinic') {
     );
   }
 
+  const clinicDay = getAccraQueueDate();
+
   const called = await Appointment.find({
     clinicSite: site,
     status: 'CALLED',
+    ...liveClinicDayFilter(clinicDay),
   })
     .populate('roomId', 'name clinicSite')
     .sort({ calledTime: 1, appointmentTime: 1 })
@@ -491,6 +522,7 @@ export async function getClinicActivity(clinicSite = 'students-clinic') {
   const waiting = await Appointment.find({
     clinicSite: site,
     status: 'WAITING',
+    ...liveClinicDayFilter(clinicDay),
   })
     .sort({ queueSequence: 1, checkInTime: 1, createdAt: 1 })
     .lean();
@@ -535,6 +567,7 @@ export async function getClinicActivity(clinicSite = 'students-clinic') {
 
   return {
     clinicSite: site,
+    activityDate: clinicDay,
     isOpen: isClinicOpen(site),
     nowServingToken,
     nowServingRoom,

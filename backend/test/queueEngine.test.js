@@ -11,6 +11,7 @@ import {
   AVERAGE_CONSULT_DURATION_MINUTES,
   getRoomTokenPrefix,
   getAccraQueueDate,
+  liveClinicDayFilter,
 } from '../src/services/queueEngine.js';
 
 const oid = () => new mongoose.Types.ObjectId();
@@ -45,6 +46,11 @@ describe('queueEngine room prefix and date logic', () => {
 
   it('getAccraQueueDate rejects invalid date pattern', () => {
     assert.throws(() => getAccraQueueDate('15-09-2026'), /overrideDate must be YYYY-MM-DD/);
+  });
+
+  it('scopes the live queue to appointmentDate (visit day), not createdAt', () => {
+    assert.deepEqual(liveClinicDayFilter('2026-09-18'), { appointmentDate: '2026-09-18' });
+    assert.deepEqual(liveClinicDayFilter(), { appointmentDate: accraTodayIso() });
   });
 });
 

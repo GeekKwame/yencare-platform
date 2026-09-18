@@ -29,6 +29,7 @@ const StaffPortal = () => {
   const toast = useToast();
   const [clinicSite, setClinicSite] = useState(staff?.clinicSite || DEFAULT_CLINIC_SITE);
   const [selectedDate, setSelectedDate] = useState(() => accraTodayIso());
+  const [followToday, setFollowToday] = useState(true);
   const [view, setView] = useState(staff?.role === "DOCTOR" ? "queue" : "today");
   const [deskQuery, setDeskQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -59,6 +60,17 @@ const StaffPortal = () => {
       cancelled = true;
     };
   }, [clinicSite]);
+
+  useEffect(() => {
+    if (!followToday) return undefined;
+    const syncToday = () => {
+      const today = accraTodayIso();
+      setSelectedDate((current) => (current === today ? current : today));
+    };
+    syncToday();
+    const id = window.setInterval(syncToday, 30000);
+    return () => window.clearInterval(id);
+  }, [followToday]);
 
   const clinicLabel = CLINIC_SITE_LABELS[clinicSite] || clinicSite;
   const isSelectedToday = selectedDate === accraTodayIso();
@@ -198,11 +210,25 @@ const StaffPortal = () => {
   const canCallNext = staff?.role === "ADMIN" || staff?.role === "DOCTOR";
   const arrivedCount = appointments.filter((appt) => appt.status === "CHECKED_IN").length;
 
+  function openLiveQueue() {
+    setFollowToday(true);
+    setSelectedDate(accraTodayIso());
+    setView("queue");
+  }
+
+  function handleViewChange(nextView) {
+    if (nextView === "queue") {
+      openLiveQueue();
+      return;
+    }
+    setView(nextView);
+  }
+
   return (
     <StaffLayout
       staff={staff}
       view={view}
-      onViewChange={setView}
+      onViewChange={handleViewChange}
       arrivedCount={arrivedCount}
       onSignOut={logout}
     >
@@ -223,17 +249,23 @@ const StaffPortal = () => {
               </select>
             </label>
             <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
-              <span className="font-semibold">Roster date</span>
+              <span className="font-semibold">Visit date</span>
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
+                onChange={(event) => {
+                  setFollowToday(false);
+                  setSelectedDate(event.target.value);
+                }}
                 className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
               />
             </label>
             <button
               type="button"
-              onClick={() => setSelectedDate(accraTodayIso())}
+              onClick={() => {
+                setFollowToday(true);
+                setSelectedDate(accraTodayIso());
+              }}
               className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
                 isSelectedToday
                   ? "border-[#176b5f] bg-[#176b5f] text-white"
@@ -244,7 +276,10 @@ const StaffPortal = () => {
             </button>
             <button
               type="button"
-              onClick={() => setSelectedDate(SEED_DATE)}
+              onClick={() => {
+                setFollowToday(false);
+                setSelectedDate(SEED_DATE);
+              }}
               className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
                 selectedDate === SEED_DATE
                   ? "border-[#176b5f] bg-[#176b5f] text-white"
@@ -314,7 +349,7 @@ const StaffPortal = () => {
             selectedDateLabel={selectedDateLabel}
             isSelectedToday={isSelectedToday}
             onOpenRoster={() => setView("roster")}
-            onOpenQueue={() => setView("queue")}
+            onOpenQueue={openLiveQueue}
             onOpenWalkIn={() => setView("walkin")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             updatingId={updatingId}
@@ -354,7 +389,7 @@ const StaffPortal = () => {
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             onChangeTime={() => setView("change")}
             onNoShow={() => setView("noshow")}
-            onOpenQueue={() => setView("queue")}
+            onOpenQueue={openLiveQueue}
           />
         )}
 

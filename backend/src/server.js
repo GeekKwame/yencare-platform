@@ -25,6 +25,7 @@ import { createStaffAuthService } from "./auth/staffAuth.js";
 import { createAppointment } from "./services/bookAppointment.js";
 import { ensureOpenSlots } from "./services/generateSlots.js";
 import { sendAppointmentReminders } from "./services/sendReminders.js";
+import { closeMissedAppointments } from "./services/closeMissedAppointments.js";
 import { assertProductionSmsConfig } from "./sms/sendSms.js";
 
 import {
@@ -144,6 +145,7 @@ const app = createApp({
   opsService: {
     ensureOpenSlots,
     sendAppointmentReminders,
+    closeMissedAppointments,
   },
 });
 
@@ -192,11 +194,34 @@ void runReminders();
 const REMINDER_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const reminderTimer = setInterval(runReminders, REMINDER_INTERVAL_MS);
 
+function runMissedCloseout() {
+  closeMissedAppointments()
+    .then((result) => {
+      if (result.marked > 0 || result.failed > 0) {
+        logger.info("missed appointments closed", {
+          subsystem: "yencare",
+          today: result.today,
+          scanned: result.scanned,
+          marked: result.marked,
+          failed: result.failed,
+        });
+      }
+    })
+    .catch((err) => {
+      logger.warn("missed-appointment closeout skipped", { subsystem: "yencare", err });
+    });
+}
+
+void runMissedCloseout();
+const CLOSE_MISSED_INTERVAL_MS = 15 * 60 * 1000;
+const closeMissedTimer = setInterval(runMissedCloseout, CLOSE_MISSED_INTERVAL_MS);
+
 async function shutdown(signal) {
   logger.info("shutting down", { subsystem: "yencare", signal });
 
   clearInterval(slotTimer);
   clearInterval(reminderTimer);
+  clearInterval(closeMissedTimer);
   await new Promise((resolve) => server.close(resolve));
 
   await disconnectDb();

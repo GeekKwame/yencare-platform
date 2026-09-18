@@ -27,8 +27,9 @@ export default function StaffLiveQueue({
       <div className="mx-auto max-w-xl rounded-2xl border border-[#dce8df] bg-white p-10 text-center">
         <h2 className="text-2xl font-bold text-[#173b3a]">No patients in the queue</h2>
         <p className="mt-3 text-sm text-[#607672]">
-          The waiting corridor and consultation rooms are currently clear. Arriving
-          patients can be checked in from today&apos;s appointments roster.
+          The waiting corridor and consultation rooms are currently clear for
+          today&apos;s visits. Arriving patients can be checked in from the
+          appointments roster for this date.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <button

@@ -3,10 +3,10 @@ import { asyncHandler } from './asyncHandler.js';
 import { staffGuard } from './staffGuard.js';
 
 /**
- * Admin operations: rolling slots and appointment reminders.
+ * Admin operations: rolling slots, appointment reminders, missed-day closeout.
  */
 export function createOpsRouter(
-  { ensureOpenSlots, sendAppointmentReminders } = {},
+  { ensureOpenSlots, sendAppointmentReminders, closeMissedAppointments } = {},
   { authenticate } = {},
 ) {
   const router = Router();
@@ -35,6 +35,18 @@ export function createOpsRouter(
       const result = await sendAppointmentReminders({
         date: req.body?.date,
       });
+      res.status(200).json(result);
+    }),
+  );
+
+  router.post(
+    '/close-missed-appointments',
+    adminOnly,
+    asyncHandler(async (req, res) => {
+      if (!closeMissedAppointments) {
+        return res.status(501).json({ error: 'Missed-appointment closeout is not available' });
+      }
+      const result = await closeMissedAppointments();
       res.status(200).json(result);
     }),
   );

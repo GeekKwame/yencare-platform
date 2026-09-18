@@ -90,7 +90,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "", initialFind = fals
 
         <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-text-muted">
           <FaClock size={10} className="text-accent" />
-          <span>{clock} Accra</span>
+          <span>{clock}</span>
           <span
             className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
               isStudentsClinicOpen()

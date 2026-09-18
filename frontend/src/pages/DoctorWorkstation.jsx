@@ -53,6 +53,16 @@ export default function DoctorWorkstation({ staff }) {
     };
   }, [clinicSite, staff?.assignedRoom]);
 
+  useEffect(() => {
+    const syncToday = () => {
+      const today = accraTodayIso();
+      setSelectedDate((current) => (current === today ? current : today));
+    };
+    syncToday();
+    const id = window.setInterval(syncToday, 30000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const selectedRoom = rooms.find((room) => roomKey(room) === selectedRoomId) || rooms[0];
   const selectedName = selectedRoom?.name || staff?.assignedRoom || "Room";
 
