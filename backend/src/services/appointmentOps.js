@@ -455,13 +455,17 @@ function resolvePatientRef(value) {
 
 /**
  * The patient's current live appointment: the earliest active one by date then
- * time. Used both by the phone/student-index lookup and by the `supersededBy`
- * field on historical references.
+ * time on or after today. Used both by the phone/student-index lookup and by
+ * the `supersededBy` field on historical references.
  *
  * @param {unknown} patientOrAppointment Patient id, patient doc, or appointment doc.
+ * @param {{ minDate?: string | null }} [options] Defaults to accraTodayIso()
  * @returns {Promise<object | null>}
  */
-export async function findActiveAppointmentForPatient(patientOrAppointment) {
+export async function findActiveAppointmentForPatient(
+  patientOrAppointment,
+  { minDate = accraTodayIso() } = {},
+) {
   const { patientId, excludeAppointmentId } = resolvePatientRef(patientOrAppointment);
   if (!patientId) return null;
 
@@ -470,12 +474,48 @@ export async function findActiveAppointmentForPatient(patientOrAppointment) {
     status: { $in: [...ACTIVE_PATIENT_LOOKUP_STATUSES] },
   };
 
+  if (minDate) {
+    filter.appointmentDate = { $gte: minDate };
+  }
+
   if (excludeAppointmentId) {
     filter._id = { $ne: excludeAppointmentId };
   }
 
   return populatedAppointment(
     Appointment.findOne(filter).sort({ appointmentDate: 1, appointmentTime: 1 }),
+  );
+}
+
+/**
+ * All active upcoming appointments for a patient (today onwards), sorted by date and time.
+ *
+ * @param {unknown} patientOrAppointment
+ * @param {{ minDate?: string | null }} [options] Defaults to accraTodayIso()
+ * @returns {Promise<object[]>}
+ */
+export async function findActiveAppointmentsForPatient(
+  patientOrAppointment,
+  { minDate = accraTodayIso() } = {},
+) {
+  const { patientId, excludeAppointmentId } = resolvePatientRef(patientOrAppointment);
+  if (!patientId) return [];
+
+  const filter = {
+    patientId,
+    status: { $in: [...ACTIVE_PATIENT_LOOKUP_STATUSES] },
+  };
+
+  if (minDate) {
+    filter.appointmentDate = { $gte: minDate };
+  }
+
+  if (excludeAppointmentId) {
+    filter._id = { $ne: excludeAppointmentId };
+  }
+
+  return populatedAppointment(
+    Appointment.find(filter).sort({ appointmentDate: 1, appointmentTime: 1 }),
   );
 }
 

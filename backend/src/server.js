@@ -15,6 +15,7 @@ import {
   listAppointments,
   lookupAppointment,
   findActiveAppointmentForPatient,
+  findActiveAppointmentsForPatient,
   updateAppointmentStatus,
   markPatientArrived,
   cancelAppointment,
@@ -120,6 +121,8 @@ const app = createApp({
     lookupAppointment,
 
     findActiveAppointmentForPatient,
+
+    findActiveAppointmentsForPatient,
 
     listAppointments,
 

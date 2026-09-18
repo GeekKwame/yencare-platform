@@ -58,7 +58,24 @@ async function toLookupJson(appointmentService, doc, req) {
     }
   }
 
-  return { ...json, isHistorical, supersededBy };
+  let activeAppointments = null;
+  if (typeof appointmentService.findActiveAppointmentsForPatient === 'function') {
+    try {
+      const all = await appointmentService.findActiveAppointmentsForPatient(doc);
+      if (Array.isArray(all) && all.length > 0) {
+        activeAppointments = all.map((item) => toJson(item));
+      }
+    } catch (err) {
+      logger.warn('could not resolve active appointments list', {
+        subsystem: 'appointments',
+        requestId: req?.id,
+        referenceCode: json.referenceCode,
+        err,
+      });
+    }
+  }
+
+  return { ...json, isHistorical, supersededBy, activeAppointments };
 }
 
 /**

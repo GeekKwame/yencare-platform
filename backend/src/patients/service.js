@@ -121,6 +121,9 @@ async function syncExistingPatient(store, patient, input) {
 
   const storedPhone = patient.phoneNumber || patient.phone || null;
   const updates = {};
+  if (input.fullName && input.fullName.trim() && input.fullName.trim() !== patient.fullName) {
+    updates.fullName = input.fullName.trim();
+  }
   if (input.phoneNumber && input.phoneNumber !== storedPhone) {
     updates.phoneNumber = input.phoneNumber;
   }

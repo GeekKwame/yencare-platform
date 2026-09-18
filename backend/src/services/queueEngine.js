@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
 import { CLINIC_SITES, DATE_PATTERN } from '../db/constants.js';
-import { Appointment } from '../models/Appointment.js';
-import { QueueCounter } from '../models/QueueCounter.js';
-import { Room } from '../models/Room.js';
-import { Clinician } from '../models/Clinician.js';
+import {
+  Appointment,
+  QueueCounter,
+  Room,
+  Clinician,
+  Patient,
+  TimeSlot,
+} from '../models/index.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
 import { notifyPatientCalled } from './callPatient.js';
 import { accraTodayIso, isClinicOpen } from '../lib/accraTime.js';
@@ -374,11 +378,30 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason 
     throw err;
   }
 
-  appointment.status = 'NO_SHOW';
-  if (reason) {
-    appointment.cancelReason = reason;
+  try {
+    await appointment.save({ validateModifiedOnly: true });
+  } catch (err) {
+    if (err?.name === 'ValidationError') {
+      await Appointment.updateOne(
+        { _id: appointment._id },
+        {
+          $set: {
+            status: 'NO_SHOW',
+            cancelledTime: new Date(),
+            ...(reason ? { cancelReason: reason } : {}),
+          },
+        },
+      );
+      if (appointment.timeSlotId) {
+        await TimeSlot.updateOne(
+          { _id: appointment.timeSlotId },
+          { $set: { isBooked: false, appointmentId: null } },
+        );
+      }
+    } else {
+      throw err;
+    }
   }
-  await appointment.save();
 
   // Clear active counter if this was the active appointment
   await QueueCounter.updateOne(

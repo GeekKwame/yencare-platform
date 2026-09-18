@@ -94,6 +94,19 @@ export function mapAppointment(appointment) {
           appointmentTime: appointment.supersededBy.appointmentTime,
         }
       : null,
+    activeAppointments: Array.isArray(appointment?.activeAppointments)
+      ? appointment.activeAppointments.map((item) => ({
+          id: item?.id || item?._id || "",
+          referenceCode: item?.referenceCode || "—",
+          status: item?.status || "",
+          appointmentDate: item?.appointmentDate || "",
+          appointmentTime: item?.appointmentTime || "",
+          dateLabel: formatDateLabel(item?.appointmentDate),
+          timeLabel: formatTimeLabel(item?.appointmentTime),
+          clinic: clinicSiteLabel(item?.clinicSite),
+          visitType: visitTypeLabel(item?.visitType),
+        }))
+      : [],
   };
 }
 

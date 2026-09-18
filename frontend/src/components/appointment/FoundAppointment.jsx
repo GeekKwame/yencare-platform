@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { accraTodayIso } from "../../lib/accraTime";
 import { mapAppointment } from "../../lib/appointmentView";
 import { arriveAppointment, cancelAppointment } from "../../services/appointments";
 import { Button, ReferenceBlock, StatusBadge } from "../ui";
@@ -17,6 +18,7 @@ export default function FoundAppointment({
 }) {
   const view = mapAppointment(appointment);
   const isHistorical = Boolean(view.isHistorical) || TERMINAL.has(view.status);
+  const isToday = view.appointmentDate === accraTodayIso();
   const isBooked = view.status === "BOOKED" && !isHistorical;
   const inQueue = ["CHECKED_IN", "WAITING", "CALLED"].includes(view.status);
   const [modal, setModal] = useState(null);
@@ -134,11 +136,60 @@ export default function FoundAppointment({
         </div>
       )}
 
+      {view.activeAppointments && view.activeAppointments.length > 1 && (
+        <div className="mt-5 rounded-2xl border border-accent-border bg-accent-soft p-4 text-left text-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-accent">
+            Active Bookings on File ({view.activeAppointments.length})
+          </p>
+          <p className="mt-1 text-xs text-text-muted">
+            You have multiple bookings. Select an appointment below to view or manage:
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {view.activeAppointments.map((appt) => {
+              const isCurrent = appt.referenceCode === view.referenceCode;
+              return (
+                <button
+                  key={appt.referenceCode}
+                  type="button"
+                  disabled={isCurrent}
+                  onClick={() => onOpenCurrent?.(appt)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                    isCurrent
+                      ? "border-accent bg-accent text-white shadow-xs cursor-default font-bold"
+                      : "border-clinic-border bg-white text-primary hover:border-accent hover:bg-clinic-bg cursor-pointer"
+                  }`}
+                >
+                  <span className="font-mono">{appt.referenceCode}</span>
+                  {" · "}
+                  <span>{appt.dateLabel}, {appt.timeLabel}</span>
+                  {isCurrent ? " (Viewing)" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <p className="type-label-micro mt-7 text-center text-text-muted">{view.clinic}</p>
       <h2 className="display-font mt-2 text-center text-2xl font-bold text-primary sm:text-3xl">
         {isHistorical ? "Appointment record" : "Your Appointment"}
       </h2>
-      <p className="mt-1 text-center text-sm text-text-muted">{view.visitType}</p>
+      <div className="mt-2 flex items-center justify-center gap-2">
+        {isHistorical ? (
+          <span className="rounded-full border border-error-border bg-error-soft px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-error">
+            Past / Inactive
+          </span>
+        ) : isToday ? (
+          <span className="rounded-full border border-accent-border bg-accent-soft px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-accent">
+            Today&apos;s Appointment
+          </span>
+        ) : (
+          <span className="rounded-full border border-clinic-border bg-surface px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-primary">
+            Upcoming Appointment
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-center text-sm text-text-muted">{view.visitType}</p>
 
       <ReferenceBlock code={view.referenceCode} subtext={referenceSubtext} />
 

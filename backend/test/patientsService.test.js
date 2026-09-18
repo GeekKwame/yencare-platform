@@ -60,6 +60,24 @@ describe('patientService.registerOrLookup', () => {
     assert.equal(second.patient.phoneNumber, '+233279225566');
   });
 
+  it('updates the stored fullName when the same student books with an updated name', async () => {
+    const patients = service();
+    const first = await patients.registerOrLookup({
+      fullName: 'Efua Darko',
+      studentIndex: '20620111',
+      phoneNumber: '024 700 1122',
+    });
+    const second = await patients.registerOrLookup({
+      fullName: 'Sterling Darko',
+      studentIndex: '20620111',
+      phoneNumber: '024 700 1122',
+    });
+
+    assert.equal(second.created, false);
+    assert.equal(second.patient.id, first.patient.id);
+    assert.equal(second.patient.fullName, 'Sterling Darko');
+  });
+
   it('returns the existing record when the phone already exists', async () => {
     const patients = service();
     const first = await patients.registerOrLookup({

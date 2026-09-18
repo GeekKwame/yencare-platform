@@ -1,5 +1,13 @@
-import { Appointment } from '../models/Appointment.js';
+import {
+  Appointment,
+  Clinician,
+  Patient,
+  QueueCounter,
+  Room,
+  TimeSlot,
+} from '../models/index.js';
 import { accraTodayIso } from '../lib/accraTime.js';
+import { logger } from '../lib/logger.js';
 import { markNoShow } from './queueEngine.js';
 
 /** Still expected in the live clinic day until midnight Accra rolls the roster. */
@@ -66,8 +74,14 @@ export async function closeMissedAppointments({
       });
       marked += 1;
       if (appointment.referenceCode) references.push(appointment.referenceCode);
-    } catch {
+    } catch (err) {
       failed += 1;
+      logger.warn('could not mark missed appointment as no-show', {
+        subsystem: 'appointments',
+        appointmentId: appointment._id,
+        referenceCode: appointment.referenceCode,
+        err,
+      });
     }
   }
 
