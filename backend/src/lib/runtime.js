@@ -11,6 +11,37 @@ export function isProduction(env = process.env) {
   return env.NODE_ENV === 'production';
 }
 
+/** Host secrets that must exist before the API accepts traffic. */
+export const REQUIRED_PRODUCTION_SECRETS = Object.freeze([
+  'JWT_SECRET',
+  'MONGODB_URI',
+  'MNOTIFY_API_KEY',
+]);
+
+/**
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string[]}
+ */
+export function missingProductionSecrets(env = process.env) {
+  if (!isProduction(env)) return [];
+  return REQUIRED_PRODUCTION_SECRETS.filter((key) => !String(env[key] || '').trim());
+}
+
+/**
+ * Fail closed in production when the host has not injected secrets.
+ * Local `.env` is never deployed; Render dashboard env vars are required.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+export function assertProductionSecrets(env = process.env) {
+  const missing = missingProductionSecrets(env);
+  if (missing.length === 0) return;
+
+  throw new Error(
+    `Missing required production environment variables: ${missing.join(', ')}. Set them in the Render dashboard (Environment), then redeploy.`,
+  );
+}
+
 /** @param {NodeJS.ProcessEnv} [env] */
 export function isTestRun(env = process.env) {
   return env.NODE_ENV === 'test' || Boolean(env.NODE_TEST_CONTEXT);

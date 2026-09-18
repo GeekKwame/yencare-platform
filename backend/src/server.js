@@ -7,6 +7,7 @@ import { createApp } from "./http/app.js";
 import { createMongoCatalog } from "./http/mongoCatalog.js";
 import { assertEventBusFitsDeployment } from "./lib/eventBus.js";
 import { logger } from "./lib/logger.js";
+import { assertProductionSecrets } from "./lib/runtime.js";
 import { Appointment } from "./models/Appointment.js";
 import { createMongoPatientStore } from "./patients/mongoStore.js";
 import { createPatientService } from "./patients/service.js";
@@ -44,6 +45,9 @@ const backendRoot = path.join(
 
 dotenv.config({
   path: path.join(backendRoot, ".env"),
+  // Render injects dashboard env vars into process.env. Do not let a missing
+  // .env file look like a failed secret load in production logs.
+  quiet: true,
 });
 
 const port = Number(process.env.PORT || 4000);
@@ -64,10 +68,7 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET must be set in production");
-}
-
+assertProductionSecrets();
 assertProductionSmsConfig();
 
 // Refuses to boot in production when this deployment runs several instances on

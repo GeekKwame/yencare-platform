@@ -24,7 +24,7 @@ services:
       - key: MNOTIFY_API_KEY
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: CORS_ORIGIN
         value: https://yencare-platform.vercel.app
       - key: CORS_ALLOW_VERCEL_PREVIEWS

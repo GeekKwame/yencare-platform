@@ -186,7 +186,7 @@ Configure these required environment variables in the Render dashboard for the s
 - `MONGODB_URI` (staging Atlas URI)
 - `MNOTIFY_API_KEY` (mNotify API v2 key)
 - `MNOTIFY_SENDER_ID` (approved sender ID, max 11 chars)
-- `JWT_SECRET`
+- `JWT_SECRET` (Render can generate this from the blueprint; if the service already exists, add it under Environment)
 - `CORS_ORIGIN=https://yencare-platform.vercel.app`
 
 Recommended defaults for staging:
