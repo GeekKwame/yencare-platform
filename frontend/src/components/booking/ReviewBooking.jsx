@@ -19,6 +19,7 @@ import {
   visitTypeLabel,
 } from "../../data/bookingOptions";
 import { createAppointment } from "../../services/appointments";
+import { rememberBookingReference } from "../../lib/appointmentView";
 import { Button, ReferenceBlock } from "../ui";
 
 const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointment }) => {
@@ -62,7 +63,9 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointme
         appointmentTime: formData.appointmentTime,
       });
 
-      setBookingRef(created.referenceCode || created.id);
+      const ref = created.referenceCode || created.id;
+      rememberBookingReference(ref);
+      setBookingRef(ref);
       setSmsResult(created.sms ?? null);
       setIsConfirmed(true);
     } catch (err) {

@@ -18,13 +18,13 @@ const date = new Date().getFullYear()
             <Link
               to="/"
               className="flex items-center gap-2"
-              aria-label="Yencare home"
+              aria-label="YɛnCare home"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl  text-lg font-bold text-[#173b3a]">
-                <img src={Logo} alt="Yencare Logo" />
+              <span className="flex h-9 w-9 items-center justify-center text-lg font-bold">
+                <img src={Logo} alt="" />
               </span>
               <span className="display-font text-xl font-bold tracking-tight">
-                Yencare
+                YɛnCare
               </span>
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-6 text-[#b8cfbf]">
@@ -121,7 +121,7 @@ const date = new Date().getFullYear()
           </div> */}
         </div>
         <div className="mt-12 flex flex-col gap-2 border-t border-[#37615b] pt-6 text-sm text-[#91afa1] sm:flex-row sm:items-center sm:justify-between">
-          <span>&copy; {date} Yencare. Built for better access.</span>
+          <span>&copy; {date} YɛnCare. Built for KNUST students.</span>
         </div>
       </div>
     </footer>

@@ -17,6 +17,25 @@ export function normalizeReference(value) {
   return compact;
 }
 
+export function rememberBookingReference(reference) {
+  const ref = normalizeReference(reference);
+  if (!REFERENCE_PATTERN.test(ref)) return;
+  try {
+    sessionStorage.setItem("yencare.lastReference", ref);
+  } catch {
+    /* private mode / quota */
+  }
+}
+
+export function readLastBookingReference() {
+  try {
+    const ref = normalizeReference(sessionStorage.getItem("yencare.lastReference") || "");
+    return REFERENCE_PATTERN.test(ref) ? ref : "";
+  } catch {
+    return "";
+  }
+}
+
 export function entityId(value) {
   if (!value) return "";
   if (typeof value === "string") return value;

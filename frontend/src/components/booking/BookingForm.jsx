@@ -8,7 +8,8 @@ import ServiceSelection from "./ServiceSelection";
 import TimeSlots from "./TimeSlots";
 import ReviewBooking from "./ReviewBooking";
 import SlotTaken from "./SlotTaken";
-import { normalizeReference } from "../../lib/appointmentView";
+import { normalizeReference, rememberBookingReference } from "../../lib/appointmentView";
+import { isStudentsClinicOpen } from "../../lib/accraTime";
 
 const DRAFT_KEY = "yencare.booking.draft";
 
@@ -62,7 +63,9 @@ const BookingForm = () => {
   const [step, setStep] = useState(() => {
     const draft = readDraft();
     const saved = Number(draft?.step);
-    return saved >= 1 && saved <= 7 ? saved : 1;
+    if (saved >= 2 && saved <= 7) return saved;
+    if (searchParams.get("book") === "1" && isStudentsClinicOpen()) return 2;
+    return 1;
   });
   const [formData, setFormData] = useState(() => ({
     ...initialFormData,
@@ -72,6 +75,7 @@ const BookingForm = () => {
   const [findReference, setFindReference] = useState(
     () => normalizeReference(searchParams.get("ref") || ""),
   );
+  const startInFind = searchParams.get("find") === "1" || Boolean(findReference);
 
   useEffect(() => {
     if (step === 1) {
@@ -117,6 +121,7 @@ const BookingForm = () => {
 
   const handleViewAppointment = (reference) => {
     const ref = normalizeReference(reference);
+    rememberBookingReference(ref);
     clearDraft();
     setFormData(initialFormData);
     setSlotTaken(false);
@@ -145,7 +150,7 @@ const BookingForm = () => {
 
   const renderStep = () => {
     if (step === 1) {
-      return <WelcomeForm onStartBooking={handleStartBooking} initialReference={findReference} />;
+      return <WelcomeForm onStartBooking={handleStartBooking} initialReference={findReference} initialFind={startInFind} />;
     }
 
     if (step === 2) {
