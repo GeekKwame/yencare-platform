@@ -13,6 +13,7 @@ import { Room } from '../models/Room.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
 import { resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
+import { assertVisitIsToday } from './visitDayGuard.js';
 
 /**
  * @param {{ queueToken?: string, referenceCode?: string }} appointment
@@ -103,6 +104,7 @@ export async function callPatient(appointmentId) {
   if (!appointment) {
     throw new NotFoundError(`Appointment not found: ${appointmentId}`);
   }
+  assertVisitIsToday(appointment);
 
   appointment.status = 'CALLED';
   try {
