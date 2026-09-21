@@ -11,6 +11,7 @@ import {
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
+import { QueueCounter } from '../models/QueueCounter.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { normalizeGhanaPhone } from '../sms/normalizePhone.js';
 
@@ -26,6 +27,7 @@ import { accraTodayIso } from '../lib/accraTime.js';
 import { bookingSmsDestinations, resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
+import { assertVisitIsToday, assertWithinArrivalWindow, assertSlotNotInPast, assertNoShowAllowed } from './visitDayGuard.js';
 
 // Used by the real-time layer to notify clients after a successful
 // cancellation/reschedule transaction. Backed by the pluggable event bus so a
@@ -553,6 +555,13 @@ export async function updateAppointmentStatus(idOrReference, status) {
     throw new NotFoundError('Appointment not found');
   }
 
+  if (['CHECKED_IN', 'WAITING', 'CALLED'].includes(status)) {
+    assertVisitIsToday(appointment);
+  }
+  if (status === 'NO_SHOW') {
+    assertNoShowAllowed(appointment);
+  }
+
   if (status === 'WAITING' && appointment.status === 'BOOKED') {
     appointment.status = 'CHECKED_IN';
     try {
@@ -599,6 +608,22 @@ export async function updateAppointmentStatus(idOrReference, status) {
     notifyQuiet(appointment, buildWaitingSms(appointment), 'queue');
   }
 
+  if (status === 'NO_SHOW') {
+    if (appointment.timeSlotId) {
+      await TimeSlot.updateOne(
+        { _id: appointment.timeSlotId },
+        { $set: { isBooked: false, appointmentId: null } },
+      );
+    }
+    const roomId = appointment.roomId?._id || appointment.roomId;
+    if (roomId) {
+      await QueueCounter.updateOne(
+        { roomId, activeAppointmentId: appointment._id },
+        { $set: { activeAppointmentId: null } },
+      );
+    }
+  }
+
   return appointment;
 }
 
@@ -607,9 +632,9 @@ export async function updateAppointmentStatus(idOrReference, status) {
  * Reception later moves CHECKED_IN → WAITING and assigns the token.
  *
  * @param {string} referenceCode
- * @param {{ phone?: string }} [options]
+ * @param {{ phone?: string, actorIsStaff?:boolean }} [options]
  */
-export async function markPatientArrived(referenceCode, { phone } = {}) {
+export async function markPatientArrived(referenceCode, { phone, actorIsStaff = false } = {}) {
   const key = String(referenceCode || '').trim();
   if (!key) {
     throw new ValidationError('Appointment reference is required');
@@ -651,6 +676,9 @@ export async function markPatientArrived(referenceCode, { phone } = {}) {
       `Arrival can only be recorded when status is BOOKED (current: ${appointment.status})`,
     );
   }
+
+  assertVisitIsToday(appointment);
+  if (!actorIsStaff) assertWithinArrivalWindow(appointment);
 
   appointment.status = 'CHECKED_IN';
   try {
@@ -989,6 +1017,7 @@ export async function rescheduleAppointment(
       if (!newSlot) {
         throw new NotFoundError('New time slot not found');
       }
+      assertSlotNotInPast(newSlot);
 
       // New slot must be completely free.
       if (newSlot.isBooked || newSlot.appointmentId) {
@@ -1094,9 +1123,9 @@ export async function rescheduleAppointment(
               ...(wasQueued ? { status: 'BOOKED', checkInTime: null } : {}),
               ...(staffChangeReason
                 ? {
-                    staffChangeReason: String(staffChangeReason).trim(),
-                    staffChangedTime: appointment.appointmentTime,
-                  }
+                  staffChangeReason: String(staffChangeReason).trim(),
+                  staffChangedTime: appointment.appointmentTime,
+                }
                 : {}),
             },
             // A moved appointment must not keep today's queue token: the old

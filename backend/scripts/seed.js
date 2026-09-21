@@ -4,13 +4,25 @@ import path from 'node:path';
 import { connectDb, disconnectDb } from '../src/db/connection.js';
 import { Patient, Room, Clinician, TimeSlot, Appointment, StaffUser } from '../src/models/index.js';
 import { DEMO_STAFF, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
+import { accraTodayIso } from '../src/lib/accraTime.js';
 import bcrypt from 'bcryptjs';
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(backendRoot, '.env') });
 
-const DEMO_DATE = '2026-09-15';
-const BOOKABLE_DATES = ['2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18'];
+const DEMO_DATE = process.env.DEMO_DATE || accraTodayIso();
+
+function getFutureDates(baseIso, count = 4) {
+  const [year, month, day] = baseIso.split('-').map(Number);
+  const dates = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(Date.UTC(year, month - 1, day + i));
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+const BOOKABLE_DATES = getFutureDates(DEMO_DATE, 4);
 const OPEN_TIMES = [
   { startTime: '08:30', endTime: '09:00' },
   { startTime: '09:00', endTime: '09:30' },

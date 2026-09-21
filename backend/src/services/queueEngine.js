@@ -11,6 +11,7 @@ import {
 import { NotFoundError, ValidationError } from '../patients/errors.js';
 import { notifyPatientCalled } from './callPatient.js';
 import { accraTodayIso, isClinicOpen } from '../lib/accraTime.js';
+import { assertVisitIsToday, assertNoShowAllowed } from './visitDayGuard.js';
 
 export const AVERAGE_CONSULT_DURATION_MINUTES = 15;
 
@@ -242,6 +243,9 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
     if (!appointment) {
       throw new NotFoundError('Appointment not found');
     }
+    if (['BOOKED', 'CHECKED_IN', 'WAITING'].includes(appointment.status)) {   
+      assertVisitIsToday(appointment);                                        
+    }    
 
     switch (appointment.status) {
       case 'BOOKED':
@@ -377,30 +381,29 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason 
     err.status = 400;
     throw err;
   }
+  assertNoShowAllowed(appointment);
+  appointment.status = "NO_SHOW";
+  if(reason) appointment.cancelReason = reason;
+
 
   try {
-    await appointment.save({ validateModifiedOnly: true });
+    await appointment.save();
   } catch (err) {
-    if (err?.name === 'ValidationError') {
-      await Appointment.updateOne(
-        { _id: appointment._id },
-        {
-          $set: {
-            status: 'NO_SHOW',
-            cancelledTime: new Date(),
-            ...(reason ? { cancelReason: reason } : {}),
-          },
-        },
-      );
-      if (appointment.timeSlotId) {
-        await TimeSlot.updateOne(
-          { _id: appointment.timeSlotId },
-          { $set: { isBooked: false, appointmentId: null } },
-        );
-      }
-    } else {
+    const blocked =err?.name === 'ValidationError' || String(err?.message || '').startsWith('Illegal status transition');
+    if(!blocked){
       throw err;
     }
+    // Deliberate override: end-of-day closeout must work from any open status.
+    await Appointment.updateOne({ _id: appointment._id }, {
+      $set: { status: 'NO_SHOW', cancelledTime: new Date(), ...(reason ? { cancelReason: reason } : {}) },
+    });
+  }
+
+  if (appointment.timeSlotId) {
+    await TimeSlot.updateOne(
+      { _id: appointment.timeSlotId },
+      { $set: { isBooked: false, appointmentId: null } },
+    );
   }
 
   // Clear active counter if this was the active appointment

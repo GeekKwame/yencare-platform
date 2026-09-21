@@ -1,17 +1,18 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, it, mock, afterEach } from 'node:test';
 import mongoose from 'mongoose';
 import {
   isAllowedStatusTransition,
   STATUS_TRANSITIONS,
 } from '../src/db/constants.js';
-import { Appointment, QueueCounter, Room } from '../src/models/index.js';
+import { Appointment, QueueCounter, Room, TimeSlot } from '../src/models/index.js';
 import { accraTodayIso } from '../src/lib/accraTime.js';
 import {
   AVERAGE_CONSULT_DURATION_MINUTES,
   getRoomTokenPrefix,
   getAccraQueueDate,
   liveClinicDayFilter,
+  markNoShow,
 } from '../src/services/queueEngine.js';
 
 const oid = () => new mongoose.Types.ObjectId();
@@ -117,11 +118,18 @@ describe('Mongoose queue models and schema indexes', () => {
 
   it('registers unique daily room queue sequence index on Appointment', () => {
     const indexes = Appointment.schema.indexes();
-    const keys = indexes.map(([key]) => JSON.stringify(key));
+    const queueSeqIndex = indexes.find(
+      ([key]) => JSON.stringify(key) === JSON.stringify({ roomId: 1, queueDate: 1, queueSequence: 1 }),
+    );
     assert.ok(
-      keys.includes(JSON.stringify({ roomId: 1, queueDate: 1, queueSequence: 1 })),
+      queueSeqIndex,
       'Should register unique index on (roomId, queueDate, queueSequence)',
     );
+    assert.deepEqual(queueSeqIndex[1]?.partialFilterExpression, {
+      queueDate: { $type: 'string' },
+      queueSequence: { $type: 'number' },
+    });
+    const keys = indexes.map(([key]) => JSON.stringify(key));
     assert.ok(
       keys.includes(JSON.stringify({ roomId: 1, appointmentDate: 1, status: 1 })),
       'Should register index on (roomId, appointmentDate, status)',
@@ -161,10 +169,9 @@ describe('Token format and progression lifecycle', () => {
     const transitions = ['CHECKED_IN', 'WAITING', 'CALLED', 'COMPLETED'];
 
     for (const nextStatus of transitions) {
-      assert.equal(
+      assert.ok(
         isAllowedStatusTransition(currentStatus, nextStatus),
-        true,
-        `Should allow transition from ${currentStatus} to ${nextStatus}`,
+        `Should allow ${currentStatus} -> ${nextStatus}`,
       );
       currentStatus = nextStatus;
     }
@@ -174,3 +181,142 @@ describe('Token format and progression lifecycle', () => {
   });
 });
 
+
+function fakeAppointment(overrides = {}) {
+  return {
+    _id: oid(),
+    referenceCode: 'YC-4821',
+    appointmentDate: accraTodayIso(),
+    appointmentTime: '10:00',
+    status: 'WAITING',
+    roomId: oid(),
+    timeSlotId: null,
+    save: mock.fn(async () => {}),
+    ...overrides,
+  };
+}
+
+function stubDb(appointment) {
+  mock.method(Appointment, 'findByReference', async () => appointment);
+  return {
+    counterUpdate: mock.method(QueueCounter, 'updateOne', async () => ({})),
+    appointmentUpdate: mock.method(Appointment, 'updateOne', async () => ({})),
+    slotUpdate: mock.method(TimeSlot, 'updateOne', async () => ({})),
+  };
+}
+
+describe('markNoShow', () => {
+  afterEach(() => mock.restoreAll());
+
+  it('marks a WAITING appointment as NO_SHOW with a normal save', async () => {
+    const appt = fakeAppointment({ status: 'WAITING' });
+    const { appointmentUpdate, slotUpdate } = stubDb(appt);
+
+    await markNoShow({
+      referenceCode: 'YC-4821',
+      reason: 'Clinic day closed without completing visit',
+    });
+
+    
+    assert.equal(appt.status, 'NO_SHOW');
+    assert.equal(appt.cancelReason, 'Clinic day closed without completing visit');
+    assert.equal(appt.save.mock.callCount(), 1);
+
+    assert.equal(appointmentUpdate.mock.callCount(), 0);
+    assert.equal(slotUpdate.mock.callCount(), 0);
+  });
+
+  it('frees timeSlotId on normal save when marked as NO_SHOW', async () => {
+    const slotId = oid();
+    const appt = fakeAppointment({ status: 'WAITING', timeSlotId: slotId });
+    const { slotUpdate } = stubDb(appt);
+
+    await markNoShow({
+      referenceCode: 'YC-4821',
+      reason: 'Clinic day closed without completing visit',
+    });
+
+    assert.equal(appt.status, 'NO_SHOW');
+    assert.equal(slotUpdate.mock.callCount(), 1);
+    const [slotFilter, slotDoc] = slotUpdate.mock.calls[0].arguments;
+    assert.deepEqual(slotFilter, { _id: slotId });
+    assert.deepEqual(slotDoc, { $set: { isBooked: false, appointmentId: null } });
+  });
+
+  it('marks a BOOKED appointment that never arrived as NO_SHOW', async () => {
+    const appt = fakeAppointment({ status: 'BOOKED', appointmentDate: '2026-09-01' });
+    stubDb(appt);
+
+    await markNoShow({
+      referenceCode: 'YC-4821',
+      reason: 'Did not check in on appointment day',
+    });
+
+    assert.equal(appt.status, 'NO_SHOW');
+    assert.equal(appt.cancelReason, 'Did not check in on appointment day');
+    assert.equal(appt.save.mock.callCount(), 1);
+  });
+
+  it('forces NO_SHOW and frees the slot when save is refused by a status rule', async () => {
+    const slotId = oid();
+    const appt = fakeAppointment({
+      timeSlotId: slotId,
+      save: mock.fn(async () => {
+        throw new Error('Illegal status transition: WAITING → NO_SHOW');
+      }),
+    });
+    const { appointmentUpdate, slotUpdate } = stubDb(appt);
+
+    await markNoShow({ referenceCode: 'YC-4821', reason: 'Did not check in' });
+
+    assert.equal(appointmentUpdate.mock.callCount(), 1);
+    const [filter, update] = appointmentUpdate.mock.calls[0].arguments;
+    assert.deepEqual(filter, { _id: appt._id });
+    assert.equal(update.$set.status, 'NO_SHOW');
+    assert.equal(update.$set.cancelReason, 'Did not check in');
+
+    assert.equal(slotUpdate.mock.callCount(), 1);
+    const [slotFilter, slotDoc] = slotUpdate.mock.calls[0].arguments;
+    assert.deepEqual(slotFilter, { _id: slotId });
+    assert.deepEqual(slotDoc, { $set: { isBooked: false, appointmentId: null } });
+  });
+
+  it('rethrows unrelated errors instead of forcing the update', async () => {
+    const appt = fakeAppointment({
+      save: mock.fn(async () => {
+        throw new Error('connection lost');
+      }),
+    });
+    const { appointmentUpdate } = stubDb(appt);
+
+    await assert.rejects(() => markNoShow({ referenceCode: 'YC-4821' }), /connection lost/);
+    assert.equal(appointmentUpdate.mock.callCount(), 0);
+  });
+
+  it('refuses appointments that are already finished', async () => {
+    for (const status of ['COMPLETED', 'CANCELLED', 'NO_SHOW']) {
+      const appt = fakeAppointment({ status });
+      stubDb(appt);
+
+      await assert.rejects(
+        () => markNoShow({ referenceCode: 'YC-4821' }),
+        (err) => err.status === 400,
+      );
+      assert.equal(appt.save.mock.callCount(), 0);
+
+      mock.restoreAll();
+    }
+  });
+
+  it("clears the room's active-patient pointer", async () => {
+    const appt = fakeAppointment();
+    const { counterUpdate } = stubDb(appt);
+
+    await markNoShow({ referenceCode: 'YC-4821' });
+
+    assert.equal(counterUpdate.mock.callCount(), 1);
+    const [filter, update] = counterUpdate.mock.calls[0].arguments;
+    assert.deepEqual(filter, { roomId: appt.roomId, activeAppointmentId: appt._id });
+    assert.deepEqual(update, { $set: { activeAppointmentId: null } });
+  });
+});
