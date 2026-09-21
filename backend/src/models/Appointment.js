@@ -121,8 +121,12 @@ appointmentSchema.index(
   { roomId: 1, queueDate: 1, queueSequence: 1 },
   {
     unique: true,
-    sparse: true,
     name: 'appointments_room_day_queue_sequence_unique',
+    partialFilterExpression: {
+      queueDate: {$type: 'string'},
+      queueSequence: {$type: 'number'},
+
+    }
   },
 );
 appointmentSchema.index(
