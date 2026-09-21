@@ -394,17 +394,16 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason 
       throw err;
     }
     // Deliberate override: end-of-day closeout must work from any open status.
-    await Appointment.updateOne({_id: appointment._id}, {
-      $set: {status: 'NO_SHOW', cancelledTime: new Date(), ...(reason ? {cancelReason: reason} : {})},
+    await Appointment.updateOne({ _id: appointment._id }, {
+      $set: { status: 'NO_SHOW', cancelledTime: new Date(), ...(reason ? { cancelReason: reason } : {}) },
     });
+  }
 
-    if(appointment.timeSlotId){
-      await TimeSlot.updateOne(
-        { _id: appointment.timeSlotId },
-        { $set: { isBooked: false, appointmentId: null } },
-      );
-    }
-
+  if (appointment.timeSlotId) {
+    await TimeSlot.updateOne(
+      { _id: appointment.timeSlotId },
+      { $set: { isBooked: false, appointmentId: null } },
+    );
   }
 
   // Clear active counter if this was the active appointment

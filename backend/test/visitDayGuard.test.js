@@ -239,4 +239,18 @@ describe('assertNoShowAllowed (slot at 09:00, grace ends 09:15)', () => {
             ValidationError,
         );
     });
+
+    it('requires appointmentDate to be present', () => {
+        assert.throws(
+            () => assertNoShowAllowed({ appointmentTime: '09:00', status: 'WAITING' }, NOW),
+            /Appointment date is required/,
+        );
+    });
+
+    it('requires appointmentTime to be present for BOOKED status', () => {
+        assert.throws(
+            () => assertNoShowAllowed({ appointmentDate: '2026-09-20', status: 'BOOKED' }, NOW),
+            /Appointment time is required/,
+        );
+    });
 });

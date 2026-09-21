@@ -11,6 +11,7 @@ import {
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
+import { QueueCounter } from '../models/QueueCounter.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { normalizeGhanaPhone } from '../sms/normalizePhone.js';
 
@@ -605,6 +606,22 @@ export async function updateAppointmentStatus(idOrReference, status) {
 
   if (status === 'WAITING') {
     notifyQuiet(appointment, buildWaitingSms(appointment), 'queue');
+  }
+
+  if (status === 'NO_SHOW') {
+    if (appointment.timeSlotId) {
+      await TimeSlot.updateOne(
+        { _id: appointment.timeSlotId },
+        { $set: { isBooked: false, appointmentId: null } },
+      );
+    }
+    const roomId = appointment.roomId?._id || appointment.roomId;
+    if (roomId) {
+      await QueueCounter.updateOne(
+        { roomId, activeAppointmentId: appointment._id },
+        { $set: { activeAppointmentId: null } },
+      );
+    }
   }
 
   return appointment;

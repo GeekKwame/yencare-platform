@@ -118,11 +118,18 @@ describe('Mongoose queue models and schema indexes', () => {
 
   it('registers unique daily room queue sequence index on Appointment', () => {
     const indexes = Appointment.schema.indexes();
-    const keys = indexes.map(([key]) => JSON.stringify(key));
+    const queueSeqIndex = indexes.find(
+      ([key]) => JSON.stringify(key) === JSON.stringify({ roomId: 1, queueDate: 1, queueSequence: 1 }),
+    );
     assert.ok(
-      keys.includes(JSON.stringify({ roomId: 1, queueDate: 1, queueSequence: 1 })),
+      queueSeqIndex,
       'Should register unique index on (roomId, queueDate, queueSequence)',
     );
+    assert.deepEqual(queueSeqIndex[1]?.partialFilterExpression, {
+      queueDate: { $type: 'string' },
+      queueSequence: { $type: 'number' },
+    });
+    const keys = indexes.map(([key]) => JSON.stringify(key));
     assert.ok(
       keys.includes(JSON.stringify({ roomId: 1, appointmentDate: 1, status: 1 })),
       'Should register index on (roomId, appointmentDate, status)',
@@ -162,10 +169,9 @@ describe('Token format and progression lifecycle', () => {
     const transitions = ['CHECKED_IN', 'WAITING', 'CALLED', 'COMPLETED'];
 
     for (const nextStatus of transitions) {
-      assert.equal(
+      assert.ok(
         isAllowedStatusTransition(currentStatus, nextStatus),
-        true,
-        `Should allow transition from ${currentStatus} to ${nextStatus}`,
+        `Should allow ${currentStatus} -> ${nextStatus}`,
       );
       currentStatus = nextStatus;
     }
@@ -180,6 +186,8 @@ function fakeAppointment(overrides = {}) {
   return {
     _id: oid(),
     referenceCode: 'YC-4821',
+    appointmentDate: accraTodayIso(),
+    appointmentTime: '10:00',
     status: 'WAITING',
     roomId: oid(),
     timeSlotId: null,
@@ -218,8 +226,25 @@ describe('markNoShow', () => {
     assert.equal(slotUpdate.mock.callCount(), 0);
   });
 
+  it('frees timeSlotId on normal save when marked as NO_SHOW', async () => {
+    const slotId = oid();
+    const appt = fakeAppointment({ status: 'WAITING', timeSlotId: slotId });
+    const { slotUpdate } = stubDb(appt);
+
+    await markNoShow({
+      referenceCode: 'YC-4821',
+      reason: 'Clinic day closed without completing visit',
+    });
+
+    assert.equal(appt.status, 'NO_SHOW');
+    assert.equal(slotUpdate.mock.callCount(), 1);
+    const [slotFilter, slotDoc] = slotUpdate.mock.calls[0].arguments;
+    assert.deepEqual(slotFilter, { _id: slotId });
+    assert.deepEqual(slotDoc, { $set: { isBooked: false, appointmentId: null } });
+  });
+
   it('marks a BOOKED appointment that never arrived as NO_SHOW', async () => {
-    const appt = fakeAppointment({ status: 'BOOKED' });
+    const appt = fakeAppointment({ status: 'BOOKED', appointmentDate: '2026-09-01' });
     stubDb(appt);
 
     await markNoShow({

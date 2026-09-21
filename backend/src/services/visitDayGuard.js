@@ -1,4 +1,4 @@
-import { accraTodayIso } from '../lib/accraTime.js';
+import { accraParts, accraTodayIso } from '../lib/accraTime.js';
 import { ValidationError } from '../patients/errors.js';
 
 export const EARLY_WINDOW_MINUTES = 60;
@@ -10,26 +10,23 @@ function toMinutes(hhmm) {
 }
 
 function toHhmm(totalMinutes) {
-  const hour = Math.floor(totalMinutes / 60);
+  const hour = (Math.floor(totalMinutes / 60)) % 24;
   const minute = totalMinutes % 60;
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
 function accraMinutesNow(now) {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Africa/Accra',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now);
-  const get = (type) => Number(parts.find((part) => part.type === type).value);
-  return get('hour') * 60 + get('minute');
+  const { hour, minute } = accraParts(now);
+  return hour * 60 + minute;
 }
 
 export function assertVisitIsToday(appointment, now = new Date()) {
-  const today = accraTodayIso(now);
-  const date = appointment.appointmentDate;
+  const date = appointment?.appointmentDate;
+  if (!date) {
+    throw new ValidationError('Appointment date is required');
+  }
 
+  const today = accraTodayIso(now);
   if (date === today) return;
 
   if (date > today) {
@@ -44,7 +41,12 @@ export function assertVisitIsToday(appointment, now = new Date()) {
 }
 
 export function assertWithinArrivalWindow(appointment, now = new Date()) {
-  const offset = accraMinutesNow(now) - toMinutes(appointment.appointmentTime);
+  const time = appointment?.appointmentTime;
+  if (!time) {
+    throw new ValidationError('Appointment time is required');
+  }
+
+  const offset = accraMinutesNow(now) - toMinutes(time);
 
   if (offset < -EARLY_WINDOW_MINUTES) {
     throw new ValidationError(
@@ -69,9 +71,12 @@ export function assertSlotNotInPast(slot, now = new Date()) {
 }
 
 export function assertNoShowAllowed(appointment, now = new Date()) {
-  const today = accraTodayIso(now);
-  const date = appointment.appointmentDate;
+  const date = appointment?.appointmentDate;
+  if (!date) {
+    throw new ValidationError('Appointment date is required');
+  }
 
+  const today = accraTodayIso(now);
   if (date < today) return;
 
   if (date > today) {
@@ -82,7 +87,12 @@ export function assertNoShowAllowed(appointment, now = new Date()) {
 
   if (appointment.status !== 'BOOKED') return;
 
-  const graceEnds = toMinutes(appointment.appointmentTime) + LATE_GRACE_MINUTES;
+  const time = appointment?.appointmentTime;
+  if (!time) {
+    throw new ValidationError('Appointment time is required');
+  }
+
+  const graceEnds = toMinutes(time) + LATE_GRACE_MINUTES;
   if (accraMinutesNow(now) <= graceEnds) {
     throw new ValidationError(
       `The patient can still arrive until ${toHhmm(graceEnds)}. Mark as no-show after that.`,
