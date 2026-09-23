@@ -35,6 +35,9 @@ describe('MongoDB migration + seed regression', { skip: skipReason }, () => {
   });
 
   after(async () => {
+    if (db) {
+      await db.dropDatabase();
+    }
     await disconnectDb();
   });
 
@@ -121,3 +124,4 @@ describe('MongoDB migration + seed regression', { skip: skipReason }, () => {
     );
   });
 });
+
