@@ -168,6 +168,21 @@ export const COLLECTION_SPECS = [
       { keys: { patientId: 1, appointmentDate: -1 }, options: { name: 'appointments_patient_date' } },
       { keys: { clinicianId: 1, appointmentDate: 1 }, options: { name: 'appointments_clinician_date' } },
       { keys: { timeSlotId: 1 }, options: { sparse: true, name: 'appointments_timeslot' } },
+      {
+        keys: { roomId: 1, queueDate: 1, queueSequence: 1 },
+        options: {
+          unique: true,
+          name: 'appointments_room_day_queue_sequence_unique',
+          partialFilterExpression: {
+            queueDate: { $type: 'string' },
+            queueSequence: { $type: 'number' },
+          },
+        },
+      },
+      {
+        keys: { roomId: 1, appointmentDate: 1, status: 1 },
+        options: { name: 'appointments_room_date_status' },
+      },
     ],
   },
   {
