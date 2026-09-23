@@ -96,6 +96,7 @@ async function toLookupJson(appointmentService, doc, req) {
  *   authenticateOptional?: (roles?: string[]) => import('express').RequestHandler,
  *   publicLookupLimiter?: import('express').RequestHandler | import('express').RequestHandler[],
  *   queueStatusLimiter?: import('express').RequestHandler | import('express').RequestHandler[],
+ *   arrivalLimiter?: import('express').RequestHandler | import('express').RequestHandler[],
  * }} [options]
  */
 export function createAppointmentsRouter(
@@ -107,6 +108,7 @@ export function createAppointmentsRouter(
     // limiters here. Unlimited by default to keep the router self-contained.
     publicLookupLimiter = passthrough,
     queueStatusLimiter = passthrough,
+    arrivalLimiter = passthrough,
   } = {},
 ) {
   const router = Router();
@@ -280,8 +282,8 @@ export function createAppointmentsRouter(
     res.status(200).json(toJson(appointment));
   });
 
-  router.post('/arrive', recordArrival);
-  router.post('/:reference/arrive', recordArrival);
+  router.post('/arrive', arrivalLimiter, recordArrival);
+  router.post('/:reference/arrive', arrivalLimiter, recordArrival);
 
   // PATCH /api/appointments/:id/status
   router.patch(

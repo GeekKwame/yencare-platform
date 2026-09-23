@@ -63,7 +63,27 @@ function buildAppointmentLimiters() {
     }),
   ];
 
-  return { publicLookup, queueStatus };
+  // Arrival check-in is a write op against an enumerable 4-digit code space.
+  // Two layers: a per-IP ceiling and a tight per-IP+reference cap that makes
+  // scanning impractical (5 attempts per reference per 15-minute window).
+  const arrivalCheckin = [
+    maybeRateLimit({
+      name: 'arrival-ip',
+      windowMs: 15 * 60_000,
+      max: envInt('ARRIVAL_RATE_MAX', 30),
+    }),
+    maybeRateLimit({
+      name: 'arrival-reference',
+      windowMs: 15 * 60_000,
+      max: envInt('ARRIVAL_REFERENCE_RATE_MAX', 5),
+      keyGenerator: (req) =>
+        `${req.ip || req.socket?.remoteAddress || 'unknown'}|${String(
+          req.body?.reference || req.body?.referenceCode || req.params?.reference || '',
+        ).toUpperCase()}`,
+    }),
+  ];
+
+  return { publicLookup, queueStatus, arrivalCheckin };
 }
 
 /**
@@ -152,7 +172,7 @@ export function createApp({
   };
 
   if (appointmentService) {
-    const { publicLookup, queueStatus } = buildAppointmentLimiters();
+    const { publicLookup, queueStatus, arrivalCheckin } = buildAppointmentLimiters();
 
     app.use(
       '/api/appointments',
@@ -161,6 +181,7 @@ export function createApp({
         ...staffHttp,
         publicLookupLimiter: publicLookup,
         queueStatusLimiter: queueStatus,
+        arrivalLimiter: arrivalCheckin,
       }),
     );
   }

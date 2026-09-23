@@ -169,4 +169,75 @@ describe('public endpoint rate limiting', () => {
 
     assert.equal(store.hit('ip', { ...options, now: 1_500 }).allowed, true);
   });
+
+  it('blocks arrival check-in after 5 attempts per IP/reference (anti-brute-force)', async () => {
+    // Simulate the two-layer arrival limiter wired in app.js:
+    //   layer 1 — per-IP ceiling (generous)
+    //   layer 2 — per-IP+reference cap (strict: max 5 per 15 min)
+    const arrivalLimiter = [
+      rateLimit({
+        name: 'arrival-ip',
+        windowMs: 15 * 60_000,
+        max: 30,
+        store: createMemoryRateLimitStore(),
+      }),
+      rateLimit({
+        name: 'arrival-reference',
+        windowMs: 15 * 60_000,
+        max: 5,
+        store: createMemoryRateLimitStore(),
+        keyGenerator: (req) =>
+          `${req.ip || req.socket?.remoteAddress || 'unknown'}|${String(
+            req.body?.reference || req.body?.referenceCode || req.params?.reference || '',
+          ).toUpperCase()}`,
+      }),
+    ];
+
+    const app = express();
+    app.use(express.json());
+    // Both public arrival routes, same as appointmentsRoutes.js
+    const handler = (_req, res) => res.status(200).json({ status: 'CHECKED_IN' });
+    app.post('/api/appointments/arrive', arrivalLimiter, handler);
+    app.post('/api/appointments/:reference/arrive', arrivalLimiter, handler);
+
+    const instance = await new Promise((resolve) => {
+      const server = app.listen(0, '127.0.0.1', () => {
+        const { port } = server.address();
+        resolve({ server, url: `http://127.0.0.1:${port}` });
+      });
+    });
+    started.push(instance);
+    const { url } = instance;
+
+    // 5 attempts against the same reference should all succeed.
+    const statuses = [];
+    for (let i = 0; i < 6; i += 1) {
+      const res = await fetch(`${url}/api/appointments/YC-4821/arrive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '0241234567' }),
+      });
+      statuses.push(res.status);
+      if (res.status === 429) {
+        const body = await res.json();
+        assert.equal(body.error, TOO_MANY_REQUESTS_MESSAGE);
+        assert.ok(Number(res.headers.get('retry-after')) > 0);
+      } else {
+        await res.json();
+      }
+    }
+
+    assert.deepEqual(statuses, [200, 200, 200, 200, 200, 429],
+      'requests 1-5 should succeed, request 6 should be rate-limited');
+
+    // A different reference still has its own budget.
+    const otherRef = await fetch(`${url}/api/appointments/arrive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reference: 'YC-9999', phone: '0241234567' }),
+    });
+    await otherRef.json();
+    assert.equal(otherRef.status, 200,
+      'a different reference should not be blocked');
+  });
 });
