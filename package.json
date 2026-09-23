@@ -16,7 +16,10 @@
     "db:seed": "npm --prefix backend run db:seed",
     "sms:test": "npm --prefix backend run sms:test",
     "test:sms": "npm --prefix backend test",
-    "test:backend": "npm --prefix backend test"
+    "test:backend": "npm --prefix backend test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "keywords": [
     "yencare",
@@ -27,5 +30,10 @@
     "clinical-brutalism"
   ],
   "author": "YɛnCare Platform Team",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.2",
+    "mongodb": "^7.6.0"
+  }
 }
