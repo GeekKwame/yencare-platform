@@ -29,7 +29,7 @@ const date = new Date().getFullYear()
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-6 text-[#b8cfbf]">
               Outpatient booking and live queues for KNUST University Health
-              Services, including the Students&apos; Clinic opposite Hall 7.
+              Services — KNUST Hospital and the Students&apos; Clinic.
             </p>
             
           </div>
