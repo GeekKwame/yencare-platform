@@ -1,0 +1,54 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    env:
+      E2E_MONGODB_URI: mongodb://127.0.0.1:27017/yencare_e2e
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install root dependencies (Playwright)
+        run: npm ci
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Start MongoDB replica set
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          timeout 60 bash -c 'until docker exec mongo mongosh --quiet --eval "db.adminCommand({ping:1})" >/dev/null 2>&1; do sleep 1; done'
+          docker exec mongo mongosh --quiet --eval \
+            "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+          timeout 60 bash -c 'until [ "$(docker exec mongo mongosh --quiet --eval "rs.status().ok" 2>/dev/null)" = "1" ]; do sleep 1; done'
+          timeout 60 bash -c 'until [ "$(docker exec mongo mongosh --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null)" = "true" ]; do sleep 1; done'
+      - name: Seed test database
+        run: npm run db:seed
+        working-directory: backend
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017/yencare_e2e
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

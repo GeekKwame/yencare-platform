@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaCalendarAlt,
   FaClock,
+  FaHospital,
   FaSearch,
 } from "react-icons/fa";
-import { MdAnalytics, MdArrowForward, MdSchedule, MdSms } from "react-icons/md";
+import { MdAnalytics, MdArrowForward, MdLocalHospital, MdSchedule, MdSms } from "react-icons/md";
 import Logo from "../assets/Yencare Logo.png";
-import { accraClockLabel, isStudentsClinicOpen } from "../lib/accraTime";
+import { accraClockLabel, isStudentsClinicOpen, isClinicOpen } from "../lib/accraTime";
 import {
   mapAppointment,
   readLastBookingReference,
@@ -23,8 +24,30 @@ function waitLabel(minutes) {
   return `~${minutes}m`;
 }
 
+/** Intersection Observer hook for fade-up-on-scroll */
+function useFadeUp() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("hero-visible");
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+}
+
 export default function Hero() {
-  const clinicOpen = isStudentsClinicOpen();
+  const studentsClinicOpen = isStudentsClinicOpen();
+  const hospitalOpen = isClinicOpen("knust-hospital");
   const [clock, setClock] = useState(() => accraClockLabel());
   const [activity, setActivity] = useState({
     nowServingToken: "—",
@@ -33,6 +56,9 @@ export default function Hero() {
   });
   const [activityError, setActivityError] = useState("");
   const [appointment, setAppointment] = useState(null);
+
+  const leftRef = useFadeUp();
+  const rightRef = useFadeUp();
 
   useEffect(() => {
     setClock(accraClockLabel());
@@ -90,28 +116,36 @@ export default function Hero() {
 
   const view = appointment ? mapAppointment(appointment) : null;
   const isLive = view && LIVE_STATUSES.has(view.status);
-  const bookTo = clinicOpen ? "/appointments?book=1" : "/appointments";
+  const bookTo = studentsClinicOpen ? "/appointments?book=1" : "/appointments";
 
   return (
     <section className="mx-auto max-w-7xl px-5 pb-12 pt-28 sm:px-8 sm:pb-16 lg:px-10 lg:pb-20">
       <div className="grid items-start gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-        <div>
+        <div ref={leftRef} className="hero-fade-up">
           <div className="flex items-center gap-3">
             <img src={Logo} alt="" className="h-12 w-12 object-contain" />
-            <p className="type-label-micro text-text-muted">KNUST Students&apos; Clinic</p>
+            <p className="type-label-micro text-text-muted">KNUST Health Services</p>
           </div>
 
+          {/* Dual facility status badges */}
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-text-muted">
             <FaClock size={11} className="text-accent" aria-hidden="true" />
             <span>{clock}</span>
             <span
-              className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                clinicOpen
+              className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                studentsClinicOpen
                   ? "border-accent-border bg-accent-soft text-accent"
                   : "border-warning-border bg-warning-soft text-warning"
               }`}
             >
-              Students&apos; Clinic {clinicOpen ? "open" : "closed"}
+              <MdLocalHospital size={10} aria-hidden="true" />
+              Students&apos; Clinic {studentsClinicOpen ? "open" : "closed"}
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 border border-accent-border bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent"
+            >
+              <FaHospital size={9} aria-hidden="true" />
+              Hospital {hospitalOpen ? "24h" : "open"}
             </span>
           </div>
 
@@ -119,8 +153,10 @@ export default function Hero() {
             Akwaaba
           </h1>
           <p className="mt-4 max-w-lg text-base leading-7 text-text-muted sm:text-lg">
-            Healthcare access for KNUST students. Book a visit, find an existing
-            appointment, or check the live queue from your phone.
+            Healthcare access for the KNUST community. Book a visit at the{" "}
+            <strong className="text-primary">Students&apos; Clinic</strong> or{" "}
+            <strong className="text-primary">KNUST Hospital</strong>, find an
+            existing appointment, or check the live queue — all from your phone.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:max-w-md">
@@ -146,9 +182,9 @@ export default function Hero() {
           </p>
         </div>
 
-        <div className="card-clinical bg-surface p-5 sm:p-7">
+        <div ref={rightRef} className="hero-fade-up hero-delay card-clinical bg-surface p-5 sm:p-7">
           <div className="grid grid-cols-3 gap-2 text-left">
-            <div className="border border-clinic-border bg-clinic-bg p-3">
+            <div className="border border-clinic-border bg-clinic-bg p-3 transition-colors hover:border-accent-border">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
                 Now serving
               </p>
@@ -156,7 +192,7 @@ export default function Hero() {
                 {activity.nowServingToken}
               </p>
             </div>
-            <div className="border border-clinic-border bg-clinic-bg p-3">
+            <div className="border border-clinic-border bg-clinic-bg p-3 transition-colors hover:border-accent-border">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
                 Waiting
               </p>
@@ -164,7 +200,7 @@ export default function Hero() {
                 {activity.waitingCount}
               </p>
             </div>
-            <div className="border border-clinic-border bg-clinic-bg p-3">
+            <div className="border border-clinic-border bg-clinic-bg p-3 transition-colors hover:border-accent-border">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
                 Est. wait
               </p>

@@ -2,23 +2,23 @@ const Benefits = () => {
   const benefits = [
     {
       id: 1,
-      title: "Creat Account",
-      description: "Sign up with your phone number or email in under 60 seconds",
+      title: "Choose a facility",
+      description: "Pick the Students' Clinic or KNUST Hospital based on your needs.",
     },
     {
       id: 2,
-      title: "Find a clinic",
-      description: "Search by specialty, location or availability near you.",
+      title: "Select a clinician",
+      description: "Browse available doctors and pick the time that works for you.",
     },
     {
       id: 3,
       title: "Book an appointment",
-      description: "Choose your preferred time slot if it exists.",
+      description: "Confirm your visit and receive an SMS with your reference code.",
     },
     {
       id: 4,
-      title: "Track Queue",
-      description: "Monitor your position live. Get SMS when you are next.",
+      title: "Track your queue",
+      description: "Monitor your position live. Get notified when you're next.",
     },
   ];
 

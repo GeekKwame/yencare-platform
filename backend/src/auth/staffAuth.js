@@ -30,6 +30,7 @@ export const DEMO_STAFF = Object.freeze([
     role: 'DOCTOR',
     assignedRoom: 'Room 1',
     clinicSite: 'students-clinic',
+    clinicianId: '68bf2c0e9c1a2b0012345671',
   },
   {
     staffId: 'stf_03',
@@ -39,7 +40,97 @@ export const DEMO_STAFF = Object.freeze([
     assignedRoom: null,
     clinicSite: 'students-clinic',
   },
+  {
+    staffId: 'stf_04',
+    email: 'ama.serwaa@yencare.gh',
+    name: 'Dr. Ama Serwaa',
+    role: 'DOCTOR',
+    assignedRoom: 'Room 2',
+    clinicSite: 'students-clinic',
+    clinicianId: '68bf2c0e9c1a2b0012345672',
+  },
 ]);
+
+/** Centralized RBAC Permissions Matrix */
+export const PERMISSIONS = Object.freeze({
+  APPOINTMENTS_READ: 'APPOINTMENTS_READ',
+  APPOINTMENTS_CHECKIN: 'APPOINTMENTS_CHECKIN',
+  APPOINTMENTS_STATUS: 'APPOINTMENTS_STATUS',
+  APPOINTMENTS_CANCEL: 'APPOINTMENTS_CANCEL',
+  APPOINTMENTS_RESCHEDULE: 'APPOINTMENTS_RESCHEDULE',
+  QUEUE_READ: 'QUEUE_READ',
+  QUEUE_CALL_NEXT: 'QUEUE_CALL_NEXT',
+  QUEUE_ADVANCE: 'QUEUE_ADVANCE',
+  QUEUE_COMPLETE: 'QUEUE_COMPLETE',
+  QUEUE_NO_SHOW: 'QUEUE_NO_SHOW',
+  PATIENTS_REGISTER: 'PATIENTS_REGISTER',
+  OPS_ADMIN: 'OPS_ADMIN',
+});
+
+/**
+ * Mapping of Staff Roles to their permitted capabilities.
+ */
+export const ROLE_PERMISSIONS = Object.freeze({
+  RECEPTIONIST: Object.freeze([
+    PERMISSIONS.APPOINTMENTS_READ,
+    PERMISSIONS.APPOINTMENTS_CHECKIN,
+    PERMISSIONS.APPOINTMENTS_STATUS,
+    PERMISSIONS.APPOINTMENTS_CANCEL,
+    PERMISSIONS.APPOINTMENTS_RESCHEDULE,
+    PERMISSIONS.QUEUE_READ,
+    PERMISSIONS.QUEUE_NO_SHOW,
+    PERMISSIONS.PATIENTS_REGISTER,
+  ]),
+  DOCTOR: Object.freeze([
+    PERMISSIONS.APPOINTMENTS_READ,
+    PERMISSIONS.APPOINTMENTS_CANCEL,
+    PERMISSIONS.APPOINTMENTS_RESCHEDULE,
+    PERMISSIONS.QUEUE_READ,
+    PERMISSIONS.QUEUE_CALL_NEXT,
+    PERMISSIONS.QUEUE_ADVANCE,
+    PERMISSIONS.QUEUE_COMPLETE,
+    PERMISSIONS.QUEUE_NO_SHOW,
+  ]),
+  ADMIN: Object.freeze([
+    PERMISSIONS.APPOINTMENTS_READ,
+    PERMISSIONS.APPOINTMENTS_CHECKIN,
+    PERMISSIONS.APPOINTMENTS_STATUS,
+    PERMISSIONS.APPOINTMENTS_CANCEL,
+    PERMISSIONS.APPOINTMENTS_RESCHEDULE,
+    PERMISSIONS.QUEUE_READ,
+    PERMISSIONS.QUEUE_CALL_NEXT,
+    PERMISSIONS.QUEUE_NO_SHOW,
+    PERMISSIONS.PATIENTS_REGISTER,
+    PERMISSIONS.OPS_ADMIN,
+  ]),
+});
+
+/**
+ * Evaluates whether a user or staff entity has a given RBAC permission.
+ *
+ * @param {object | null | undefined} user - Staff or user object containing .role
+ * @param {string} permission - The permission identifier to test (e.g. 'APPOINTMENTS_CHECKIN')
+ * @returns {boolean}
+ */
+export function hasPermission(user, permission) {
+  if (!user || !user.role || !permission) return false;
+  const role = String(user.role).toUpperCase();
+  const allowed = ROLE_PERMISSIONS[role];
+  if (!allowed) return false;
+  return allowed.includes(permission);
+}
+
+/**
+ * Lists all staff roles that possess the specified permission.
+ *
+ * @param {string} permission
+ * @returns {string[]}
+ */
+export function rolesWithPermission(permission) {
+  return Object.entries(ROLE_PERMISSIONS)
+    .filter(([_, perms]) => perms.includes(permission))
+    .map(([role]) => role);
+}
 
 const DEFAULT_JWT_SECRET = 'yencare-dev-jwt-secret';
 const BCRYPT_ROUNDS = 8;
@@ -62,6 +153,7 @@ export function serializeStaff(user) {
     assignedRoom: user.assignedRoom || null,
     clinicSite: user.clinicSite || 'students-clinic',
     activeSite: user.clinicSite || 'students-clinic',
+    clinicianId: user.clinicianId ? String(user.clinicianId) : null,
   };
 }
 
@@ -160,8 +252,10 @@ export function createStaffAuthService({
         staffId: payload.staffId,
         role: payload.role,
         name: payload.name,
+        email: payload.email,
         assignedRoom: payload.assignedRoom,
         clinicSite: payload.clinicSite,
+        clinicianId: payload.clinicianId || null,
       },
       jwtSecret,
       { expiresIn },
@@ -224,6 +318,15 @@ export function createStaffAuthService({
 
     let seeded = 0;
     for (const person of DEMO_STAFF) {
+      let clinicianId = person.clinicianId || null;
+      if (person.role === 'DOCTOR') {
+        const { Clinician } = await import('../models/Clinician.js');
+        const clin = await Clinician.findOne({ name: person.name });
+        if (clin?._id) {
+          clinicianId = clin._id;
+        }
+      }
+
       await StaffUser.findOneAndUpdate(
         { email: person.email },
         {
@@ -234,6 +337,7 @@ export function createStaffAuthService({
             role: person.role,
             assignedRoom: person.assignedRoom,
             clinicSite: person.clinicSite,
+            clinicianId,
             active: true,
           },
           $setOnInsert: {
@@ -288,15 +392,40 @@ export function createStaffAuthService({
       role: String(payload.role || '').toUpperCase(),
       assignedRoom: payload.assignedRoom || null,
       clinicSite: payload.clinicSite,
+      clinicianId: payload.clinicianId || null,
     };
   }
 
   /**
-   * Express middleware factory. Empty `requiredRoles` means any authenticated staff.
-   * @param {string[]} [requiredRoles]
+   * Express middleware factory. Supports:
+   * - Array of roles: e.g. ['RECEPTIONIST', 'ADMIN']
+   * - Permission string: e.g. 'APPOINTMENTS_CHECKIN'
+   * - Config object: e.g. { permission: 'APPOINTMENTS_CHECKIN' }
+   * Empty requirement means any authenticated staff.
+   *
+   * @param {string[] | string | { permission?: string, roles?: string[] }} [requirement]
    */
-  function authenticate(requiredRoles = []) {
-    const allowed = requiredRoles.map((role) => String(role).toUpperCase());
+  function authenticate(requirement = []) {
+    let allowedRoles = [];
+    let requiredPermission = null;
+
+    if (typeof requirement === 'string') {
+      if (PERMISSIONS[requirement]) {
+        requiredPermission = requirement;
+        allowedRoles = rolesWithPermission(requirement);
+      } else {
+        allowedRoles = [requirement.toUpperCase()];
+      }
+    } else if (Array.isArray(requirement)) {
+      allowedRoles = requirement.map((role) => String(role).toUpperCase());
+    } else if (requirement && typeof requirement === 'object') {
+      if (requirement.permission) {
+        requiredPermission = requirement.permission;
+        allowedRoles = rolesWithPermission(requirement.permission);
+      } else if (Array.isArray(requirement.roles)) {
+        allowedRoles = requirement.roles.map((role) => String(role).toUpperCase());
+      }
+    }
 
     return (req, res, next) => {
       const token = bearerToken(req);
@@ -307,9 +436,15 @@ export function createStaffAuthService({
       try {
         const staff = staffFromPayload(verifyToken(token));
 
-        if (allowed.length > 0 && !allowed.includes(staff.role)) {
+        if (requiredPermission && !hasPermission(staff, requiredPermission)) {
           return res.status(403).json({
-            error: `This action requires one of: ${allowed.join(', ')}`,
+            error: `This action requires permission: ${requiredPermission}`,
+          });
+        }
+
+        if (allowedRoles.length > 0 && !allowedRoles.includes(staff.role)) {
+          return res.status(403).json({
+            error: `This action requires one of: ${allowedRoles.join(', ')}`,
           });
         }
 
@@ -331,10 +466,29 @@ export function createStaffAuthService({
    * 401, so a patient whose browser still holds a stale staff token can still
    * use the public (phone-verified) path.
    *
-   * @param {string[]} [requiredRoles]
+   * @param {string[] | string | { permission?: string, roles?: string[] }} [requirement]
    */
-  function authenticateOptional(requiredRoles = []) {
-    const allowed = requiredRoles.map((role) => String(role).toUpperCase());
+  function authenticateOptional(requirement = []) {
+    let allowedRoles = [];
+    let requiredPermission = null;
+
+    if (typeof requirement === 'string') {
+      if (PERMISSIONS[requirement]) {
+        requiredPermission = requirement;
+        allowedRoles = rolesWithPermission(requirement);
+      } else {
+        allowedRoles = [requirement.toUpperCase()];
+      }
+    } else if (Array.isArray(requirement)) {
+      allowedRoles = requirement.map((role) => String(role).toUpperCase());
+    } else if (requirement && typeof requirement === 'object') {
+      if (requirement.permission) {
+        requiredPermission = requirement.permission;
+        allowedRoles = rolesWithPermission(requirement.permission);
+      } else if (Array.isArray(requirement.roles)) {
+        allowedRoles = requirement.roles.map((role) => String(role).toUpperCase());
+      }
+    }
 
     return (req, _res, next) => {
       const token = bearerToken(req);
@@ -347,7 +501,11 @@ export function createStaffAuthService({
         return next();
       }
 
-      if (allowed.length > 0 && !allowed.includes(staff.role)) {
+      if (requiredPermission && !hasPermission(staff, requiredPermission)) {
+        return next();
+      }
+
+      if (allowedRoles.length > 0 && !allowedRoles.includes(staff.role)) {
         return next();
       }
 
@@ -366,6 +524,10 @@ export function createStaffAuthService({
     authenticateOptional,
     verifyToken,
     serializeStaff,
+    hasPermission,
+    rolesWithPermission,
+    permissions: PERMISSIONS,
+    rolePermissions: ROLE_PERMISSIONS,
     usingDevSecret,
     demoPassword,
     roles: STAFF_ROLES,

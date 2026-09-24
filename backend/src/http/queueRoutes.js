@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { resolveClinicianIdForStaff } from '../auth/clinicianResolver.js';
 import { asyncHandler } from './asyncHandler.js';
 import { staffGuard } from './staffGuard.js';
 
@@ -45,7 +46,24 @@ export function createQueueRouter(queueService, { authenticate } = {}) {
     '/call-next',
     callNextStaff,
     asyncHandler(async (req, res) => {
-      const result = await queueService.callNextPatient(req.body || {});
+      let clinicianId = req.body?.clinicianId;
+
+      if (req.staff?.role === 'DOCTOR') {
+        const doctorClinicianId = await resolveClinicianIdForStaff(req.staff);
+        if (doctorClinicianId) {
+          if (clinicianId && String(clinicianId) !== String(doctorClinicianId)) {
+            return res.status(403).json({
+              error: 'Doctors can only call patients who booked a consultation with them.',
+            });
+          }
+          clinicianId = doctorClinicianId;
+        }
+      }
+
+      const result = await queueService.callNextPatient({
+        ...(req.body || {}),
+        ...(clinicianId ? { clinicianId } : {}),
+      });
       res.status(200).json({
         ...result,
         appointment: toJson(result.appointment),
@@ -58,7 +76,24 @@ export function createQueueRouter(queueService, { authenticate } = {}) {
     '/advance',
     completeStaff,
     asyncHandler(async (req, res) => {
-      const result = await queueService.advanceQueue(req.body || {});
+      let clinicianId = req.body?.clinicianId;
+
+      if (req.staff?.role === 'DOCTOR') {
+        const doctorClinicianId = await resolveClinicianIdForStaff(req.staff);
+        if (doctorClinicianId) {
+          if (clinicianId && String(clinicianId) !== String(doctorClinicianId)) {
+            return res.status(403).json({
+              error: 'Doctors can only advance appointments booked for their consultation.',
+            });
+          }
+          clinicianId = doctorClinicianId;
+        }
+      }
+
+      const result = await queueService.advanceQueue({
+        ...(req.body || {}),
+        ...(clinicianId ? { clinicianId } : {}),
+      });
       res.status(200).json({
         ...result,
         appointment: toJson(result.appointment),
@@ -72,7 +107,24 @@ export function createQueueRouter(queueService, { authenticate } = {}) {
     '/no-show',
     noShowStaff,
     asyncHandler(async (req, res) => {
-      const result = await queueService.markNoShow(req.body || {});
+      let clinicianId = req.body?.clinicianId;
+
+      if (req.staff?.role === 'DOCTOR') {
+        const doctorClinicianId = await resolveClinicianIdForStaff(req.staff);
+        if (doctorClinicianId) {
+          if (clinicianId && String(clinicianId) !== String(doctorClinicianId)) {
+            return res.status(403).json({
+              error: 'Doctors can only manage consultations booked with them.',
+            });
+          }
+          clinicianId = doctorClinicianId;
+        }
+      }
+
+      const result = await queueService.markNoShow({
+        ...(req.body || {}),
+        ...(clinicianId ? { clinicianId } : {}),
+      });
       res.status(200).json({
         ...result,
         appointment: toJson(result.appointment),

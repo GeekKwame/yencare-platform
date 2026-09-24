@@ -42,13 +42,20 @@ async function ensureCollection(db, spec, { dryRun }) {
   }
 
   if (existing.length === 0) {
-    await db.createCollection(spec.name, {
-      validator,
-      validationLevel: 'moderate',
-      validationAction: 'error',
-    });
-    console.log(`[migrate] created ${spec.name}`);
-    return;
+    try {
+      await db.createCollection(spec.name, {
+        validator,
+        validationLevel: 'moderate',
+        validationAction: 'error',
+      });
+      console.log(`[migrate] created ${spec.name}`);
+      return;
+    } catch (err) {
+      if (err?.code !== 48 && err?.codeName !== 'NamespaceExists') {
+        throw err;
+      }
+      // The collection was created concurrently; fall through to update its validator.
+    }
   }
 
   await db.command({

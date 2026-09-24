@@ -5,15 +5,27 @@
 // Booking routes should call createAppointment(data) instead of calling
 // Appointment.create(data) directly.
 
-import { clinicHoursLabel, isClinicOpenAt } from '../lib/accraTime.js';
+import { accraTodayIso, clinicHoursLabel, isClinicOpenAt } from '../lib/accraTime.js';
 import { logger } from '../lib/logger.js';
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
-import { ValidationError } from '../patients/errors.js';
+import { ConflictError, ValidationError } from '../patients/errors.js';
 import { resolvePatientPhone, resolveSmsDestination, bookingSmsDestinations } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { appointmentEvents } from './appointmentOps.js';
+
+export const MAX_ACTIVE_STUDENT_BOOKINGS = 2;
+
+export const STUDENT_BOOKING_CAP_MESSAGE =
+  'You have reached the maximum of 2 active appointments. Please complete or cancel existing visits.';
+
+export const ACTIVE_STUDENT_BOOKING_STATUSES = Object.freeze([
+  'BOOKED',
+  'CHECKED_IN',
+  'WAITING',
+  'CALLED',
+]);
 
 function slotTakenError(message = 'This time slot is already booked') {
   const err = new Error(message);
@@ -105,6 +117,127 @@ async function releaseClaimedSlot(slotId) {
 }
 
 /**
+ * Count active (non-completed, non-cancelled) upcoming appointments for a studentIndex.
+ *
+ * @param {string} studentIndex 8-digit student index number
+ * @param {{ minDate?: string, patientId?: unknown, excludeAppointmentId?: unknown }} [options]
+ * @returns {Promise<number>}
+ */
+export async function countActiveBookingsForStudent(
+  studentIndex,
+  { minDate = accraTodayIso(), patientId, excludeAppointmentId } = {},
+) {
+  if (!studentIndex) return 0;
+  const normalizedIndex = String(studentIndex).trim().replace(/\s+/g, '');
+  if (!normalizedIndex) return 0;
+
+  let patientIds = [];
+  try {
+    if (typeof Patient.find === 'function') {
+      const docs = await Patient.find({ studentIndex: normalizedIndex }, '_id');
+      if (Array.isArray(docs)) {
+        patientIds = docs.map((doc) => doc._id || doc.id).filter(Boolean);
+      }
+    }
+  } catch (err) {
+    logger.warn('could not query patients by studentIndex for booking cap', {
+      subsystem: 'booking-policy',
+      studentIndex: normalizedIndex,
+      err,
+    });
+  }
+
+  if (patientId && !patientIds.some((id) => String(id) === String(patientId))) {
+    patientIds.push(patientId);
+  }
+
+  const query = {
+    status: { $in: [...ACTIVE_STUDENT_BOOKING_STATUSES] },
+  };
+
+  if (minDate) {
+    query.appointmentDate = { $gte: minDate };
+  }
+
+  if (excludeAppointmentId) {
+    query._id = { $ne: excludeAppointmentId };
+  }
+
+  const orConditions = [];
+  if (patientIds.length > 0) {
+    orConditions.push({ patientId: patientIds.length === 1 ? patientIds[0] : { $in: patientIds } });
+  }
+  orConditions.push({ studentIndex: normalizedIndex });
+
+  if (orConditions.length === 1) {
+    Object.assign(query, orConditions[0]);
+  } else {
+    query.$or = orConditions;
+  }
+
+  if (typeof Appointment.countDocuments === 'function') {
+    return await Appointment.countDocuments(query);
+  }
+
+  if (typeof Appointment.find === 'function') {
+    const results = await Appointment.find(query);
+    return Array.isArray(results) ? results.length : 0;
+  }
+
+  return 0;
+}
+
+/**
+ * Enforce the active booking policy per studentIndex:
+ * Caps active (BOOKED, CHECKED_IN, WAITING) appointments on future dates at 2.
+ * Rejects requests with HTTP 409 if the student already has 2 active upcoming bookings.
+ *
+ * @param {object} payload
+ * @param {{ minDate?: string }} [options]
+ * @throws {ConflictError} if the student already has 2 active upcoming bookings.
+ */
+export async function assertStudentBookingCap(payload, { minDate = accraTodayIso() } = {}) {
+  let studentIndex = payload.studentIndex
+    ? String(payload.studentIndex).trim().replace(/\s+/g, '')
+    : null;
+
+  let patientDoc = null;
+  if (!studentIndex && payload.patientId) {
+    try {
+      patientDoc = await Patient.findById(payload.patientId);
+      if (patientDoc?.studentIndex) {
+        studentIndex = String(patientDoc.studentIndex).trim().replace(/\s+/g, '');
+      }
+    } catch {
+      // Patient lookup failure will be handled downstream if patient does not exist
+    }
+  }
+
+  if (!studentIndex && payload.patient?.studentIndex) {
+    studentIndex = String(payload.patient.studentIndex).trim().replace(/\s+/g, '');
+  }
+
+  // Non-student bookings have no studentIndex; booking cap policy does not apply.
+  if (!studentIndex) {
+    return { studentIndex: null, activeCount: 0, patient: patientDoc };
+  }
+
+  const activeCount = await countActiveBookingsForStudent(studentIndex, {
+    minDate,
+    patientId: payload.patientId,
+    excludeAppointmentId: payload._id || payload.appointmentId,
+  });
+
+  if (activeCount >= MAX_ACTIVE_STUDENT_BOOKINGS) {
+    const err = new ConflictError(STUDENT_BOOKING_CAP_MESSAGE);
+    err.code = 'STUDENT_BOOKING_CAP_EXCEEDED';
+    throw err;
+  }
+
+  return { studentIndex, activeCount, patient: patientDoc };
+}
+
+/**
  * @param {object} data - fields matching the Appointment schema
  *   (patientId, clinicianId, roomId, clinicSite, visitType,
  *    appointmentDate "YYYY-MM-DD", appointmentTime "HH:mm", timeSlotId?)
@@ -123,6 +256,10 @@ export async function createAppointment(data) {
       (payload.clinicianId && payload.appointmentDate && payload.appointmentTime),
   );
   let claimedSlot = null;
+
+  // Enforce student booking cap policy before reserving any slot.
+  const { patient: preloadedPatient } = await assertStudentBookingCap(payload);
+  delete payload.studentIndex;
 
   if (!isWalkIn) {
     assertWithinClinicHours(payload);
@@ -179,7 +316,7 @@ export async function createAppointment(data) {
     });
   }
 
-  const patient = await Patient.findById(appointment.patientId);
+  const patient = preloadedPatient || (await Patient.findById(appointment.patientId));
   if (!patient) {
     logger.error('appointment created but patient not found for SMS', {
       subsystem: 'booking',

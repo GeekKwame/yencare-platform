@@ -12,8 +12,15 @@ import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
 import { QueueCounter } from '../models/QueueCounter.js';
-import { AuditLog } from '../models/AuditLog.js';
-import { normalizeGhanaPhone } from '../sms/normalizePhone.js';
+import { AuditLog, recordAuditLog } from '../models/AuditLog.js';
+import { normalizeGhanaPhone, maskPhone } from '../sms/normalizePhone.js';
+import {
+  generateOtpCode,
+  storeOtp,
+  verifyOtp,
+  DEFAULT_OTP_EXPIRY_MS,
+  getLatestOtpForTesting,
+} from './otpService.js';
 
 import {
   ForbiddenError,
@@ -109,6 +116,26 @@ export function buildRescheduleSms(appointment) {
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+export function buildCancelOtpSms(appointment, code) {
+  return [
+    'YenCare Health',
+    '',
+    `Your cancellation verification code for appointment ${appointment.referenceCode} is: ${code}`,
+    'This code expires in 10 minutes.',
+    'Do not share this code with anyone.',
+  ].join('\n');
+}
+
+export function buildRescheduleOtpSms(appointment, code) {
+  return [
+    'YenCare Health',
+    '',
+    `Your rescheduling verification code for appointment ${appointment.referenceCode} is: ${code}`,
+    'This code expires in 10 minutes.',
+    'Do not share this code with anyone.',
+  ].join('\n');
 }
 
 function patientIdOf(appointment) {
@@ -252,6 +279,228 @@ export function assertAppointmentOwnership(appointment, { actorIsStaff = false, 
   }
 }
 
+export const OTP_REQUIRED_MESSAGE =
+  'A valid OTP verification code (otpCode) is required to cancel this appointment unless initiated by staff.';
+
+/**
+ * Proof of OTP verification for patient-initiated cancellation.
+ * Staff skip the check; unauthenticated patients must provide a valid 4-digit OTP code.
+ *
+ * @param {object | null} appointment
+ * @param {{ actorIsStaff?: boolean, otpCode?: unknown, phone?: unknown }} [context]
+ * @throws {ForbiddenError}
+ */
+export async function assertAppointmentCancelOtp(
+  appointment,
+  { actorIsStaff = false, otpCode = null, phone = null } = {},
+) {
+  if (actorIsStaff) return;
+
+  const code = String(otpCode ?? '').trim();
+  if (!code) {
+    throw new ForbiddenError(OTP_REQUIRED_MESSAGE);
+  }
+
+  const verification = await verifyOtp({
+    appointmentId: appointment?._id,
+    referenceCode: appointment?.referenceCode,
+    action: 'CANCEL',
+    code,
+  });
+
+  if (!verification.ok) {
+    throw new ForbiddenError(verification.message);
+  }
+}
+
+export const RESCHEDULE_OTP_REQUIRED_MESSAGE =
+  'A valid OTP verification code (otpCode) is required to reschedule this appointment unless initiated by staff.';
+
+/**
+ * Proof of OTP verification or ownership for reschedule.
+ * Staff skip the check; patients provide otpCode or registered phone.
+ */
+export async function assertAppointmentRescheduleOtp(
+  appointment,
+  { actorIsStaff = false, otpCode = null, phone = null } = {},
+) {
+  if (actorIsStaff) return;
+
+  const code = String(otpCode ?? '').trim();
+  if (code) {
+    const verification = await verifyOtp({
+      appointmentId: appointment?._id,
+      referenceCode: appointment?.referenceCode,
+      action: 'RESCHEDULE',
+      code,
+    });
+
+    if (!verification.ok) {
+      throw new ForbiddenError(verification.message);
+    }
+    return;
+  }
+
+  // If a masked phone was sent (e.g. from public lookup), require OTP verification code
+  if (phone && String(phone).includes('*')) {
+    throw new ForbiddenError(RESCHEDULE_OTP_REQUIRED_MESSAGE);
+  }
+
+  // Fall back to phone ownership check if unmasked phone was supplied
+  assertAppointmentOwnership(appointment, { actorIsStaff, phone });
+}
+
+/**
+ * Send a 4-digit SMS OTP code for appointment cancellation.
+ *
+ * @param {string} idOrReference
+ * @returns {Promise<{ message: string, referenceCode: string, maskedPhone: string, expiresInMinutes: number, sms: object }>}
+ */
+export async function requestCancelOtp(idOrReference) {
+  const key = String(idOrReference || '').trim();
+  if (!key) {
+    throw new ValidationError('Appointment id or reference is required');
+  }
+
+  const query = mongoose.isValidObjectId(key)
+    ? { _id: key }
+    : { referenceCode: key.toUpperCase() };
+
+  let appointment = null;
+  if (typeof Appointment.findOne === 'function') {
+    appointment = await Appointment.findOne(query).populate(
+      'patientId',
+      'fullName phone studentIndex',
+    );
+  }
+
+  if (!appointment) {
+    throw new NotFoundError('Appointment not found');
+  }
+
+  assertNotInLiveQueue(appointment);
+
+  if (
+    appointment.status === 'CHECKED_IN' ||
+    appointment.status === 'CALLED' ||
+    appointment.status === 'COMPLETED'
+  ) {
+    throw new ValidationError(
+      `Appointment cannot be cancelled when status is ${appointment.status}`,
+    );
+  }
+
+  if (appointment.status === 'CANCELLED') {
+    throw new ValidationError('Appointment is already cancelled');
+  }
+
+  const destinations = await smsDestinationsForAppointment(appointment);
+  if (!destinations || destinations.length === 0) {
+    throw new ValidationError('Patient has no phone number on record for OTP verification');
+  }
+  const phone = destinations[0];
+
+  const code = generateOtpCode();
+
+  await storeOtp({
+    appointmentId: appointment._id,
+    referenceCode: appointment.referenceCode,
+    action: 'CANCEL',
+    phone,
+    code,
+  });
+
+  const sms = await sendSms(phone, buildCancelOtpSms(appointment, code));
+
+  const response = {
+    message: 'Cancellation verification code sent via SMS',
+    referenceCode: appointment.referenceCode,
+    maskedPhone: maskPhone(phone),
+    expiresInMinutes: 10,
+    sms,
+  };
+
+  if (process.env.NODE_ENV === 'test') {
+    response.testOtp = code;
+  }
+
+  return response;
+}
+
+/**
+ * Send a 4-digit SMS OTP code for appointment rescheduling.
+ *
+ * @param {string} idOrReference
+ * @returns {Promise<{ message: string, referenceCode: string, maskedPhone: string, expiresInMinutes: number, sms: object }>}
+ */
+export async function requestRescheduleOtp(idOrReference) {
+  const key = String(idOrReference || '').trim();
+  if (!key) {
+    throw new ValidationError('Appointment id or reference is required');
+  }
+
+  const query = mongoose.isValidObjectId(key)
+    ? { _id: key }
+    : { referenceCode: key.toUpperCase() };
+
+  let appointment = null;
+  if (typeof Appointment.findOne === 'function') {
+    appointment = await Appointment.findOne(query).populate(
+      'patientId',
+      'fullName phone studentIndex',
+    );
+  }
+
+  if (!appointment) {
+    throw new NotFoundError('Appointment not found');
+  }
+
+  assertNotInLiveQueue(appointment);
+
+  if (
+    appointment.status === 'CHECKED_IN' ||
+    appointment.status === 'CALLED' ||
+    appointment.status === 'COMPLETED' ||
+    appointment.status === 'CANCELLED'
+  ) {
+    throw new ValidationError(
+      `Appointment cannot be rescheduled when status is ${appointment.status}`,
+    );
+  }
+
+  const destinations = await smsDestinationsForAppointment(appointment);
+  if (!destinations || destinations.length === 0) {
+    throw new ValidationError('Patient has no phone number on record for OTP verification');
+  }
+  const phone = destinations[0];
+
+  const code = generateOtpCode();
+
+  await storeOtp({
+    appointmentId: appointment._id,
+    referenceCode: appointment.referenceCode,
+    action: 'RESCHEDULE',
+    phone,
+    code,
+  });
+
+  const sms = await sendSms(phone, buildRescheduleOtpSms(appointment, code));
+
+  const response = {
+    message: 'Reschedule verification code sent via SMS',
+    referenceCode: appointment.referenceCode,
+    maskedPhone: maskPhone(phone),
+    expiresInMinutes: 10,
+    sms,
+  };
+
+  if (process.env.NODE_ENV === 'test') {
+    response.testOtp = code;
+  }
+
+  return response;
+}
+
 /**
  * Once a queue token has been handed out the patient is standing in the live
  * queue, so self-service cancel/reschedule would strand that token. Reception
@@ -304,6 +553,10 @@ export async function listAppointments(filters = {}) {
     }
 
     query.clinicSite = clinicSite;
+  }
+
+  if (filters.clinicianId) {
+    query.clinicianId = filters.clinicianId;
   }
 
   return Appointment.populateQueue(query);
@@ -710,9 +963,15 @@ export async function cancelAppointment(
   idOrReference,
   {
     cancelReason = '',
+    reason = '',
+    changeReason = '',
     performedBy = null,
     actorIsStaff = false,
+    actorType = null,
+    actorId = null,
+    actingUserId = null,
     phone = null,
+    otpCode = null,
   } = {},
 ) {
   const key = String(idOrReference || '').trim();
@@ -740,8 +999,8 @@ export async function cancelAppointment(
         .session(session);
 
       // Runs before the 404 so an unauthenticated caller cannot tell a wrong
-      // phone number apart from a reference that does not exist.
-      assertAppointmentOwnership(appointment, { actorIsStaff, phone });
+      // OTP code apart from a reference that does not exist.
+      await assertAppointmentCancelOtp(appointment, { actorIsStaff, otpCode, phone });
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');
@@ -867,20 +1126,50 @@ export async function cancelAppointment(
         );
       }
 
-      // Audit stamp.
-      await AuditLog.create(
-        [
-          {
-            action: 'APPOINTMENT_CANCELLED',
-            appointmentId: appointment._id,
-            cancelledTime,
-            cancelReason: cancelReason
-              ? String(cancelReason).trim()
-              : null,
-            performedBy: performedBy || null,
-          },
-        ],
-        { session },
+      const finalActorType = actorType || (actorIsStaff ? 'STAFF' : 'PATIENT');
+      const finalActorId =
+        actorId ||
+        actingUserId ||
+        performedBy ||
+        (finalActorType === 'STAFF'
+          ? null
+          : appointment.patientId?.studentIndex ||
+            patientPhone(appointment) ||
+            (appointment.patientId?._id
+              ? String(appointment.patientId._id)
+              : 'PATIENT_SELF_SERVICE'));
+
+      const finalReason = String(
+        reason ||
+          cancelReason ||
+          changeReason ||
+          (finalActorType === 'PATIENT'
+            ? 'Cancelled by patient via self-service'
+            : 'Cancelled by staff via portal'),
+      ).trim();
+
+      const oldDate = appointment.appointmentDate || slot?.date || null;
+      const oldTime = appointment.appointmentTime || slot?.startTime || null;
+
+      // Comprehensive audit log.
+      await recordAuditLog(
+        {
+          action: 'APPOINTMENT_CANCELLED',
+          appointmentId: appointment._id,
+          actorType: finalActorType,
+          actorId: finalActorId,
+          actingUserId: finalActorId,
+          oldDate,
+          oldTime,
+          newDate: null,
+          newTime: null,
+          reason: finalReason,
+          changeReason: finalReason,
+          cancelReason: finalReason,
+          cancelledTime,
+          performedBy: finalActorId,
+        },
+        session,
       );
 
       result = {
@@ -931,8 +1220,14 @@ export async function rescheduleAppointment(
     newSlotId,
     performedBy = null,
     staffChangeReason = '',
+    changeReason = '',
+    reason = '',
     actorIsStaff = false,
+    actorType = null,
+    actorId = null,
+    actingUserId = null,
     phone = null,
+    otpCode = null,
   } = {},
 ) {
   const key = String(idOrReference || '').trim();
@@ -964,8 +1259,8 @@ export async function rescheduleAppointment(
         .populate('patientId', 'fullName phone studentIndex')
         .session(session);
 
-      // Before the 404, so a wrong phone and an unknown reference look identical.
-      assertAppointmentOwnership(appointment, { actorIsStaff, phone });
+      // Before the 404, so an invalid code and an unknown reference look identical.
+      await assertAppointmentRescheduleOtp(appointment, { actorIsStaff, otpCode, phone });
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');
@@ -1157,19 +1452,53 @@ export async function rescheduleAppointment(
         );
       }
 
-      // Audit log.
-      await AuditLog.create(
-        [
-          {
-            action: 'APPOINTMENT_RESCHEDULED',
-            appointmentId: appointment._id,
-            oldSlotId: oldSlot._id,
-            newSlotId: newSlot._id,
-            rescheduledTime: new Date(),
-            performedBy: performedBy || null,
-          },
-        ],
-        { session },
+      const finalActorType = actorType || (actorIsStaff ? 'STAFF' : 'PATIENT');
+      const finalActorId =
+        actorId ||
+        actingUserId ||
+        performedBy ||
+        (finalActorType === 'STAFF'
+          ? null
+          : appointment.patientId?.studentIndex ||
+            patientPhone(appointment) ||
+            (appointment.patientId?._id
+              ? String(appointment.patientId._id)
+              : 'PATIENT_SELF_SERVICE'));
+
+      const finalReason = String(
+        reason ||
+          changeReason ||
+          staffChangeReason ||
+          (finalActorType === 'PATIENT'
+            ? 'Rescheduled by patient via self-service'
+            : 'Rescheduled by staff via portal'),
+      ).trim();
+
+      const oldDate = appointment.appointmentDate || oldSlot.date || null;
+      const oldTime = appointment.appointmentTime || oldSlot.startTime || null;
+      const newDate = newSlot.date;
+      const newTime = newSlot.startTime;
+
+      // Comprehensive audit log.
+      await recordAuditLog(
+        {
+          action: 'APPOINTMENT_RESCHEDULED',
+          appointmentId: appointment._id,
+          actorType: finalActorType,
+          actorId: finalActorId,
+          actingUserId: finalActorId,
+          oldDate,
+          oldTime,
+          newDate,
+          newTime,
+          reason: finalReason,
+          changeReason: finalReason,
+          oldSlotId: oldSlot._id,
+          newSlotId: newSlot._id,
+          rescheduledTime: new Date(),
+          performedBy: finalActorId,
+        },
+        session,
       );
 
       result = {

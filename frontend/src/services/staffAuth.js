@@ -31,6 +31,7 @@ export const DEMO_STAFF_ACCOUNTS = [
       role: "DOCTOR",
       assignedRoom: "Room 1",
       clinicSite: "students-clinic",
+      clinicianId: "68bf2c0e9c1a2b0012345671",
     },
   },
   {
@@ -45,6 +46,21 @@ export const DEMO_STAFF_ACCOUNTS = [
       role: "ADMIN",
       assignedRoom: null,
       clinicSite: "students-clinic",
+    },
+  },
+  {
+    identifier: "ama.serwaa@yencare.gh",
+    password: DEMO_STAFF_PASSWORD,
+    destination: "Room 2 Consult",
+    staff: {
+      id: "stf_04",
+      staffId: "stf_04",
+      name: "Dr. Ama Serwaa",
+      email: "ama.serwaa@yencare.gh",
+      role: "DOCTOR",
+      assignedRoom: "Room 2",
+      clinicSite: "students-clinic",
+      clinicianId: "68bf2c0e9c1a2b0012345672",
     },
   },
 ];

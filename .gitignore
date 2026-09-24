@@ -39,3 +39,11 @@ Thumbs.db
 generate_word_plan.py
 
 *.docx
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+

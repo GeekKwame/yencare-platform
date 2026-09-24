@@ -105,7 +105,12 @@ export default function StaffWalkIn({ clinicSite, onBack, onQueued }) {
           break;
         } catch (err) {
           lastError = err;
-          if (err.response?.status !== 409) throw err;
+          if (
+            err.response?.status !== 409 ||
+            err.response?.data?.error?.includes("maximum of 2 active appointments")
+          ) {
+            throw err;
+          }
           appointmentTime = bumpClock(appointmentTime, 1);
         }
       }

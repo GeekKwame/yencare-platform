@@ -320,11 +320,13 @@ export async function seed({ dryRun = false } = {}) {
 
   const passwordHash = bcrypt.hashSync(DEMO_STAFF_PASSWORD, 8);
   for (const person of DEMO_STAFF) {
+    const clinicianDoc = cliniciansByName.get(person.name);
     await StaffUser.findOneAndUpdate(
       { email: person.email },
       {
         $set: {
           ...person,
+          clinicianId: clinicianDoc?._id || person.clinicianId || null,
           passwordHash,
           active: true,
         },

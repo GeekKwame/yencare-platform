@@ -68,11 +68,27 @@ export default function DoctorWorkstation({ staff }) {
 
   const roomAppointments = useMemo(() => {
     return appointments.filter((appt) => {
+      // A booked doctor should only have access to call and view patients booked with him
+      if (staff?.role === "DOCTOR") {
+        const matchesClinicianId =
+          staff.clinicianId &&
+          appt.clinicianId &&
+          String(appt.clinicianId) === String(staff.clinicianId);
+        const matchesName =
+          staff.name &&
+          appt.clinicianName &&
+          String(appt.clinicianName).trim().toLowerCase() === String(staff.name).trim().toLowerCase();
+
+        if (!matchesClinicianId && !matchesName) {
+          return false;
+        }
+      }
+
       if (!appt.roomName && !appt.roomId) return true;
       if (appt.roomId && selectedRoom && String(appt.roomId) === roomKey(selectedRoom)) return true;
       return String(appt.roomName || "").toLowerCase() === String(selectedName).toLowerCase();
     });
-  }, [appointments, selectedRoom, selectedName]);
+  }, [appointments, selectedRoom, selectedName, staff]);
 
   const called = roomAppointments.find((appt) => appt.status === "CALLED");
   const waiting = roomAppointments
@@ -88,6 +104,7 @@ export default function DoctorWorkstation({ staff }) {
     try {
       const result = await callNextPatient({
         roomId: selectedRoom.id || selectedRoom._id,
+        clinicianId: staff?.clinicianId || undefined,
         completePrevious,
       });
       const calledAppt = result.appointment;
@@ -115,7 +132,10 @@ export default function DoctorWorkstation({ staff }) {
     if (!called) return;
     setBusy(true);
     try {
-      await advanceQueue({ appointmentId: called.id });
+      await advanceQueue({
+        appointmentId: called.id,
+        clinicianId: staff?.clinicianId || undefined,
+      });
       setMessage(`Visit completed for ${called.patientName}.`);
       await reload();
     } catch (err) {
@@ -130,7 +150,10 @@ export default function DoctorWorkstation({ staff }) {
     if (!window.confirm(`Mark ${called.patientName} as no-show?`)) return;
     setBusy(true);
     try {
-      await markQueueNoShow({ appointmentId: called.id });
+      await markQueueNoShow({
+        appointmentId: called.id,
+        clinicianId: staff?.clinicianId || undefined,
+      });
       setMessage(`${called.patientName} marked no-show.`);
       await reload();
     } catch (err) {

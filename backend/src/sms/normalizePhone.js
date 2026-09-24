@@ -76,3 +76,36 @@ export function toLocalGhanaPhone(raw) {
 export function toMsisdnGhanaPhone(raw) {
   return normalizeGhanaPhone(raw).slice(1);
 }
+
+/**
+ * Mask Ghana phone number for public display (e.g. `+233 24 **** 567`).
+ * Protects patient privacy in public lookup endpoints.
+ *
+ * @param {unknown} raw
+ * @returns {string}
+ */
+export function maskPhone(raw) {
+  if (raw == null) return '';
+  const str = String(raw).trim();
+  if (!str) return '';
+  if (str.includes('*')) return str;
+
+  const national = ghanaNationalNumber(str);
+  if (national) {
+    const network = national.slice(0, 2);
+    const last3 = national.slice(-3);
+    return `+233 ${network} **** ${last3}`;
+  }
+
+  // Fallback if raw phone contains digits
+  const digits = str.replace(/\D/g, '');
+  if (digits.length >= 7) {
+    const prefix = digits.length >= 9 ? digits.slice(-9, -7) : digits.slice(0, 2);
+    const last3 = digits.slice(-3);
+    return `+233 ${prefix} **** ${last3}`;
+  }
+
+  return '****';
+}
+
+export const maskGhanaPhone = maskPhone;

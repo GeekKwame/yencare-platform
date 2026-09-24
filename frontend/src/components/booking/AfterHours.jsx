@@ -40,7 +40,7 @@ export default function AfterHours({ onFindAppointment, onBookHospital, onHome }
           onClick={onFindAppointment}
           className="w-full rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
         >
-          Find an existing appointment
+          Find your existing appointment
         </button>
         <button
           type="button"

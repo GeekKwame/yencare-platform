@@ -47,14 +47,37 @@ export async function lookupAppointment(query) {
 }
 
 /**
+ * Request a 4-digit SMS OTP to cancel an appointment.
+ * @param {string} idOrReference
+ */
+export async function requestCancelOtp(idOrReference) {
+  const response = await api.post(
+    `/appointments/${encodeURIComponent(idOrReference)}/request-cancel-otp`,
+  );
+  return response.data;
+}
+
+/**
+ * Request a 4-digit SMS OTP to reschedule an appointment.
+ * @param {string} idOrReference
+ */
+export async function requestRescheduleOtp(idOrReference) {
+  const response = await api.post(
+    `/appointments/${encodeURIComponent(idOrReference)}/request-reschedule-otp`,
+  );
+  return response.data;
+}
+
+/**
  * @param {string} idOrReference Mongo id or YC-XXXX
- * @param {{ cancelReason?: string }} [options]
+ * @param {{ cancelReason?: string, otpCode?: string, phone?: string }} [options]
  */
 export async function cancelAppointment(idOrReference, options = {}) {
   const response = await api.patch(
     `/appointments/${encodeURIComponent(idOrReference)}/cancel`,
     {
       cancelReason: options.cancelReason,
+      otpCode: options.otpCode,
       phone: options.phone,
       phoneNumber: options.phone,
     },
@@ -65,6 +88,7 @@ export async function cancelAppointment(idOrReference, options = {}) {
 /**
  * @param {string} idOrReference
  * @param {string} newSlotId
+ * @param {{ staffChangeReason?: string, otpCode?: string, phone?: string }} [options]
  */
 export async function rescheduleAppointment(idOrReference, newSlotId, options = {}) {
   const response = await api.patch(
@@ -72,6 +96,7 @@ export async function rescheduleAppointment(idOrReference, newSlotId, options = 
     {
       newSlotId,
       staffChangeReason: options.staffChangeReason,
+      otpCode: options.otpCode,
       phone: options.phone,
       phoneNumber: options.phone,
     },
