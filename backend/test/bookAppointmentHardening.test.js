@@ -13,6 +13,7 @@ import {
   MAX_ACTIVE_STUDENT_BOOKINGS,
   STUDENT_BOOKING_CAP_MESSAGE,
   ACTIVE_STUDENT_BOOKING_STATUSES,
+  WALK_IN_STAFF_ONLY_MESSAGE,
 } from '../src/services/bookAppointment.js';
 
 const oid = () => new mongoose.Types.ObjectId();
@@ -20,6 +21,9 @@ const oid = () => new mongoose.Types.ObjectId();
 const CLINICIAN_ID = oid();
 const ROOM_ID = oid();
 const PATIENT_ID = oid();
+
+// The verified identity the route passes for a reception-desk walk-in.
+const AS_RECEPTION = { staff: { staffId: 'stf_01', role: 'RECEPTIONIST' } };
 
 // 2026-09-16 is a Wednesday, 2026-09-20 a Sunday.
 const WEDNESDAY = '2026-09-16';
@@ -143,8 +147,8 @@ describe('walk-in slot claiming is atomic', () => {
     stubs = stubModels({ catalogSlot: true });
 
     const results = await Promise.allSettled([
-      createAppointment(basePayload({ bookingType: 'WALK_IN' })),
-      createAppointment(basePayload({ bookingType: 'WALK_IN' })),
+      createAppointment(basePayload({ bookingType: 'WALK_IN' }), AS_RECEPTION),
+      createAppointment(basePayload({ bookingType: 'WALK_IN' }), AS_RECEPTION),
     ]);
 
     const fulfilled = results.filter((result) => result.status === 'fulfilled');
@@ -161,7 +165,10 @@ describe('walk-in slot claiming is atomic', () => {
   it('links the claimed catalog slot to the walk-in so online patients cannot take it', async () => {
     stubs = stubModels({ catalogSlot: true });
 
-    const { appointment } = await createAppointment(basePayload({ bookingType: 'WALK_IN' }));
+    const { appointment } = await createAppointment(
+      basePayload({ bookingType: 'WALK_IN' }),
+      AS_RECEPTION,
+    );
 
     assert.equal(String(appointment.timeSlotId), String(stubs.slot._id));
     assert.equal(stubs.slot.isBooked, true);
@@ -172,6 +179,7 @@ describe('walk-in slot claiming is atomic', () => {
 
     const { appointment } = await createAppointment(
       basePayload({ bookingType: 'WALK_IN', appointmentTime: '13:47' }),
+      AS_RECEPTION,
     );
 
     assert.equal(stubs.state.created.length, 1);
@@ -182,7 +190,11 @@ describe('walk-in slot claiming is atomic', () => {
     stubs = stubModels({ catalogSlot: false, existingAppointment: true });
 
     await assert.rejects(
-      () => createAppointment(basePayload({ bookingType: 'WALK_IN', appointmentTime: '13:47' })),
+      () =>
+        createAppointment(
+          basePayload({ bookingType: 'WALK_IN', appointmentTime: '13:47' }),
+          AS_RECEPTION,
+        ),
       (err) => {
         assert.equal(err.status, 409);
         assert.match(err.message, /already booked for this clinician/i);
@@ -200,7 +212,7 @@ describe('walk-in slot claiming is atomic', () => {
       throw err;
     };
 
-    await assert.rejects(() => createAppointment(basePayload({ bookingType: 'WALK_IN' })), {
+    await assert.rejects(() => createAppointment(basePayload({ bookingType: 'WALK_IN' }), AS_RECEPTION), {
       status: 409,
     });
     assert.equal(stubs.state.released, 1);
@@ -294,6 +306,7 @@ describe('clinic opening hours are enforced server-side', () => {
         appointmentDate: SUNDAY,
         appointmentTime: '20:15',
       }),
+      AS_RECEPTION,
     );
 
     assert.equal(appointment.referenceCode, 'YC-4821');
@@ -440,6 +453,135 @@ describe('student booking cap policy (Issue B)', () => {
 
     assert.ok(result.appointment);
     assert.equal(stubs.state.created.length, 1);
+  });
+});
+
+describe('walk-ins require a verified reception or admin identity', () => {
+  /** @type {{ restore: () => void } | null} */
+  let stubs = null;
+
+  afterEach(() => {
+    stubs?.restore();
+    stubs = null;
+  });
+
+  const STUDENT_INDEX = '20612345';
+
+  /** A student who already holds the maximum number of active bookings. */
+  function stubCappedStudent() {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-05', status: 'BOOKED' },
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-06', status: 'BOOKED' },
+      ],
+    });
+    // No phone on purpose: createAppointment then stops before any SMS is sent.
+    Patient.findById = async () => ({
+      _id: PATIENT_ID,
+      studentIndex: STUDENT_INDEX,
+      fullName: 'Akosua Boateng',
+    });
+
+    let capQueries = 0;
+    const countDocuments = Appointment.countDocuments;
+    Appointment.countDocuments = async (query) => {
+      capQueries += 1;
+      return countDocuments(query);
+    };
+    return { capQueries: () => capQueries };
+  }
+
+  function assertForbiddenWalkIn(err) {
+    assert.equal(err.name, 'ForbiddenError');
+    assert.equal(err.status, 403);
+    assert.equal(err.message, WALK_IN_STAFF_ONLY_MESSAGE);
+    return true;
+  }
+
+  it('refuses an anonymous WALK_IN before claiming a slot or creating anything', async () => {
+    stubs = stubModels({ catalogSlot: true });
+
+    await assert.rejects(
+      () => createAppointment(basePayload({ bookingType: 'WALK_IN' })),
+      assertForbiddenWalkIn,
+    );
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('refuses a WALK_IN from a doctor: walk-ins go through the desk', async () => {
+    stubs = stubModels({ catalogSlot: true });
+
+    await assert.rejects(
+      () =>
+        createAppointment(basePayload({ bookingType: 'WALK_IN' }), {
+          staff: { staffId: 'stf_02', role: 'DOCTOR' },
+        }),
+      assertForbiddenWalkIn,
+    );
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('ignores a staff identity smuggled into the request body', async () => {
+    stubs = stubModels({ catalogSlot: true });
+
+    await assert.rejects(
+      () =>
+        createAppointment(
+          basePayload({ bookingType: 'WALK_IN', staff: { role: 'RECEPTIONIST' } }),
+        ),
+      assertForbiddenWalkIn,
+    );
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('lets an admin create a walk-in', async () => {
+    stubs = stubModels({ catalogSlot: true });
+
+    const { appointment } = await createAppointment(basePayload({ bookingType: 'WALK_IN' }), {
+      staff: { staffId: 'stf_03', role: 'ADMIN' },
+    });
+
+    assert.equal(appointment.bookingType, 'WALK_IN');
+    assert.equal(stubs.state.created.length, 1);
+  });
+
+  it('a reception walk-in skips the booking cap for a student already at the maximum', async () => {
+    const cap = stubCappedStudent();
+
+    const { appointment } = await createAppointment(
+      basePayload({ bookingType: 'WALK_IN' }),
+      AS_RECEPTION,
+    );
+
+    assert.equal(appointment.bookingType, 'WALK_IN');
+    assert.equal(stubs.state.created.length, 1);
+    assert.equal(cap.capQueries(), 0, 'the cap must not be consulted for a staff walk-in');
+  });
+
+  it('the same student booking online is still capped', async () => {
+    const cap = stubCappedStudent();
+
+    await assert.rejects(() => createAppointment(basePayload()), {
+      name: 'ConflictError',
+      status: 409,
+      message: STUDENT_BOOKING_CAP_MESSAGE,
+    });
+    assert.equal(cap.capQueries(), 1);
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('a reception-staff booking that is not a walk-in stays capped', async () => {
+    stubCappedStudent();
+
+    await assert.rejects(() => createAppointment(basePayload(), AS_RECEPTION), {
+      status: 409,
+      message: STUDENT_BOOKING_CAP_MESSAGE,
+    });
+    assert.equal(stubs.state.created.length, 0);
   });
 });
 

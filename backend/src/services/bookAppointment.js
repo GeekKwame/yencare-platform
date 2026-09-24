@@ -10,7 +10,7 @@ import { logger } from '../lib/logger.js';
 import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
-import { ConflictError, ValidationError } from '../patients/errors.js';
+import { ConflictError, ForbiddenError, ValidationError } from '../patients/errors.js';
 import { resolvePatientPhone, resolveSmsDestination, bookingSmsDestinations } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { appointmentEvents } from './appointmentOps.js';
@@ -26,6 +26,11 @@ export const ACTIVE_STUDENT_BOOKING_STATUSES = Object.freeze([
   'WAITING',
   'CALLED',
 ]);
+
+export const WALK_IN_STAFF_ONLY_MESSAGE = 'Walk-ins can only be created by reception staff.';
+
+/** Roles allowed to admit a walk-in. Doctors are not: walk-ins go through the desk. */
+const WALK_IN_STAFF_ROLES = Object.freeze(['RECEPTIONIST', 'ADMIN']);
 
 function slotTakenError(message = 'This time slot is already booked') {
   const err = new Error(message);
@@ -242,23 +247,37 @@ export async function assertStudentBookingCap(payload, { minDate = accraTodayIso
  *   (patientId, clinicianId, roomId, clinicSite, visitType,
  *    appointmentDate "YYYY-MM-DD", appointmentTime "HH:mm", timeSlotId?)
  *   Optional `phone` / `phoneNumber` is the SMS destination for this booking.
+ * @param {{ staff?: { role?: string } | null }} [context]
+ *   `staff` is the verified staff identity (`req.staff`) or null. It is the only
+ *   thing that can make a booking a walk-in; `bookingType` in the body cannot.
  * @returns {Promise<{ appointment: object, sms: { ok: boolean, error?: string } }>}
  */
-export async function createAppointment(data) {
+export async function createAppointment(data, { staff = null } = {}) {
   const payload = { ...data };
   const requestedPhone = payload.phone ?? payload.phoneNumber ?? null;
   delete payload.phone;
   delete payload.phoneNumber;
 
-  const isWalkIn = payload.bookingType === 'WALK_IN';
+  // A walk-in skips opening hours and the booking cap, so it must be admitted
+  // by verified desk staff. Anyone else asking for one is refused outright.
+  const isWalkIn =
+    payload.bookingType === 'WALK_IN' && WALK_IN_STAFF_ROLES.includes(staff?.role);
+  if (payload.bookingType === 'WALK_IN' && !isWalkIn) {
+    throw new ForbiddenError(WALK_IN_STAFF_ONLY_MESSAGE);
+  }
+
   const isScheduledAgainstClinician = Boolean(
     payload.timeSlotId ||
       (payload.clinicianId && payload.appointmentDate && payload.appointmentTime),
   );
   let claimedSlot = null;
 
-  // Enforce student booking cap policy before reserving any slot.
-  const { patient: preloadedPatient } = await assertStudentBookingCap(payload);
+  // Enforce student booking cap policy before reserving any slot. Staff
+  // walk-ins are exempt: reception is admitting the patient in person.
+  let preloadedPatient = null;
+  if (!isWalkIn) {
+    ({ patient: preloadedPatient } = await assertStudentBookingCap(payload));
+  }
   delete payload.studentIndex;
 
   if (!isWalkIn) {

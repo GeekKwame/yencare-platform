@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
+import jwt from 'jsonwebtoken';
+import { createStaffAuthService, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
 import { createApp } from '../src/http/app.js';
 import { createMemoryStore } from '../src/patients/memoryStore.js';
 import { createPatientService } from '../src/patients/service.js';
+import { createAppointment, WALK_IN_STAFF_ONLY_MESSAGE } from '../src/services/bookAppointment.js';
 
 function startApp(mockService) {
   const app = createApp({
@@ -782,5 +785,122 @@ describe('appointments HTTP', () => {
       body.error,
       /cannot be rescheduled/i,
     );
+  });
+});
+
+describe('POST /api/appointments walk-in identity', () => {
+  const TEST_SECRET = 'walk-in-test-staff-jwt-secret';
+
+  /** @type {{ server: import('node:http').Server, url: string }[]} */
+  const started = [];
+
+  after(async () => {
+    await Promise.all(
+      started.map(
+        ({ server }) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  /** App with real staff auth, so req.staff only exists for a verified token. */
+  async function client(appointmentService) {
+    const app = createApp({
+      patientService: createPatientService(createMemoryStore()),
+      appointmentService,
+      staffAuth: createStaffAuthService({
+        jwtSecret: TEST_SECRET,
+        demoPassword: DEMO_STAFF_PASSWORD,
+      }),
+    });
+
+    const instance = await new Promise((resolve) => {
+      const server = app.listen(0, '127.0.0.1', () => {
+        resolve({ server, url: `http://127.0.0.1:${server.address().port}` });
+      });
+    });
+    started.push(instance);
+    return instance;
+  }
+
+  async function staffToken(url, identifier) {
+    const res = await fetch(`${url}/api/auth/staff-login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ identifier, password: DEMO_STAFF_PASSWORD }),
+    });
+    assert.equal(res.status, 200);
+    return (await res.json()).token;
+  }
+
+  function book(url, token, body = {}) {
+    return fetch(`${url}/api/appointments`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ bookingType: 'WALK_IN', ...body }),
+    });
+  }
+
+  /** Stub service that records the context the route resolved. */
+  function recordingService() {
+    /** @type {object[]} */
+    const contexts = [];
+    return {
+      contexts,
+      service: {
+        createAppointment: async (_data, context) => {
+          contexts.push(context);
+          return { appointment: { referenceCode: 'YC-4821' }, sms: { ok: true } };
+        },
+      },
+    };
+  }
+
+  // Signed correctly in shape, but with a secret the server does not hold.
+  const forgedReceptionToken = jwt.sign(
+    { sub: 'forged', staffId: 'stf_01', role: 'RECEPTIONIST', name: 'Abena Osei' },
+    'attacker-chosen-secret',
+    { expiresIn: '1h' },
+  );
+
+  it('passes the verified identity for a receptionist and an admin', async () => {
+    const recorder = recordingService();
+    const { url } = await client(recorder.service);
+
+    assert.equal((await book(url, await staffToken(url, 'abena.osei@yencare.gh'))).status, 201);
+    assert.equal((await book(url, await staffToken(url, 'kojo.mensah@yencare.gh'))).status, 201);
+
+    assert.equal(recorder.contexts[0].staff.role, 'RECEPTIONIST');
+    assert.equal(recorder.contexts[0].staff.staffId, 'stf_01');
+    assert.equal(recorder.contexts[1].staff.role, 'ADMIN');
+  });
+
+  it('passes no identity for a doctor, a forged token, or no token', async () => {
+    const recorder = recordingService();
+    const { url } = await client(recorder.service);
+
+    await book(url, await staffToken(url, 'kwame.boateng@yencare.gh'));
+    await book(url, forgedReceptionToken);
+    await book(url, null);
+
+    assert.equal(recorder.contexts.length, 3);
+    for (const context of recorder.contexts) {
+      assert.equal(context.staff, null);
+    }
+  });
+
+  it('refuses an anonymous or forged-token walk-in end to end with 403', async () => {
+    const { url } = await client({ createAppointment });
+
+    for (const token of [null, forgedReceptionToken]) {
+      const res = await book(url, token, { appointmentDate: '2026-09-20', appointmentTime: '23:47' });
+      assert.equal(res.status, 403);
+      assert.equal((await res.json()).error, WALK_IN_STAFF_ONLY_MESSAGE);
+    }
   });
 });

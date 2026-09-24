@@ -168,7 +168,7 @@ async function toLookupJson(appointmentService, doc, req) {
 
 /**
  * @param {{
- *   createAppointment: (data: object) => Promise<{ appointment: object, sms: object }>,
+ *   createAppointment: (data: object, context?: { staff: object | null }) => Promise<{ appointment: object, sms: object }>,
  *   findByReference?: (referenceCode: string) => Promise<object | null>,
  *   lookupAppointment?: (query: object) => Promise<object>,
  *   findActiveAppointmentForPatient?: (appointment: object) => Promise<object | null>,
@@ -205,6 +205,9 @@ export function createAppointmentsRouter(
   // Cancel/reschedule serve both reception and patients: staff are recognised
   // here, everyone else has to prove ownership with their phone number.
   const maybeStaff = optionalStaffGuard(authenticateOptional, ALL_STAFF_ROLES);
+  // Booking is public, but only verified desk staff may admit a walk-in. A
+  // doctor, invalid or forged token leaves req.staff unset (a public booking).
+  const maybeDeskStaff = optionalStaffGuard(authenticateOptional, ['RECEPTIONIST', 'ADMIN']);
 
   // GET /api/appointments
   router.get(
@@ -233,10 +236,12 @@ export function createAppointmentsRouter(
   // POST /api/appointments
   router.post(
     '/',
+    maybeDeskStaff,
     asyncHandler(async (req, res) => {
       const result =
         await appointmentService.createAppointment(
           req.body,
+          { staff: req.staff || null },
         );
 
       const appointmentJson =
