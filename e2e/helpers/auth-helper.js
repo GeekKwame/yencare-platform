@@ -1,3 +1,5 @@
+import { expect } from '@playwright/test';
+
 export const RECEPTIONIST = {
   staffId: 'stf_01',
   name: 'Abena Osei',
@@ -31,9 +33,15 @@ export async function loginStaff(page, credentials) {
 
   await page.getByRole('link', { name: 'Staff portal' }).click();
 
+  const identifierBox = page.getByRole('textbox', { name: 'Staff ID or Email' });
+  const passwordBox = page.getByRole('textbox', { name: 'Password' });
 
-  await page.getByRole('textbox', { name: 'Staff ID or Email' }).fill(loginIdentifier);
-  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await identifierBox.fill(loginIdentifier);
+  await expect(identifierBox).toHaveValue(loginIdentifier);
+
+  await passwordBox.fill(password);
+  await expect(passwordBox).toHaveValue(password);
+
   await page.getByRole('button', { name: 'Sign in to Workstation' }).click();
 
   await page.waitForURL('**/staff');

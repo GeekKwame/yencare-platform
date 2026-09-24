@@ -15,6 +15,7 @@ import {
   staffToken,
   supportsTransactions,
 } from '../helpers/db-helper.js';
+import { LATE_GRACE_MINUTES } from '../../backend/src/services/visitDayGuard.js';
 
 const API = 'http://localhost:4000/api';
 
@@ -28,7 +29,17 @@ const OFFSETS = {
   rescheduleStartedSlot: -53,
   calledNoShow: -59,
   arrivedNoShow: -23,
+  noShowInsideGrace: -Math.max(1, Math.floor(LATE_GRACE_MINUTES / 2)),
+  noShowAfterGrace: -(LATE_GRACE_MINUTES + 18),
 };
+
+
+function addMinutesHm(hhmm, minutes) {
+  const [hour, minute] = hhmm.split(':').map(Number);
+  const total = hour * 60 + minute + minutes;
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}`;
+}
 
 
 function rosterCard(page, reference) {
@@ -257,6 +268,60 @@ test.describe('visit-day check-in and no-show guards', () => {
 
     await expect(page.getByText('Marked as no-show')).toBeVisible();
     expect((await getAppointment('YC-9510')).status).toBe('NO_SHOW');
+
+    const slot = await getSlot(fixture.timeSlotId);
+    expect(slot.isBooked).toBe(false);
+    expect(slot.appointmentId).toBeNull();
+  });
+
+  test('11 · reception cannot no-show a booked patient still inside the grace period', async ({ page }) => {
+    const date = accraDateFromToday(0);
+    const fixture = await createAppointmentFixture({
+      referenceCode: 'YC-9511',
+      date,
+      time: accraTimeFromNow(OFFSETS.noShowInsideGrace),
+    });
+    const graceEnds = addMinutesHm(fixture.time, LATE_GRACE_MINUTES);
+
+    await loginStaff(page, RECEPTIONIST);
+    await openRosterForDate(page, date);
+    await rosterCard(page, 'YC-9511').getByRole('button', { name: 'No-Show' }).click();
+
+    const refusal = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/queue/no-show') && response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Yes, mark as no-show' }).click();
+    expect((await refusal).status()).toBe(400);
+
+    await expect(
+      feedback(page, `The patient can still arrive until ${graceEnds}. Mark as no-show after that.`),
+    ).toBeVisible();
+    await expect(page.getByText('Marked as no-show')).toBeHidden();
+    expect((await getAppointment('YC-9511')).status).toBe('BOOKED');
+  });
+
+  test('12 · reception can no-show a booked patient once the grace period has passed', async ({ page }) => {
+    const date = accraDateFromToday(0);
+    const fixture = await createAppointmentFixture({
+      referenceCode: 'YC-9512',
+      date,
+      time: accraTimeFromNow(OFFSETS.noShowAfterGrace),
+    });
+
+    await loginStaff(page, RECEPTIONIST);
+    await openRosterForDate(page, date);
+    await rosterCard(page, 'YC-9512').getByRole('button', { name: 'No-Show' }).click();
+
+    const accepted = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/queue/no-show') && response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Yes, mark as no-show' }).click();
+    expect((await accepted).status()).toBe(200);
+
+    await expect(page.getByText('Marked as no-show')).toBeVisible();
+    expect((await getAppointment('YC-9512')).status).toBe('NO_SHOW');
 
     const slot = await getSlot(fixture.timeSlotId);
     expect(slot.isBooked).toBe(false);

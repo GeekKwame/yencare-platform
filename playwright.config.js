@@ -58,7 +58,7 @@ export default defineConfig({
     {
       command: 'npm run dev:frontend',
       url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !e2eMongoUri && !process.env.CI,
       timeout: 30_000,
     },
   ],

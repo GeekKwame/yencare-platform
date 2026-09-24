@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 
 import { logger } from '../lib/logger.js';
 import { maskPhone } from '../sms/normalizePhone.js';
@@ -15,34 +14,18 @@ const ALL_STAFF_ROLES = ['RECEPTIONIST', 'DOCTOR', 'ADMIN'];
 const passthrough = (_req, _res, next) => next();
 
 /**
- * Resolve the acting user (staff or patient) from the request context or auth token.
+ * Resolve the acting user (staff or patient) for cancel / reschedule.
+ *
+ * Staff status comes only from `req.staff`, which is set solely by the staff
+ * guard after the token's signature has been verified. Never derive it from an
+ * unverified token or from request body fields: `actorIsStaff` skips the OTP,
+ * phone-ownership and live-queue checks.
  *
  * @param {import('express').Request} req
  * @returns {{ actorType: 'STAFF' | 'PATIENT', actorId: string | null, actingUserId: string | null, actorIsStaff: boolean, staff: object | null }}
  */
 function resolveActingUser(req) {
-  let staff = req.staff || req.user || null;
-
-  // Resolve directly from Authorization Bearer token if not already populated
-  if (!staff && req.headers?.authorization) {
-    const match = String(req.headers.authorization).match(/^Bearer\s+(.+)$/i);
-    if (match) {
-      try {
-        const decoded = jwt.decode(match[1].trim());
-        if (decoded && typeof decoded === 'object') {
-          staff = {
-            id: decoded.sub || decoded.id,
-            _id: decoded.sub || decoded._id,
-            staffId: decoded.staffId,
-            name: decoded.name,
-            role: decoded.role ? String(decoded.role).toUpperCase() : null,
-          };
-        }
-      } catch {
-        /* best effort */
-      }
-    }
-  }
+  const staff = req.staff || null;
 
   if (staff) {
     const staffId =
@@ -494,12 +477,9 @@ export function createAppointmentsRouter(
         });
       }
 
+      // Actor identity is server-derived only; body actorType/actorId are ignored.
       const acting = resolveActingUser(req);
-      const actorType = req.body?.actorType || acting.actorType;
-      const actorId =
-        req.body?.actorId ||
-        req.body?.actingUserId ||
-        acting.actorId;
+      const { actorType, actorId } = acting;
       const cancelReason =
         req.body?.cancelReason ||
         req.body?.reason ||
@@ -555,12 +535,9 @@ export function createAppointmentsRouter(
         });
       }
 
+      // Actor identity is server-derived only; body actorType/actorId are ignored.
       const acting = resolveActingUser(req);
-      const actorType = req.body?.actorType || acting.actorType;
-      const actorId =
-        req.body?.actorId ||
-        req.body?.actingUserId ||
-        acting.actorId;
+      const { actorType, actorId } = acting;
       const changeReason =
         req.body?.staffChangeReason ||
         req.body?.changeReason ||
