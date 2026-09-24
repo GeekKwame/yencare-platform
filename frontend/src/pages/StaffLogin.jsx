@@ -20,25 +20,32 @@ export default function StaffLogin() {
   const redirectTo = location.state?.from || "/staff";
 
   if (staff) {
-    return <Navigate to="/staff"/>;
+    return <Navigate to="/staff" replace />;
   }
 
   async function submit(nextIdentifier, nextPassword) {
-  setLoading(true);
-  setError("");
-  try {
-    const signedInStaff = await login({
-      identifier: nextIdentifier,
-      password: nextPassword,
-    });
-    toast.success(`Signed in as ${signedInStaff.role === "DOCTOR" ? "Doctor" : signedInStaff.role === "ADMIN" ? "Admin" : "Receptionist"}`);
-    navigate(redirectTo);
-  } catch (err) {
+    setLoading(true);
+    setError("");
+    try {
+      const signedInStaff = await login({
+        identifier: nextIdentifier,
+        password: nextPassword,
+      });
+      const roleLabel =
+        signedInStaff?.role === "DOCTOR"
+          ? "Doctor"
+          : signedInStaff?.role === "ADMIN"
+            ? "Admin"
+            : "Receptionist";
+      toast.success(`Signed in as ${roleLabel}`);
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
       const message =
         err?.response?.data?.error ||
         err?.message ||
         "Could not sign in. Check your staff ID and password.";
       setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

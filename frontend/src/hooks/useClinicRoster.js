@@ -21,7 +21,7 @@ export function useClinicRoster(clinicSite, selectedDate, { pollMs = 0 } = {}) {
       setUsingLive(false);
       setError(
         err.response?.data?.error ||
-          "Could not load appointment roster. [Retry]",
+          "Could not load appointment roster.",
       );
       return [];
     } finally {
@@ -30,7 +30,6 @@ export function useClinicRoster(clinicSite, selectedDate, { pollMs = 0 } = {}) {
   }, [clinicSite, selectedDate]);
 
   useEffect(() => {
-    setLoading(true);
     void reload();
   }, [reload]);
 

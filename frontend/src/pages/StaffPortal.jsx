@@ -294,7 +294,7 @@ const StaffPortal = () => {
           </div>
         )}
 
-        {(error || message) && (
+        {(message || (error && view !== "roster")) && (
           <div
             className={`mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm ${
               error && !usingLive
@@ -369,6 +369,8 @@ const StaffPortal = () => {
             highlightedId={highlightedId}
             updatingId={updatingId}
             loading={loading}
+            error={error && !usingLive ? error : ""}
+            onRetry={reload}
             onCheckIn={(id) => applyStatus(id, "CHECKED_IN", "Checked in")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             onNoShow={(id) => {

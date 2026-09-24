@@ -235,13 +235,26 @@ export default function DoctorWorkstation({ staff }) {
       </div>
 
       {(message || error) && (
-        <p
-          className={`mb-4 rounded-xl px-4 py-3 text-sm ${
-            error ? "bg-[#fff6e8] text-[#8a5a12]" : "bg-[#E7F5F1] text-[#176b5f]"
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm ${
+            error
+              ? "border border-warning-border bg-warning-soft text-warning"
+              : "border border-accent-border bg-accent-soft text-accent"
           }`}
         >
-          {error || message}
-        </p>
+          <p>{error || message}</p>
+          {error && (
+            <button
+              type="button"
+              onClick={() => void reload()}
+              className="min-h-11 border border-clinic-border bg-surface px-3 py-2 text-xs font-semibold text-primary hover:bg-surface-secondary"
+            >
+              Retry
+            </button>
+          )}
+        </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
