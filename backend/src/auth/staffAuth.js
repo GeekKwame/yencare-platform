@@ -40,6 +40,15 @@ export const DEMO_STAFF = Object.freeze([
     assignedRoom: null,
     clinicSite: 'students-clinic',
   },
+  {
+    staffId: 'stf_04',
+    email: 'ama.serwaa@yencare.gh',
+    name: 'Dr. Ama Serwaa',
+    role: 'DOCTOR',
+    assignedRoom: 'Room 2',
+    clinicSite: 'students-clinic',
+    clinicianId: '68bf2c0e9c1a2b0012345672',
+  },
 ]);
 
 const DEFAULT_JWT_SECRET = 'yencare-dev-jwt-secret';
