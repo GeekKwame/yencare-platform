@@ -3,8 +3,10 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useStaffAuth } from "../context/StaffAuthContext";
 import { DEMO_STAFF_ACCOUNTS, DEMO_STAFF_PASSWORD } from "../services/staffAuth";
 import Logo from "../assets/Yencare Logo.png";
+import { useToast } from "../components/ui";
 
 export default function StaffLogin() {
+  const toast = useToast();
   const { staff, login } = useStaffAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,19 +20,20 @@ export default function StaffLogin() {
   const redirectTo = location.state?.from || "/staff";
 
   if (staff) {
-    return <Navigate to="/staff" replace />;
+    return <Navigate to="/staff"/>;
   }
 
   async function submit(nextIdentifier, nextPassword) {
-    setLoading(true);
-    setError("");
-    try {
-      await login({
-        identifier: nextIdentifier,
-        password: nextPassword,
-      });
-      navigate(redirectTo, { replace: true });
-    } catch (err) {
+  setLoading(true);
+  setError("");
+  try {
+    const signedInStaff = await login({
+      identifier: nextIdentifier,
+      password: nextPassword,
+    });
+    toast.success(`Signed in as ${signedInStaff.role === "DOCTOR" ? "Doctor" : signedInStaff.role === "ADMIN" ? "Admin" : "Receptionist"}`);
+    navigate(redirectTo);
+  } catch (err) {
       const message =
         err?.response?.data?.error ||
         err?.message ||

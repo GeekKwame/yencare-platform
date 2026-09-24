@@ -5,8 +5,8 @@ import StaffSessionExpired from "./staff/StaffSessionExpired";
 export default function RequireStaffAuth({ children, roles = [] }) {
   const { staff, loading, sessionExpired, clearSessionExpired } = useStaffAuth();
   const location = useLocation();
-
-  if (loading) {
+  
+if (loading) {
     return (
       <main className="mx-auto max-w-lg px-5 pt-28 pb-16 text-sm text-gray-500">
         Checking staff session…

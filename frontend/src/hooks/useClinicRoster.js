@@ -21,7 +21,7 @@ export function useClinicRoster(clinicSite, selectedDate, { pollMs = 0 } = {}) {
       setUsingLive(false);
       setError(
         err.response?.data?.error ||
-          "Could not load the clinic roster. Check that the API is running.",
+          "Could not load appointment roster. [Retry]",
       );
       return [];
     } finally {
