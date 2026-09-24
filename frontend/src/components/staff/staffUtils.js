@@ -43,35 +43,64 @@ function formatUnlockTime(hhmm) {
 export function getStaffActionState(appointment, now = new Date()) {
   const date = appointment?.date || appointment?.appointmentDate;
   const startTime = parseAppointmentTime(appointment?.appointmentTime || appointment?.time);
-  const isVisitDate = Boolean(date) && date === accraTodayIso(now);
-  const checkInNote = isVisitDate
-    ? ""
-    : `Check-in opens on ${formatUnlockDate(date)}`;
+  const today = accraTodayIso(now);
+  const isVisitDate = Boolean(date) && date === today;
+  const isPastDate = Boolean(date) && date < today;
+  const isFutureDate = Boolean(date) && date > today;
+
+  let checkInNote = "";
+  if (isVisitDate) {
+    checkInNote = "Check in patient for today's visit";
+  } else if (isFutureDate) {
+    checkInNote = `Check-in opens on ${formatUnlockDate(date)}`;
+  } else if (isPastDate) {
+    checkInNote = `This appointment was on ${formatUnlockDate(date)} and has passed`;
+  }
 
   if (!date || !startTime) {
     return {
       canCheckIn: isVisitDate,
       checkInNote,
-      canNoShow: false,
-      noShowNote: "No-show availability cannot be determined yet",
+      canNoShow: isPastDate,
+      noShowNote: isPastDate
+        ? "Mark past appointment as no-show"
+        : "No-show availability cannot be determined yet",
     };
   }
 
   const [year, month, day] = date.split("-").map(Number);
   const [hours, minutes] = startTime.split(":").map(Number);
   const unlockAt = new Date(Date.UTC(year, month - 1, day, hours, minutes + 15));
-  const canNoShow = now >= unlockAt;
   const unlockLabel = formatUnlockTime(
     `${String(unlockAt.getUTCHours()).padStart(2, "0")}:${String(unlockAt.getUTCMinutes()).padStart(2, "0")}`,
   );
+
+  let canNoShow = false;
+  let noShowNote = "";
+
+  if (isPastDate) {
+    canNoShow = true;
+    noShowNote = "Mark past appointment as no-show";
+  } else if (isFutureDate) {
+    canNoShow = false;
+    noShowNote = `No-show available on day of visit (after ${unlockLabel} on ${formatUnlockDate(date)})`;
+  } else if (isVisitDate) {
+    if (appointment?.status && appointment.status !== "BOOKED") {
+      canNoShow = true;
+      noShowNote = "Mark appointment as no-show";
+    } else {
+      canNoShow = now >= unlockAt;
+      noShowNote = canNoShow
+        ? "Mark appointment as no-show"
+        : `Patient can still arrive until ${unlockLabel}. No-show available after that.`;
+    }
+  }
 
   return {
     canCheckIn: isVisitDate,
     checkInNote,
     canNoShow,
-    noShowNote: canNoShow
-      ? ""
-      : `No-show available after ${unlockLabel}${date === accraTodayIso(now) ? "" : ` on ${formatUnlockDate(date)}`}`,
+    noShowNote,
   };
 }
 

@@ -126,13 +126,13 @@ export default function StaffAppointmentDetail({
         <div className="space-y-3 pt-2">
           {canStaffCheckIn && (
             <>
-              <span title={actionState.checkInNote || undefined}>
+              <span title={actionState.checkInNote || undefined} className="block w-full">
                 <button
                   type="button"
-                  disabled={updating || !actionState.canCheckIn}
+                  disabled={updating}
                   onClick={() => onCheckInToQueue(appointment.id)}
-                  aria-label={actionState.checkInNote || "Check in"}
-                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-40"
+                  title={actionState.checkInNote || undefined}
+                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {updating
                     ? "Updating…"
@@ -149,13 +149,13 @@ export default function StaffAppointmentDetail({
                 >
                   Change time
                 </button>
-                <span title={actionState.noShowNote || undefined}>
+                <span title={actionState.noShowNote || undefined} className="block w-full">
                   <button
                     type="button"
                     onClick={onNoShow}
-                    disabled={!actionState.canNoShow || updating}
-                    aria-label={actionState.noShowNote || "Mark no-show"}
-                    className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={updating}
+                    title={actionState.noShowNote || undefined}
+                    className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Mark no-show
                   </button>

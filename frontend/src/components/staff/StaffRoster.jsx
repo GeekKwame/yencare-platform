@@ -128,30 +128,30 @@ export default function StaffRoster({
 
               {appt.status === "BOOKED" && (
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <span title={actionState.checkInNote || undefined}>
+                  <span title={actionState.checkInNote || undefined} className="block w-full">
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onCheckIn(appt.id);
                       }}
-                      disabled={updatingId === appt.id || !actionState.canCheckIn}
-                      aria-label={actionState.checkInNote || "Check in"}
-                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={updatingId === appt.id}
+                      title={actionState.checkInNote || undefined}
+                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {updatingId === appt.id ? "Updating…" : "Check In"}
                     </button>
                   </span>
-                  <span title={actionState.noShowNote || undefined}>
+                  <span title={actionState.noShowNote || undefined} className="block w-full">
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onNoShow(appt.id);
                       }}
-                      disabled={updatingId === appt.id || !actionState.canNoShow}
-                      aria-label={actionState.noShowNote || "Mark no-show"}
-                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={updatingId === appt.id}
+                      title={actionState.noShowNote || undefined}
+                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       No-Show
                     </button>
