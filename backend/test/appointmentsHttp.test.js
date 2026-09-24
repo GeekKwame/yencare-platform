@@ -904,3 +904,44 @@ describe('POST /api/appointments walk-in identity', () => {
     }
   });
 });
+
+describe('arrival routes pass the normalised reference to the service', () => {
+  const started = [];
+
+  after(async () => {
+    await Promise.all(
+      started.map(
+        ({ server }) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  it('POST /arrive and POST /:reference/arrive hand markPatientArrived YC-4821', async () => {
+    const seen = [];
+    const instance = await startApp({
+      createAppointment: async () => ({ appointment: {}, sms: {} }),
+      markPatientArrived: async (reference) => {
+        seen.push(reference);
+        return { referenceCode: reference, status: 'CHECKED_IN' };
+      },
+    });
+    started.push(instance);
+
+    const byBody = await fetch(`${instance.url}/api/appointments/arrive`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ reference: '  yc-4821\t' }),
+    });
+    const byPath = await fetch(
+      `${instance.url}/api/appointments/${encodeURIComponent(' yc-4821 ')}/arrive`,
+      { method: 'POST' },
+    );
+
+    assert.equal(byBody.status, 200);
+    assert.equal(byPath.status, 200);
+    assert.deepEqual(seen, ['YC-4821', 'YC-4821']);
+  });
+});

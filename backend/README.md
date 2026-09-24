@@ -40,7 +40,7 @@ No auth on **patient** booking, lookup, or catalog routes. Identifier is an 8-di
 
 Patients also cannot cancel or reschedule once they are `WAITING` in the live queue (**400**, `You are already in the live queue for today. Please speak to reception to cancel or change this appointment.`); reception still can, and doing so clears the queue token.
 
-**Rate limits.** The reference-code endpoints (`GET /api/appointments/:reference`, `GET /api/appointments/lookup`, both mutations) allow 30 requests/minute/IP; `queue-status` allows 120/minute/IP plus 30/minute per IP+reference. Over the limit is **429** with `Retry-After`. Limits are active in every environment except test runs (`PUBLIC_LOOKUP_RATE_MAX`, `QUEUE_STATUS_RATE_MAX`, `QUEUE_STATUS_REFERENCE_RATE_MAX`, `RATE_LIMIT_DISABLED`).
+**Rate limits.** The reference-code endpoints (`GET /api/appointments/:reference`, `GET /api/appointments/lookup`, both mutations) allow 30 requests/minute/IP; `queue-status` allows 120/minute/IP plus 30/minute per IP+reference. Over the limit is **429** with `Retry-After`. Limits are active in every environment except test runs (`PUBLIC_LOOKUP_RATE_MAX`, `QUEUE_STATUS_RATE_MAX`, `QUEUE_STATUS_REFERENCE_RATE_MAX`, `RATE_LIMIT_DISABLED`). `RATE_LIMIT_DISABLED` is ignored when `NODE_ENV=production` (including Render staging); raise the `*_RATE_MAX` values there instead. Per-reference limits treat a reference the same however it is spaced or cased (` yc-4821 ` counts as `YC-4821`).
 
 **Opening hours are enforced server-side.** Scheduled bookings outside the target clinic's hours are **400**: Students' Clinic is Monday–Friday 08:00–16:00 Accra, KNUST Hospital is 24h. Staff walk-ins (`bookingType: "WALK_IN"`) are exempt.
 

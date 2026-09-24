@@ -48,13 +48,20 @@ export const TOO_MANY_REQUESTS_MESSAGE =
 /**
  * Rate limiting is on everywhere except test runs, where deterministic
  * request counts matter more than throttling. `RATE_LIMIT_DISABLED=true`
- * is an explicit escape hatch for load testing.
+ * is an escape hatch for local load testing only: it is ignored in
+ * production, where limits can be raised with the `*_RATE_MAX` variables
+ * but never turned off.
  *
  * @param {NodeJS.ProcessEnv} [env]
  */
 export function rateLimitEnabled(env = process.env) {
-  if (String(env.RATE_LIMIT_DISABLED || '').toLowerCase() === 'true') return false;
+  if (isProduction(env)) return true;
+  if (rateLimitDisableRequested(env)) return false;
   return !isTestRun(env);
+}
+
+export function rateLimitDisableRequested(env = process.env) {
+  return String(env.RATE_LIMIT_DISABLED || '').toLowerCase() === 'true';
 }
 
 function clientKey(req) {

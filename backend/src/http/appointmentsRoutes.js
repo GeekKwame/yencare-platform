@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { resolveDoctorScope } from '../auth/clinicianResolver.js';
 import { logger } from '../lib/logger.js';
 import { maskPhone } from '../sms/normalizePhone.js';
+import { normalizeReferenceInput } from '../utils/referenceCode.js';
 import { asyncHandler } from './asyncHandler.js';
 import {
   appointmentEvents,
@@ -59,6 +60,12 @@ function toJson(doc) {
   if (!doc) return null;
 
   return typeof doc.toJSON === 'function' ? doc.toJSON() : doc;
+}
+
+export function arrivalReferenceFromRequest(req) {
+  return normalizeReferenceInput(
+    req.body?.reference || req.body?.referenceCode || req.params?.reference,
+  );
 }
 
 /**
@@ -375,10 +382,7 @@ export function createAppointmentsRouter(
       });
     }
 
-    const reference =
-      req.body?.reference ||
-      req.body?.referenceCode ||
-      req.params?.reference;
+    const reference = arrivalReferenceFromRequest(req);
 
     const appointment = await appointmentService.markPatientArrived(
       reference,

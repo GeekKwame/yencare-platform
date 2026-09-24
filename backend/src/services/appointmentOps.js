@@ -33,6 +33,7 @@ import { logger } from '../lib/logger.js';
 import { accraTodayIso } from '../lib/accraTime.js';
 import { bookingSmsDestinations, resolveSmsDestination } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
+import { normalizeReferenceInput } from '../utils/referenceCode.js';
 import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
 import { assertVisitIsToday, assertWithinArrivalWindow, assertSlotNotInPast, assertNoShowAllowed } from './visitDayGuard.js';
 
@@ -888,7 +889,7 @@ export async function updateAppointmentStatus(idOrReference, status) {
  * @param {{ phone?: string, actorIsStaff?:boolean }} [options]
  */
 export async function markPatientArrived(referenceCode, { phone, actorIsStaff = false } = {}) {
-  const key = String(referenceCode || '').trim();
+  const key = normalizeReferenceInput(referenceCode);
   if (!key) {
     throw new ValidationError('Appointment reference is required');
   }
@@ -902,7 +903,7 @@ export async function markPatientArrived(referenceCode, { phone, actorIsStaff = 
       .populate('timeSlotId');
   }
   if (!appointment) {
-    appointment = await Appointment.findByReference(key.toUpperCase());
+    appointment = await Appointment.findByReference(key);
   }
   if (!appointment) {
     throw new NotFoundError('Appointment not found');

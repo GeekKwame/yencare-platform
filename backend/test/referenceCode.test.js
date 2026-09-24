@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { afterEach, describe, it, mock } from 'node:test';
+import { Appointment } from '../src/models/Appointment.js';
+import { markPatientArrived } from '../src/services/appointmentOps.js';
+import { getQueueStatus } from '../src/services/queueEngine.js';
 import {
   generateReferenceCode,
   generateUniqueReferenceCode,
   isValidReferenceCode,
+  normalizeReferenceInput,
 } from '../src/utils/referenceCode.js';
 
 describe('generateReferenceCode', () => {
@@ -53,5 +57,54 @@ describe('generateUniqueReferenceCode', () => {
       () => generateUniqueReferenceCode(() => true, { maxAttempts: 3 }),
       /Could not allocate/,
     );
+  });
+});
+
+describe('normalizeReferenceInput', () => {
+  it('trims surrounding whitespace and uppercases', () => {
+    for (const raw of ['YC-4821', ' yc-4821', 'yc-4821 ', '\tYc-4821\n', '  YC-4821  ']) {
+      assert.equal(normalizeReferenceInput(raw), 'YC-4821', JSON.stringify(raw));
+    }
+  });
+
+  it('turns missing input into an empty string', () => {
+    for (const raw of [undefined, null, '', '   ']) {
+      assert.equal(normalizeReferenceInput(raw), '');
+    }
+  });
+});
+
+describe('reference lookups use the same normalisation as the limiter keys', () => {
+  afterEach(() => mock.restoreAll());
+
+  function query(value) {
+    const chain = {
+      populate: () => chain,
+      then: (resolve, reject) => Promise.resolve(value).then(resolve, reject),
+    };
+    return chain;
+  }
+
+  it('Appointment.findByReference looks up the trimmed, uppercased code', async () => {
+    let filter = null;
+    mock.method(Appointment, 'findOne', (f) => {
+      filter = f;
+      return query(null);
+    });
+
+    await Appointment.findByReference('  yc-4821\t');
+    assert.deepEqual(filter, { referenceCode: 'YC-4821' });
+  });
+
+  it('markPatientArrived and getQueueStatus look up the normalised reference', async () => {
+    const seen = [];
+    mock.method(Appointment, 'findByReference', async (ref) => {
+      seen.push(ref);
+      return null;
+    });
+
+    await assert.rejects(() => markPatientArrived(' yc-4821 '), { status: 404 });
+    await assert.rejects(() => getQueueStatus('\tyc-4821 '), { status: 404 });
+    assert.deepEqual(seen, ['YC-4821', 'YC-4821']);
   });
 });

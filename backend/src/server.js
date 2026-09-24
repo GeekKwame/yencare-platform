@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { connectDb, disconnectDb } from "./db/connection.js";
 import { createApp } from "./http/app.js";
+import { rateLimitDisableRequested } from "./http/security.js";
 import { createMongoCatalog } from "./http/mongoCatalog.js";
 import { assertValidEnv } from "./config/env.js";
 import { assertEventBusFitsDeployment } from "./lib/eventBus.js";
@@ -84,6 +85,12 @@ await connectDb();
 const staffAuth = createStaffAuthService({
   jwtSecret: process.env.JWT_SECRET,
 });
+
+if (process.env.NODE_ENV === "production" && rateLimitDisableRequested()) {
+  logger.warn("RATE_LIMIT_DISABLED is ignored in production; rate limits stay on", {
+    subsystem: "security",
+  });
+}
 
 if (staffAuth.usingDevSecret) {
   if (process.env.NODE_ENV === "production") {

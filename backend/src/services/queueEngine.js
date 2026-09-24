@@ -12,6 +12,7 @@ import { NotFoundError, ValidationError } from '../patients/errors.js';
 import { notifyPatientCalled } from './callPatient.js';
 import { accraTodayIso, isClinicOpen } from '../lib/accraTime.js';
 import { assertVisitIsToday, assertNoShowAllowed } from './visitDayGuard.js';
+import { normalizeReferenceInput } from '../utils/referenceCode.js';
 
 export const AVERAGE_CONSULT_DURATION_MINUTES = 15;
 
@@ -466,7 +467,7 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason,
  * @param {string} referenceCode
  */
 export async function getQueueStatus(referenceCode) {
-  const ref = String(referenceCode || '').trim().toUpperCase();
+  const ref = normalizeReferenceInput(referenceCode);
   if (!ref) {
     throw new ValidationError('referenceCode is required');
   }

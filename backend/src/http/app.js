@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { createAppointmentsRouter } from './appointmentsRoutes.js';
+import { arrivalReferenceFromRequest, createAppointmentsRouter } from './appointmentsRoutes.js';
 import { createAuthRouter } from './authRoutes.js';
 import { createCatalogRouter } from './catalogRoutes.js';
 import { buildCorsOptions } from './corsOrigins.js';
@@ -11,6 +11,7 @@ import { createQueueRouter } from './queueRoutes.js';
 import { requestId } from './requestId.js';
 import { rateLimit, rateLimitEnabled, securityHeaders } from './security.js';
 import { logger } from '../lib/logger.js';
+import { normalizeReferenceInput } from '../utils/referenceCode.js';
 
 const passthrough = (_req, _res, next) => next();
 
@@ -23,6 +24,18 @@ const passthrough = (_req, _res, next) => next();
 function maybeRateLimit(options) {
   if (!rateLimitEnabled()) return passthrough;
   return rateLimit(options);
+}
+
+function clientIp(req) {
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+export function queueStatusReferenceKey(req) {
+  return `${clientIp(req)}|${normalizeReferenceInput(req.params?.reference)}`;
+}
+
+export function arrivalReferenceKey(req) {
+  return `${clientIp(req)}|${arrivalReferenceFromRequest(req)}`;
 }
 
 function envInt(name, fallback) {
@@ -56,10 +69,7 @@ function buildAppointmentLimiters() {
       name: 'queue-status-reference',
       windowMs: 60_000,
       max: envInt('QUEUE_STATUS_REFERENCE_RATE_MAX', 30),
-      keyGenerator: (req) =>
-        `${req.ip || req.socket?.remoteAddress || 'unknown'}|${String(
-          req.params?.reference || '',
-        ).toUpperCase()}`,
+      keyGenerator: queueStatusReferenceKey,
     }),
   ];
 
@@ -76,10 +86,7 @@ function buildAppointmentLimiters() {
       name: 'arrival-reference',
       windowMs: 15 * 60_000,
       max: envInt('ARRIVAL_REFERENCE_RATE_MAX', 5),
-      keyGenerator: (req) =>
-        `${req.ip || req.socket?.remoteAddress || 'unknown'}|${String(
-          req.body?.reference || req.body?.referenceCode || req.params?.reference || '',
-        ).toUpperCase()}`,
+      keyGenerator: arrivalReferenceKey,
     }),
   ];
 

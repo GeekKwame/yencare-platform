@@ -25,6 +25,10 @@ export function isValidReferenceCode(code) {
   return typeof code === 'string' && REFERENCE_CODE_PATTERN.test(code);
 }
 
+export function normalizeReferenceInput(raw) {
+  return String(raw ?? '').trim().toUpperCase();
+}
+
 /**
  * Allocate a code that `existsFn` has not seen. Retries on collision.
  *
