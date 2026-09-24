@@ -1,22 +1,21 @@
 # Testing & Quality Verification Guide
 
-> **Test Suites, Automation Tools & Clinical Scenario Simulator**
+> **Official Test Suite Documentation, Quality Assurance Runbooks & Simulator Controls**
 
 ---
 
 ## 1. Overview of Testing Layers
 
-The YɛnCare platform employs a three-tier quality verification strategy:
+The YɛnCare platform employs a comprehensive multi-tier quality verification strategy:
 
-1. **Automated Backend Tests**: Built with Node.js's native test runner (`node:test`), testing Mongoose schemas, migration scripts, phone parsing, reference generation, SMS providers, and HTTP controllers.
-2. **Build & Type Checking**: TypeScript strict compilation in `ui/prototype` and Vite production bundling across `ui/prototype` and `frontend/`.
-3. **Interactive Scenario Simulation**: In-browser control panel (`ProtoToolbar`) for live demonstration, edge-case testing, and clinical stakeholder reviews.
+1. **Automated Backend Tests (`node:test`)**: Built with Node.js's native test runner (zero external test runner dependencies). Covers schemas, migrations, clinical domain logic, student booking caps, visit-day guards, OTP security, rate limiting, and centralized RBAC matrix.
+2. **End-to-End Automation (`@playwright/test`)**: Hermetic browser test suite testing real cross-browser user workflows (reception check-in, doctor room advance, self-arrival, no-show release).
+3. **Build & Type Checking**: TypeScript strict compilation (`tsc -b`) and Vite production bundling across `ui/prototype` and `frontend/`.
+4. **Interactive Scenario Simulation**: In-browser control panel (`ProtoToolbar`) for live demonstration, edge-case testing, and clinical stakeholder reviews.
 
 ---
 
 ## 2. Backend Automated Test Suite (`backend/`)
-
-The backend test suite is executed using Node.js's built-in test runner. No external testing dependencies (like Jest or Mocha) are required.
 
 ### 2.1 Running All Backend Tests
 From the repository root:
@@ -29,70 +28,66 @@ cd backend
 npm test
 ```
 
-### 2.2 Running an Individual Test File
-You can run any specific test file directly using Node.js:
+### 2.2 Suite Metrics
+- **Current Total**: **339 tests** across **84 suites** (`pass 339, fail 0`).
+- **Execution Time**: ~14.8 seconds.
 
-```bash
-cd backend
-node --test ./test/patientsHttp.test.js
-node --test ./test/normalizePhone.test.js
-node --test ./test/referenceCode.test.js
-```
+### 2.3 Test Suite Catalog
 
-### 2.3 Test File Catalog & Responsibilities
-
-| Test File | Target Area | What It Validates |
+| Test File | Category | Focus & Test Coverage |
 |---|---|---|
-| `test/patientsHttp.test.js` | Express HTTP Layer | `POST /api/patients` (200/201/400), `GET /api/patients/:identifier` (200/404), dual `phone` + `phoneNumber` on the JSON body, `GET /health` |
-| `test/catalogHttp.test.js` | Clinic catalog | `GET /api/rooms`, `/api/clinicians`, `/api/time-slots` return `id` values for Postman booking bodies |
-| `test/patientFields.test.js` | Field contract | `resolvePatientPhone` prefers Mongo `phone`; `Appointment.populateQueue` only selects schema paths |
-| `test/patientsService.test.js` | Patient Domain Logic | Find-or-create matching by student index or phone, 409 conflict detection between mismatched identities |
-| `test/validatePatient.test.js` | Validation & Aliasing | camelCase vs snake_case aliases, 8-digit student index validation, required fields |
-| `test/normalizePhone.test.js` | Ghana Phone Formatting | E.164 conversion (`+233...`), local 0-prefix formatting (`024...`), invalid number rejection |
-| `test/referenceCode.test.js` | Token Generator | Format `YC-XXXX`, character set uniformity, collision retry budget |
-| `test/models.test.js` | Mongoose Models | Schema constraints, pre-save foreign key checks, cascading slot release on delete |
-| `test/migration.test.js` | Database Schema Migrations | Index conflict detection, idempotency of migration script in dry-run mode |
-| `test/sendSms.test.js` | SMS Abstraction Layer | Mock fallback when credentials are empty, error handling, parameter validation |
-| `test/mnotify.test.js` | mNotify Provider | Payload formatting, local phone number translation |
-
-Current suite size: **66** tests (`npm test` in `backend/`).
+| `test/configEnv.test.js` | DevOps / Infrastructure | Validates startup environment validator (`PORT`, `MONGODB_URI`, `JWT_SECRET`, `MNOTIFY_KEY`), diagnostic banner formatting, and fail-fast assertions. |
+| `test/rbac.test.js` | Auth / Security | Validates centralized `hasPermission` helper (e.g. `APPOINTMENTS_CHECKIN`, `QUEUE_CALL_NEXT`, `QUEUE_ADVANCE`) and HTTP middleware permission enforcement. |
+| `test/appointmentOwnership.test.js` | Security / Auth Bypass | Verifies rejection of forged/unverified tokens on cancel and reschedule; asserts actor identity is server-derived only. |
+| `test/rateLimit.test.js` | Security / Anti-Abuse | Verifies per-IP rate limiting on public lookup endpoints and arrival brute-force protection (5 attempts / 15 min). |
+| `test/studentBookingCap.test.js` | Clinical Policy | Enforces student active booking limit (max 2 active bookings) and double-booking guard (HTTP 409). |
+| `test/visitDayGuard.test.js` | Clinical Policy | Enforces arrival window (60m early to 15m late) and no-show grace period rules. |
+| `test/patientsHttp.test.js` | HTTP Layer | `POST /api/patients`, `GET /api/patients/:id`, identifier formatting, `GET /health`. |
+| `test/staffAuth.test.js` | Authentication | Staff sign-in, JWT issuance, token refresh, demo account policy, and RBAC guards. |
+| `test/queueEngine.test.js` | Virtual Queue | Room assignment, token advancement, SSE real-time event emission, and no-show slot release. |
 
 ---
 
-## 3. Frontend & Prototype Build Verification
+## 3. End-to-End (E2E) Test Suite (`e2e/`)
 
-To ensure that components, styles, and dependencies compile without syntax or module resolution errors:
+Playwright automated tests verify real browser interactions against live backend and frontend instances:
 
-### 3.1 Validate Interactive Clinical Prototype
 ```bash
-# Compiles TypeScript and builds Vite bundle
-npm run build
+# Run all E2E tests headless
+npm run test:e2e
+
+# Run with interactive UI
+npm run test:e2e:ui
 ```
-*(Executes `vite build` in `ui/prototype`)*.
 
-### 3.2 Validate Public Web Frontend
+### E2E Suite Coverage (21 Tests)
+1. **Visit-Day Check-In Guards**: Reception cannot check in future-dated bookings; allowed on visit date.
+2. **Patient Self-Arrival**: Enforces arrival window boundaries and feedback messages.
+3. **Doctor Consultation Flow**: Doctor workstation loads assigned patient queue, calls next patient, and advances consultation state.
+4. **No-Show Boundary Verification**:
+   - Marking no-show inside grace period is refused with 400 and exact time countdown.
+   - Marking no-show after grace period succeeds with 200, updates status, and immediately frees the time slot.
+
+---
+
+## 4. Production Build Verification
+
+Verify that client bundles build cleanly with zero errors:
+
 ```bash
+# Compile and build clinical prototype
+npm run build
+
+# Compile and build production web frontend
 npm run build:frontend
 ```
-*(Executes `vite build` in `frontend`)*.
 
 ---
 
-## 4. In-Browser Scenario Simulator (`ProtoToolbar`)
+## 5. In-Browser Scenario Simulator (`ProtoToolbar`)
 
-The interactive clinical prototype (`ui/prototype`) includes a floating floating scenario controller (`ProtoToolbar`) positioned at the bottom right of the screen.
-
-It enables instant testing of clinical and network scenarios without manual database manipulation:
-
-### 4.1 Session Progressor
-After booking an appointment or finding an existing student record:
-- Step the patient's live visit state through:
-  `BOOKED` &rarr; `CHECKED_IN` &rarr; `WAITING` &rarr; `CALLED (Room 1/2)` &rarr; `COMPLETED`.
-
-### 4.2 Scenario Injections
-- **`+ Simulate Walk-in (W-024)`**: Injects an unscheduled student walk-in into the active queue to test token distinction and priority.
-- **`Mark YC-4822 No-Show`**: Simulates a patient missing their appointment, verifying slot release and queue recalibration.
-- **`Staff Change current to 10:30`**: Simulates a doctor-initiated schedule adjustment, displaying the clinical reason alert on the student's dashboard.
-- **`Toggle After-Hours (P19)`**: Toggles the clinic between open hours and after-hours emergency mode.
-- **`Network State Selector`**: Toggles between `online`, `poor`, `offline` (renders G01 recovery screen with cached reference code), and `restored`.
-- **`All Screens Grid`**: Direct one-click navigation to any of the 19 patient screens or 11 staff workstation views.
+The interactive clinical prototype includes a floating scenario controller (`ProtoToolbar`) at the bottom right of the screen:
+- **Session Progressor**: Steps visits through `BOOKED` &rarr; `CHECKED_IN` &rarr; `WAITING` &rarr; `CALLED` &rarr; `COMPLETED`.
+- **Walk-In Simulator**: Injects unscheduled walk-in patients (`W-024`) with priority queue handling.
+- **Doctor Reschedule Alert**: Simulates schedule changes and confirms real-time notification alerts.
+- **Offline / Network Simulator**: Tests degraded network states and `ConnectivityBanner` reconnect behaviors.

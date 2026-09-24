@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { connectDb, disconnectDb } from "./db/connection.js";
 import { createApp } from "./http/app.js";
 import { createMongoCatalog } from "./http/mongoCatalog.js";
+import { assertValidEnv } from "./config/env.js";
 import { assertEventBusFitsDeployment } from "./lib/eventBus.js";
 import { logger } from "./lib/logger.js";
 import { assertProductionSecrets } from "./lib/runtime.js";
@@ -70,6 +71,7 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
+assertValidEnv();
 assertProductionSecrets();
 assertProductionSmsConfig();
 

@@ -1,302 +1,190 @@
 # YɛnCare REST API Specification
 
-> **Official HTTP API Documentation for Backend Services**  
+> **Official HTTP API & RBAC Specification for Backend Services**  
 > Base URL (Local Development): `http://localhost:4000`  
+> Base URL (Staging Production): `https://yencare-api-staging.onrender.com`  
 > API Base Path: `/api`
 
 ---
 
 ## 1. Overview & General Conventions
 
-The YɛnCare backend exposes a lightweight RESTful JSON API.
+The YɛnCare backend exposes a high-performance RESTful JSON API supporting outpatient appointment booking, staff workstation operations, live virtual queue coordination, and corridor digital displays.
 
-### Content Negotiation & Headers
-- For all requests with a body, the client **must** set:
+### Content Negotiation & Payload Limits
+- Requests with bodies **must** supply:
   ```http
   Content-Type: application/json
   ```
-- All responses return standard JSON encoded in UTF-8.
-- Maximum request payload size is restricted to **32 KB** (`express.json({ limit: '32kb' })`).
+- All responses return UTF-8 encoded JSON.
+- Request payload size is capped at **32 KB** (`express.json({ limit: '32kb' })`).
 
-### Authentication & Authorization
-- **Current Status**: Public access. No API bearer token or session cookie is required for patient registration and lookup endpoints.
-- **Identifier Encoding**: When passing phone numbers with a leading `+` in URL paths (e.g. `+233247001122`), the `+` character **must** be URL-encoded as `%2B` (e.g., `/api/patients/%2B233247001122`).
+### Authentication & Centralized RBAC
+- **Public Endpoints**: Patient registration (`POST /api/patients`), booking (`POST /api/appointments`), self-arrival (`POST /api/appointments/:ref/arrive`), queue status, and public display boards do not require staff tokens.
+- **Staff Endpoints**: Protected via JWT Bearer authentication:
+  ```http
+  Authorization: Bearer <STAFF_JWT_TOKEN>
+  ```
+- **RBAC Matrix**: Permissions are centralized via `hasPermission(user, permission)`:
+  - `RECEPTIONIST`: Front-desk check-in, roster view, walk-in registration, mark no-show, reschedule.
+  - `DOCTOR`: Workstation consultation queue, call next patient, advance/complete visit, mark no-show.
+  - `ADMIN`: Full administrative control, system diagnostics, and emergency overrides.
+
+### Security & Rate Limiting
+- Public lookup and self-arrival endpoints enforce strict per-IP / per-reference rate limiting:
+  - Reference lookups: 30 requests/minute per IP
+  - Queue status polling: 120 requests/minute per IP (30 req/min per specific reference code)
+  - Arrival check-in: 5 attempts per 15 minutes per IP/reference (brute-force defense)
+- Unverified tokens on cancel and reschedule are rejected; actor identity in audit trails is server-derived only.
 
 ---
 
-## 2. Implemented Endpoints
+## 2. Service Health & Diagnostics
 
-### 2.1 Service Health Check
-
+### 2.1 Health Probe
 ```http
 GET /health
 ```
+Liveness and readiness probe for container supervisors, Render uptime, and Vercel frontends.
 
-#### Purpose
-Liveness and readiness probe for container orchestration, monitoring, and uptime checks.
-
-#### Authentication
-None.
-
-#### Request Headers
-None required.
-
-#### Request Parameters / Body
-None.
-
-#### Success Response
-- **Status Code**: `200 OK` when MongoDB answers a ping; `503` when the database is down
-- **Body**:
-  ```json
-  {
-    "ok": true,
-    "service": "yencare-api",
-    "db": "connected",
-    "readyState": 1,
-    "latencyMs": 12
-  }
-  ```
-
-#### Example `curl`
-```bash
-curl -i http://localhost:4000/health
+#### Response (`200 OK` / `503 Service Unavailable`)
+```json
+{
+  "ok": true,
+  "service": "yencare-api",
+  "db": "connected",
+  "readyState": 1,
+  "latencyMs": 8
+}
 ```
 
 ---
 
-### 2.2 Patient Registration & Verification (Find-or-Create)
+## 3. Staff Authentication & RBAC Endpoints
 
+### 3.1 Staff Sign-In
+```http
+POST /api/auth/staff-login
+```
+Authenticates clinical staff (Receptionist, Doctor, Admin) using either **email** or **Staff ID** (`stf_01`).
+
+#### Request Body
+```json
+{
+  "identifier": "abena.osei@yencare.gh",
+  "password": "demo-password"
+}
+```
+
+#### Response (`200 OK`)
+```json
+{
+  "token": "eyJhbGciOi...",
+  "staff": {
+    "id": "68bf2c0e9c1a2b0011111111",
+    "staffId": "stf_01",
+    "name": "Abena Osei",
+    "email": "abena.osei@yencare.gh",
+    "role": "RECEPTIONIST",
+    "clinicSite": "students-clinic",
+    "assignedRoom": null
+  }
+}
+```
+
+### 3.2 Token Refresh
+```http
+POST /api/auth/staff-refresh
+```
+Exchanges a valid, unexpired token for a fresh token with renewed 8-hour validity.
+
+### 3.3 Active Staff Profile
+```http
+GET /api/auth/staff-me
+```
+Returns authenticated staff session details and assigned clinic room.
+
+---
+
+## 4. Patient Registration & Lookup
+
+### 4.1 Patient Find-or-Create
 ```http
 POST /api/patients
 ```
+Finds an existing student record by Ghana phone number or 8-digit KNUST student index. If not found, creates a new record.
 
-#### Purpose
-Used by the web frontend during booking (**Step 1/6: Your Details**) or by reception staff during walk-in intake. If a patient with the provided student index number or Ghana phone number already exists in MongoDB, the existing record is returned (`200 OK`). If no match is found, a new patient record is created (`201 Created`).
-
-#### Authentication
-None.
-
-#### Request Headers
-```http
-Content-Type: application/json
-```
-
-#### Request Body Schema
-
-| Field Name | Type | Required | Description & Validation Rules |
-|---|---|---|---|
-| `fullName` | `string` | Required to create | Full name of the patient (2 to 120 characters). Aliases: `full_name`, `patientName`. |
-| `studentIndex`| `string` | Optional | KNUST student index number. If provided, must be **exactly 8 numeric digits** (e.g., `"20612345"`). Aliases: `student_index`. |
-| `phone` / `phoneNumber` | `string` | Required to create | Ghana telephone number. Accepted formats: `024 123 4567`, `0241234567`, `241234567`, `233241234567`, `+233241234567`. **Mongo / `Appointment.populate()` / SMS use `phone`.** HTTP also accepts `phoneNumber` and `phone_number`. Stored as E.164 (`+233...`). |
-| `nhis` / `nhisNumber` | `string` | Optional | National Health Insurance Scheme card number. Mongo stores **`nhisNumber`**. HTTP also accepts `nhis` and `nhis_number`. |
-
-> [!NOTE]
-> At least one identifier (`studentIndex` or `phone` / `phoneNumber`) must be present for lookup. Creating a **new** patient also requires `fullName` and a valid Ghana phone.
->
-> Responses always include **both** `phone` and `phoneNumber` (same E.164 value) so booking/SMS code that reads `patient.phone` never gets `undefined`.
-
-#### Example Request Body (Student Booking)
+#### Request Body
 ```json
 {
   "fullName": "Akosua Boateng",
   "studentIndex": "20612345",
-  "phoneNumber": "024 123 4567",
-  "nhis": "NHIS-992144"
+  "phoneNumber": "0241234567",
+  "nhisNumber": "12345678"
 }
-```
-
-#### Example Request Body (Walk-In without Student Index)
-```json
-{
-  "fullName": "Kwame Ofori Atta",
-  "phoneNumber": "+233245551234"
-}
-```
-
-#### Success Responses
-
-**1. Newly Created Patient (`201 Created`):**
-```json
-{
-  "id": "66dd8f1a2b0c3d0012e45678",
-  "fullName": "Akosua Boateng",
-  "studentIndex": "20612345",
-  "phone": "+233241234567",
-  "phoneNumber": "+233241234567",
-  "nhisNumber": "NHIS-992144",
-  "nhis": "NHIS-992144",
-  "createdAt": "2026-09-08T14:30:00.000Z",
-  "updatedAt": "2026-09-08T14:30:00.000Z"
-}
-```
-
-**2. Existing Patient Matched (`200 OK`):**
-Returns identical JSON structure with the existing database `id` and timestamps.
-
-#### Error Responses
-
-- **`400 Bad Request`**: Validation error (e.g. invalid phone number, non-8-digit student index, missing mandatory create fields):
-  ```json
-  {
-    "error": "Enter a valid Ghana phone number (e.g. 024 123 4567)"
-  }
-  ```
-- **`409 Conflict`**: The supplied `studentIndex` belongs to one existing patient record, but the `phoneNumber` belongs to a different existing patient record:
-  ```json
-  {
-    "error": "The student index number and phone number belong to different registered records"
-  }
-  ```
-- **`500 Internal Server Error`**: Unexpected server fault:
-  ```json
-  {
-    "error": "Internal server error"
-  }
-  ```
-
-#### Example `curl`
-```bash
-curl -i -X POST http://localhost:4000/api/patients \
-  -H "Content-Type: application/json" \
-  -d '{"fullName":"Akosua Boateng","studentIndex":"20612345","phoneNumber":"024 123 4567"}'
 ```
 
 ---
 
-### 2.3 Patient Lookup by Identifier
+## 5. Clinic Catalog Endpoints
 
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/rooms` | Lists active consultation rooms across clinic sites |
+| `GET` | `/api/clinicians` | Lists available doctors, titles, specialties, and assigned rooms |
+| `GET` | `/api/time-slots` | Lists consultation slots filtered by `date`, `clinicSite`, `clinicianId`, and `available` |
+
+---
+
+## 6. Appointment Operations
+
+### 6.1 Create Appointment
 ```http
-GET /api/patients/:identifier
+POST /api/appointments
 ```
+Books an outpatient consultation slot.
+- **Student Booking Cap**: Enforces a strict maximum of **2 active bookings** (`BOOKED`, `CHECKED_IN`, `WAITING`) per student index.
+- **Double-Booking Guard**: Prevents booking duplicate appointments for the same student on the same date (HTTP `409 Conflict`).
 
-#### Purpose
-Used on the Find Appointment screen (**P09**) or reception search. Looks up a patient by their 8-digit KNUST student index number or their Ghana phone number.
-
-#### Authentication
-None.
-
-#### URL Parameters
-- `identifier` (`string`, required): Either:
-  - An 8-digit student index (e.g., `20612345`)
-  - A local Ghana mobile number (e.g., `0241234567`)
-  - A URL-encoded E.164 Ghana phone number (e.g., `%2B233241234567`)
-
-#### Success Response
-- **Status Code**: `200 OK`
-- **Body**:
-  ```json
-  {
-    "id": "66dd8f1a2b0c3d0012e45678",
-    "fullName": "Akosua Boateng",
-    "studentIndex": "20612345",
-    "phone": "+233241234567",
-    "phoneNumber": "+233241234567",
-    "nhisNumber": "NHIS-992144",
-    "nhis": "NHIS-992144",
-    "createdAt": "2026-09-08T14:30:00.000Z",
-    "updatedAt": "2026-09-08T14:30:00.000Z"
-  }
-  ```
-
-#### Error Responses
-- **`400 Bad Request`**: Unusable identifier format:
-  ```json
-  {
-    "error": "Enter an 8-digit student index or a Ghana phone number"
-  }
-  ```
-- **`404 Not Found`**: No patient matches the identifier:
-  ```json
-  {
-    "error": "Patient not found"
-  }
-  ```
-
-#### Example `curl`
-```bash
-# Lookup by Student Index
-curl -i http://localhost:4000/api/patients/20612345
-
-# Lookup by Local Phone
-curl -i http://localhost:4000/api/patients/0241234567
-
-# Lookup by E.164 Phone (+ encoded as %2B)
-curl -i http://localhost:4000/api/patients/%2B233241234567
+### 6.2 Staff Appointment Roster
+```http
+GET /api/appointments?date=YYYY-MM-DD&clinicSite=students-clinic
 ```
+*Requires Staff Authentication (`RECEPTIONIST`, `DOCTOR`, `ADMIN`).*
+
+### 6.3 Cancel Appointment
+```http
+PATCH /api/appointments/:id/cancel
+```
+- **Patients**: Requires verified 6-digit OTP code (`otpCode`) sent via `/request-cancel-otp` and phone match.
+- **Staff**: Allows instant cancellation without OTP if signed in with a valid staff token.
+
+### 6.4 Reschedule Appointment
+```http
+PATCH /api/appointments/:id/reschedule
+```
+Moves an appointment to a new available time slot. Requires ownership phone or valid staff token.
 
 ---
 
-### 2.4 Clinic Catalog (IDs for booking / Postman)
+## 7. Virtual Queue Coordination
 
-After `npm run db:seed`, these read-only lists return Mongo `id` values to copy into `POST /api/appointments` (when that route lands).
-
-| Method | Path | Query | Use the `id` as |
-|---|---|---|---|
-| `GET` | `/api/rooms` | — | `roomId` |
-| `GET` | `/api/clinicians` | — | `clinicianId` (`roomId` is populated) |
-| `GET` | `/api/time-slots` | `date=2026-09-15`, `clinicSite=students-clinic`, `available=true` | `timeSlotId` |
-
-```bash
-curl -s http://localhost:4000/api/rooms
-curl -s http://localhost:4000/api/clinicians
-curl -s "http://localhost:4000/api/time-slots?date=2026-09-15&available=true"
+### 7.1 Patient Arrival Check-In
+```http
+POST /api/appointments/:reference/arrive
 ```
+Marks the student as arrived. Enforces visit-day guards:
+- Only permitted on the day of the appointment.
+- Permitted within 60 minutes before slot start up to 15 minutes after slot start.
+- Rate-limited to 5 attempts per 15 minutes per IP/reference.
 
----
-
-## 3. Client Integration Service Examples (JavaScript)
-
-### 3.1 Patient Service Wrapper (`frontend/src/services/patients.js`)
-
-```javascript
-import api from "./api";
-
-/**
- * Register a new patient or look up an existing record.
- * @param {Object} data - { fullName, studentIndex, phoneNumber | phone, nhis | nhisNumber }
- * Response includes both `phone` (Mongo / SMS) and `phoneNumber`.
- */
-export async function registerPatient(data) {
-  const response = await api.post("/patients", {
-    fullName: data.fullName ?? data.name,
-    studentIndex: data.studentIndex ?? data.indexNumber,
-    phoneNumber: data.phoneNumber ?? data.phone,
-    nhis: data.nhis ?? data.nhisNumber,
-  });
-  return response.data;
-}
-
-/**
- * Look up a patient by student index or telephone number.
- * @param {string} identifier - 8-digit index or Ghana phone
- */
-export async function lookupPatient(identifier) {
-  const response = await api.get(`/patients/${encodeURIComponent(identifier)}`);
-  return response.data;
-}
+### 7.2 Real-time Queue Status
+```http
+GET /api/appointments/:reference/queue-status
 ```
+Returns estimated wait time, live position in queue, assigned room, and active consultation token.
 
----
-
-## 4. Planned & Future Endpoints (Design Contracts)
-
-The following endpoints are defined in architecture specifications and frontend client stubs (`frontend/src/services/appointments.js`), with schema models already committed in `backend/src/models/`:
-
-### 4.1 Create Appointment (`POST /api/appointments`) — Planned
-- **Purpose**: Creates an appointment reservation linked to an existing `patientId`, `timeSlotId`, `clinicianId`, and `roomId`.
-- **IDs**: Copy `id` from `GET /api/patients/:identifier`, `GET /api/clinicians`, `GET /api/rooms`, and `GET /api/time-slots`.
-- **Expected Payload**:
-  ```json
-  {
-    "patientId": "66dd8f1a2b0c3d0012e45678",
-    "clinicSite": "students-clinic",
-    "clinicianId": "66dd8f1a2b0c3d0012e45111",
-    "timeSlotId": "66dd8f1a2b0c3d0012e45222",
-    "visitType": "general-opd"
-  }
-  ```
-- **Target Response**: `201 Created` with generated `referenceCode` (`YC-4821`).
-
-### 4.2 Query Live Queue (`GET /api/queue`) — Planned
-- **Purpose**: Retrieves the real-time queue roster partitioned by `clinicSite` for display boards and patient queue monitors.
-- **Target Response**: Active consultation tokens in Room 1 and Room 2, plus sorted array of waiting queue tokens.
+### 7.3 Doctor Consultation Controls
+- `POST /api/queue/call-next`: Calls next waiting patient into doctor's consultation room. *(Doctors & Admin only)*
+- `POST /api/queue/advance`: Completes active patient visit and marks consultation finished. *(Doctors only)*
+- `POST /api/queue/no-show`: Marks a patient who failed to arrive after late grace period as `NO_SHOW`.
