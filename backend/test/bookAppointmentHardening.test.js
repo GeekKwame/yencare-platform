@@ -14,6 +14,7 @@ import {
   STUDENT_BOOKING_CAP_MESSAGE,
   ACTIVE_STUDENT_BOOKING_STATUSES,
   WALK_IN_STAFF_ONLY_MESSAGE,
+  STUDENT_INDEX_REQUIRED_MESSAGE,
 } from '../src/services/bookAppointment.js';
 
 const oid = () => new mongoose.Types.ObjectId();
@@ -21,6 +22,7 @@ const oid = () => new mongoose.Types.ObjectId();
 const CLINICIAN_ID = oid();
 const ROOM_ID = oid();
 const PATIENT_ID = oid();
+const DEFAULT_STUDENT_INDEX = '20600001';
 
 // The verified identity the route passes for a reception-desk walk-in.
 const AS_RECEPTION = { staff: { staffId: 'stf_01', role: 'RECEPTIONIST' } };
@@ -87,8 +89,20 @@ function stubModels({
       }
     : null;
 
-  const state = { created: [], claims: 0, released: 0 };
+  const state = { created: [], claims: 0, released: 0, countQueries: [] };
   const mockAppointments = [...existingAppointments];
+
+  /** The subset of Mongo matching the booking cap's count query uses. */
+  const matchesQuery = (app, query) => {
+    if (query.patientId !== undefined) {
+      const ids = query.patientId?.$in ?? [query.patientId];
+      if (!ids.some((id) => String(id) === String(app.patientId))) return false;
+    }
+    if (query.status?.$in && !query.status.$in.includes(app.status)) return false;
+    if (query.appointmentDate?.$gte && app.appointmentDate < query.appointmentDate.$gte) return false;
+    if (query._id?.$ne && String(app._id) === String(query._id.$ne)) return false;
+    return true;
+  };
 
   TimeSlot.findOneAndUpdate = async () => {
     if (!slot || slot.isBooked) return null;
@@ -113,27 +127,15 @@ function stubModels({
   Appointment.findOne = async () => (existingAppointment ? { _id: oid() } : null);
 
   Appointment.countDocuments = async (query = {}) => {
-    return mockAppointments.filter((app) => {
-      if (query.status?.$in && !query.status.$in.includes(app.status)) return false;
-      if (query.appointmentDate?.$gte && app.appointmentDate < query.appointmentDate.$gte) return false;
-      if (query._id?.$ne && String(app._id) === String(query._id.$ne)) return false;
-      if (query.studentIndex && app.studentIndex && app.studentIndex !== query.studentIndex) return false;
-      return true;
-    }).length;
+    state.countQueries.push(query);
+    return mockAppointments.filter((app) => matchesQuery(app, query)).length;
   };
 
-  Appointment.find = async (query = {}) => {
-    return mockAppointments.filter((app) => {
-      if (query.status?.$in && !query.status.$in.includes(app.status)) return false;
-      if (query.appointmentDate?.$gte && app.appointmentDate < query.appointmentDate.$gte) return false;
-      if (query._id?.$ne && String(app._id) === String(query._id.$ne)) return false;
-      if (query.studentIndex && app.studentIndex && app.studentIndex !== query.studentIndex) return false;
-      return true;
-    });
-  };
+  Appointment.find = async (query = {}) => mockAppointments.filter((app) => matchesQuery(app, query));
 
-  // No patient means createAppointment short-circuits before any SMS work.
-  Patient.findById = async () => null;
+  // Default patient: a student with an index on record (Students' Clinic online
+  // bookings require one). No phone, so createAppointment skips SMS work.
+  Patient.findById = async () => ({ _id: PATIENT_ID, studentIndex: DEFAULT_STUDENT_INDEX });
   Patient.find = async () => [];
 
   return {
@@ -348,16 +350,18 @@ describe('student booking cap policy (Issue B)', () => {
 
   it('counts active non-completed, non-cancelled bookings per studentIndex on future dates', async () => {
     const existing = [
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'CHECKED_IN' },
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-27', status: 'WAITING' },
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-28', status: 'COMPLETED' },
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-29', status: 'CANCELLED' },
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-30', status: 'NO_SHOW' },
-      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-20', status: 'BOOKED' }, // past date
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-25', status: 'BOOKED' },
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-26', status: 'CHECKED_IN' },
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-27', status: 'WAITING' },
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-28', status: 'COMPLETED' },
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-29', status: 'CANCELLED' },
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-30', status: 'NO_SHOW' },
+      { patientId: PATIENT_ID, appointmentDate: '2026-09-20', status: 'BOOKED' }, // past date
     ];
 
     stubs = stubModels({ existingAppointments: existing });
+    // The student's patient record, found by index.
+    Patient.find = async () => [{ _id: PATIENT_ID }];
 
     // With minDate = '2026-09-24':
     // 3 active upcoming (BOOKED on 09-25, CHECKED_IN on 09-26, WAITING on 09-27).
@@ -372,13 +376,14 @@ describe('student booking cap policy (Issue B)', () => {
       slotDate: '2026-09-25',
       slotTime: '10:30',
       existingAppointments: [
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-24', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2026-09-24', status: 'BOOKED' },
       ],
     });
+    // The index comes from the Patient record, not the booking payload.
+    Patient.findById = async () => ({ _id: PATIENT_ID, studentIndex: STUDENT_INDEX });
 
     const result = await createAppointment(
       basePayload({
-        studentIndex: STUDENT_INDEX,
         appointmentDate: '2026-09-25',
         appointmentTime: '10:30',
       }),
@@ -396,16 +401,17 @@ describe('student booking cap policy (Issue B)', () => {
       slotDate: MONDAY,
       slotTime: '11:00',
       existingAppointments: [
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2026-09-25', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2026-09-26', status: 'BOOKED' },
       ],
     });
+    // The index comes from the Patient record, not the booking payload.
+    Patient.findById = async () => ({ _id: PATIENT_ID, studentIndex: STUDENT_INDEX });
 
     await assert.rejects(
       () =>
         createAppointment(
           basePayload({
-            studentIndex: STUDENT_INDEX,
             appointmentDate: MONDAY,
             appointmentTime: '11:00',
           }),
@@ -434,8 +440,8 @@ describe('student booking cap policy (Issue B)', () => {
       slotDate: MONDAY,
       slotTime: '11:00',
       existingAppointments: [
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'WAITING' },
+        { patientId: PATIENT_ID, appointmentDate: '2026-09-25', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2026-09-26', status: 'WAITING' },
       ],
     });
 
@@ -505,8 +511,8 @@ describe('walk-ins require a verified reception or admin identity', () => {
     stubs = stubModels({
       catalogSlot: true,
       existingAppointments: [
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-05', status: 'BOOKED' },
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-06', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2099-01-05', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2099-01-06', status: 'BOOKED' },
       ],
     });
     // No phone on purpose: createAppointment then stops before any SMS is sent.
@@ -644,8 +650,8 @@ describe('already-started slots are refused before claiming', () => {
     stubs = stubModels({
       ...options,
       existingAppointments: [
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-05', status: 'BOOKED' },
-        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-06', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2099-01-05', status: 'BOOKED' },
+        { patientId: PATIENT_ID, appointmentDate: '2099-01-06', status: 'BOOKED' },
       ],
     });
     // No phone on purpose: createAppointment then stops before any SMS is sent.
@@ -755,5 +761,171 @@ describe('already-started slots are refused before claiming', () => {
     );
     assert.equal(cap.capQueries(), 0);
     assert.equal(stubs.state.claims, 0);
+  });
+});
+
+describe('student index is resolved from the Patient record (online bookings)', () => {
+  /** @type {{ restore: () => void } | null} */
+  let stubs = null;
+
+  afterEach(() => {
+    stubs?.restore();
+    stubs = null;
+  });
+
+  const STUDENT_A = { _id: PATIENT_ID, studentIndex: '20611111' };
+  const OTHER_PATIENT_ID = oid();
+  const OTHER_INDEX = '20622222';
+  const active = (patientId, day) => ({
+    _id: oid(),
+    patientId,
+    appointmentDate: `2099-01-0${day}`,
+    status: 'BOOKED',
+  });
+
+  /** Patient records by index, as `Patient.find({ studentIndex })` would return them. */
+  function stubPatients(patient, byIndex = {}) {
+    Patient.findById = async () => patient;
+    Patient.find = async (query) => byIndex[query.studentIndex] || [];
+  }
+
+  function assertIndexRequired(err) {
+    assert.equal(err.name, 'ValidationError');
+    assert.equal(err.status, 400);
+    assert.equal(err.message, STUDENT_INDEX_REQUIRED_MESSAGE);
+    return true;
+  }
+
+  function assertCapped(err) {
+    assert.equal(err.status, 409);
+    assert.equal(err.message, STUDENT_BOOKING_CAP_MESSAGE);
+    return true;
+  }
+
+  it("refuses an online Students' Clinic booking for a patient with no index on record", async () => {
+    stubs = stubModels({ catalogSlot: true });
+    stubPatients({ _id: PATIENT_ID, fullName: 'No Index' });
+
+    await assert.rejects(() => createAppointment(basePayload(), { now: NOW }), assertIndexRequired);
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.state.created.length, 0);
+    assert.equal(stubs.state.countQueries.length, 0);
+  });
+
+  it('ignores a studentIndex in the request body when the Patient record has none', async () => {
+    stubs = stubModels({ catalogSlot: true });
+    stubPatients({ _id: PATIENT_ID, fullName: 'No Index' });
+
+    await assert.rejects(
+      () => createAppointment(basePayload({ studentIndex: '20611111' }), { now: NOW }),
+      assertIndexRequired,
+    );
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('caps an index-less KNUST Hospital patient by patientId', async () => {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [active(PATIENT_ID, 5), active(PATIENT_ID, 6)],
+    });
+    stubPatients({ _id: PATIENT_ID, fullName: 'Community Member' });
+
+    await assert.rejects(
+      () => createAppointment(basePayload({ clinicSite: 'knust-hospital' }), { now: NOW }),
+      assertCapped,
+    );
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('allows an index-less KNUST Hospital patient below the cap', async () => {
+    stubs = stubModels({ catalogSlot: true, existingAppointments: [active(PATIENT_ID, 5)] });
+    stubPatients({ _id: PATIENT_ID, fullName: 'Community Member' });
+
+    await createAppointment(basePayload({ clinicSite: 'knust-hospital' }), { now: NOW });
+
+    assert.equal(stubs.state.created.length, 1);
+    assert.deepEqual(stubs.state.countQueries.map((q) => String(q.patientId)), [String(PATIENT_ID)]);
+  });
+
+  it("a body studentIndex naming another student cannot borrow that student's budget", async () => {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [active(PATIENT_ID, 5), active(PATIENT_ID, 6)],
+    });
+    stubPatients(STUDENT_A, {
+      [STUDENT_A.studentIndex]: [{ _id: PATIENT_ID }],
+      [OTHER_INDEX]: [{ _id: OTHER_PATIENT_ID }],
+    });
+
+    await assert.rejects(
+      () => createAppointment(basePayload({ studentIndex: OTHER_INDEX }), { now: NOW }),
+      assertCapped,
+    );
+  });
+
+  it("a body studentIndex naming another student cannot charge that student's bookings", async () => {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [active(OTHER_PATIENT_ID, 5), active(OTHER_PATIENT_ID, 6)],
+    });
+    stubPatients(STUDENT_A, {
+      [STUDENT_A.studentIndex]: [{ _id: PATIENT_ID }],
+      [OTHER_INDEX]: [{ _id: OTHER_PATIENT_ID }],
+    });
+
+    await createAppointment(basePayload({ studentIndex: OTHER_INDEX }), { now: NOW });
+
+    assert.equal(stubs.state.created.length, 1);
+  });
+
+  it('an appointment id named in the body is not excluded from the count', async () => {
+    const mine = [active(PATIENT_ID, 5), active(PATIENT_ID, 6)];
+    stubs = stubModels({ catalogSlot: true, existingAppointments: mine });
+    stubPatients(STUDENT_A, { [STUDENT_A.studentIndex]: [{ _id: PATIENT_ID }] });
+
+    for (const smuggled of [{ appointmentId: mine[0]._id }, { _id: mine[0]._id }]) {
+      await assert.rejects(
+        () => createAppointment(basePayload(smuggled), { now: NOW }),
+        assertCapped,
+      );
+    }
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('counts by patientId only, active statuses, from today', async () => {
+    stubs = stubModels({ catalogSlot: true });
+    stubPatients(STUDENT_A, { [STUDENT_A.studentIndex]: [{ _id: PATIENT_ID }] });
+
+    await createAppointment(basePayload({ studentIndex: OTHER_INDEX }), { now: NOW });
+
+    assert.equal(stubs.state.countQueries.length, 1);
+    const [query] = stubs.state.countQueries;
+    assert.deepEqual(Object.keys(query).sort(), ['appointmentDate', 'patientId', 'status']);
+    assert.equal(String(query.patientId), String(PATIENT_ID));
+    assert.deepEqual(query.status, { $in: ['BOOKED', 'CHECKED_IN', 'WAITING', 'CALLED'] });
+    assert.deepEqual(query.appointmentDate, { $gte: '2026-09-15' });
+  });
+
+  it("lets desk staff book an index-less patient at the Students' Clinic, still capped", async () => {
+    stubs = stubModels({ catalogSlot: true, existingAppointments: [active(PATIENT_ID, 5)] });
+    stubPatients({ _id: PATIENT_ID, fullName: 'No Index' });
+
+    await createAppointment(basePayload(), { ...AS_RECEPTION, now: NOW });
+    assert.equal(stubs.state.created.length, 1);
+    stubs.restore();
+
+    // The same patient with two active bookings is refused, even for staff.
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [active(PATIENT_ID, 5), active(PATIENT_ID, 6)],
+    });
+    stubPatients({ _id: PATIENT_ID, fullName: 'No Index' });
+
+    await assert.rejects(
+      () => createAppointment(basePayload(), { ...AS_RECEPTION, now: NOW }),
+      assertCapped,
+    );
+    assert.equal(stubs.state.created.length, 0);
   });
 });

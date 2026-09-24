@@ -30,6 +30,15 @@ export const ACTIVE_STUDENT_BOOKING_STATUSES = Object.freeze([
 
 export const WALK_IN_STAFF_ONLY_MESSAGE = 'Walk-ins can only be created by reception staff.';
 
+export const STUDENT_INDEX_REQUIRED_MESSAGE =
+  'A KNUST student index is required to book online. Please see reception.';
+
+/**
+ * Sites whose online bookings must belong to a patient with a student index on
+ * record. KNUST Hospital also serves non-students, so it is not listed.
+ */
+const STUDENT_INDEX_REQUIRED_SITES = Object.freeze(['students-clinic']);
+
 /** Roles allowed to admit a walk-in. Doctors are not: walk-ins go through the desk. */
 const WALK_IN_STAFF_ROLES = Object.freeze(['RECEPTIONIST', 'ADMIN']);
 
@@ -151,41 +160,46 @@ async function assertRequestedSlotNotStarted(payload, now) {
 }
 
 /**
- * Count active (non-completed, non-cancelled) upcoming appointments for a studentIndex.
+ * Count a patient's active appointments (BOOKED, CHECKED_IN, WAITING, CALLED)
+ * from `minDate` onwards. Appointments are matched by `patientId` only — they
+ * carry no student index of their own. When the patient has a student index,
+ * every patient record holding it is counted together (the index is unique, so
+ * this is normally the one record).
  *
- * @param {string} studentIndex 8-digit student index number
- * @param {{ minDate?: string, patientId?: unknown, excludeAppointmentId?: unknown }} [options]
+ * @param {string | null} studentIndex 8-digit index from the Patient record, or null
+ * @param {{ minDate?: string, patientId?: unknown }} [options]
  * @returns {Promise<number>}
  */
 export async function countActiveBookingsForStudent(
   studentIndex,
-  { minDate = accraTodayIso(), patientId, excludeAppointmentId } = {},
+  { minDate = accraTodayIso(), patientId } = {},
 ) {
-  if (!studentIndex) return 0;
-  const normalizedIndex = String(studentIndex).trim().replace(/\s+/g, '');
-  if (!normalizedIndex) return 0;
+  const normalizedIndex = studentIndex ? String(studentIndex).trim().replace(/\s+/g, '') : '';
 
-  let patientIds = [];
-  try {
-    if (typeof Patient.find === 'function') {
+  const patientIds = [];
+  if (normalizedIndex) {
+    try {
       const docs = await Patient.find({ studentIndex: normalizedIndex }, '_id');
-      if (Array.isArray(docs)) {
-        patientIds = docs.map((doc) => doc._id || doc.id).filter(Boolean);
+      for (const doc of Array.isArray(docs) ? docs : []) {
+        if (doc?._id) patientIds.push(doc._id);
       }
+    } catch (err) {
+      logger.warn('could not query patients by studentIndex for booking cap', {
+        subsystem: 'booking-policy',
+        studentIndex: normalizedIndex,
+        err,
+      });
     }
-  } catch (err) {
-    logger.warn('could not query patients by studentIndex for booking cap', {
-      subsystem: 'booking-policy',
-      studentIndex: normalizedIndex,
-      err,
-    });
   }
 
   if (patientId && !patientIds.some((id) => String(id) === String(patientId))) {
     patientIds.push(patientId);
   }
 
+  if (patientIds.length === 0) return 0;
+
   const query = {
+    patientId: patientIds.length === 1 ? patientIds[0] : { $in: patientIds },
     status: { $in: [...ACTIVE_STUDENT_BOOKING_STATUSES] },
   };
 
@@ -193,73 +207,52 @@ export async function countActiveBookingsForStudent(
     query.appointmentDate = { $gte: minDate };
   }
 
-  if (excludeAppointmentId) {
-    query._id = { $ne: excludeAppointmentId };
-  }
-
-  const orConditions = [];
-  if (patientIds.length > 0) {
-    orConditions.push({ patientId: patientIds.length === 1 ? patientIds[0] : { $in: patientIds } });
-  }
-  orConditions.push({ studentIndex: normalizedIndex });
-
-  if (orConditions.length === 1) {
-    Object.assign(query, orConditions[0]);
-  } else {
-    query.$or = orConditions;
-  }
-
-  if (typeof Appointment.countDocuments === 'function') {
-    return await Appointment.countDocuments(query);
-  }
-
-  if (typeof Appointment.find === 'function') {
-    const results = await Appointment.find(query);
-    return Array.isArray(results) ? results.length : 0;
-  }
-
-  return 0;
+  return Appointment.countDocuments(query);
 }
 
 /**
- * Enforce the active booking policy per studentIndex:
- * Caps active (BOOKED, CHECKED_IN, WAITING) appointments on future dates at 2.
- * Rejects requests with HTTP 409 if the student already has 2 active upcoming bookings.
+ * Enforce the active booking policy: at most 2 active appointments from today
+ * onwards, counted per patient (and per student index when the patient has one).
+ *
+ * The student index comes only from the Patient record — a `studentIndex` in the
+ * request body is ignored, as is any appointment id the body names, so a caller
+ * cannot steer the count.
+ *
+ * Index-less patients (allowed at KNUST Hospital) are capped by patientId.
+ * Known limitation: each new phone number registers a new patient record with
+ * its own budget, so an index-less patient can dodge the cap that way.
  *
  * @param {object} payload
- * @param {{ minDate?: string }} [options]
- * @throws {ConflictError} if the student already has 2 active upcoming bookings.
+ * @param {{ minDate?: string, requireStudentIndex?: boolean }} [options]
+ *   `requireStudentIndex` refuses a patient with no index on record (online
+ *   Students' Clinic bookings).
+ * @throws {ValidationError} if an index is required and the patient has none.
+ * @throws {ConflictError} if the patient already has 2 active upcoming bookings.
  */
-export async function assertStudentBookingCap(payload, { minDate = accraTodayIso() } = {}) {
-  let studentIndex = payload.studentIndex
-    ? String(payload.studentIndex).trim().replace(/\s+/g, '')
-    : null;
-
+export async function assertStudentBookingCap(
+  payload,
+  { minDate = accraTodayIso(), requireStudentIndex = false } = {},
+) {
   let patientDoc = null;
-  if (!studentIndex && payload.patientId) {
+  if (payload.patientId) {
     try {
       patientDoc = await Patient.findById(payload.patientId);
-      if (patientDoc?.studentIndex) {
-        studentIndex = String(patientDoc.studentIndex).trim().replace(/\s+/g, '');
-      }
     } catch {
-      // Patient lookup failure will be handled downstream if patient does not exist
+      // An unusable patientId is reported by Appointment validation downstream.
     }
   }
 
-  if (!studentIndex && payload.patient?.studentIndex) {
-    studentIndex = String(payload.patient.studentIndex).trim().replace(/\s+/g, '');
-  }
+  const studentIndex = patientDoc?.studentIndex
+    ? String(patientDoc.studentIndex).trim().replace(/\s+/g, '')
+    : null;
 
-  // Non-student bookings have no studentIndex; booking cap policy does not apply.
-  if (!studentIndex) {
-    return { studentIndex: null, activeCount: 0, patient: patientDoc };
+  if (requireStudentIndex && !studentIndex) {
+    throw new ValidationError(STUDENT_INDEX_REQUIRED_MESSAGE);
   }
 
   const activeCount = await countActiveBookingsForStudent(studentIndex, {
     minDate,
     patientId: payload.patientId,
-    excludeAppointmentId: payload._id || payload.appointmentId,
   });
 
   if (activeCount >= MAX_ACTIVE_STUDENT_BOOKINGS) {
@@ -290,8 +283,8 @@ export async function createAppointment(data, { staff = null, now = new Date() }
 
   // A walk-in skips opening hours and the booking cap, so it must be admitted
   // by verified desk staff. Anyone else asking for one is refused outright.
-  const isWalkIn =
-    payload.bookingType === 'WALK_IN' && WALK_IN_STAFF_ROLES.includes(staff?.role);
+  const isDeskStaff = WALK_IN_STAFF_ROLES.includes(staff?.role);
+  const isWalkIn = payload.bookingType === 'WALK_IN' && isDeskStaff;
   if (payload.bookingType === 'WALK_IN' && !isWalkIn) {
     throw new ForbiddenError(WALK_IN_STAFF_ONLY_MESSAGE);
   }
@@ -312,6 +305,10 @@ export async function createAppointment(data, { staff = null, now = new Date() }
     await assertRequestedSlotNotStarted(payload, now);
     ({ patient: preloadedPatient } = await assertStudentBookingCap(payload, {
       minDate: accraTodayIso(now),
+      // Online Students' Clinic bookings must belong to a student. Desk staff
+      // booking on a patient's behalf are trusted and still capped.
+      requireStudentIndex:
+        !isDeskStaff && STUDENT_INDEX_REQUIRED_SITES.includes(payload.clinicSite),
     }));
   }
   delete payload.studentIndex;
