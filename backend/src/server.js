@@ -19,6 +19,8 @@ import {
   findActiveAppointmentsForPatient,
   updateAppointmentStatus,
   markPatientArrived,
+  requestCancelOtp,
+  requestRescheduleOtp,
   cancelAppointment,
   rescheduleAppointment,
 } from "./services/appointmentOps.js";
@@ -130,6 +132,10 @@ const app = createApp({
     updateStatus: updateAppointmentStatus,
 
     markPatientArrived,
+
+    requestCancelOtp,
+
+    requestRescheduleOtp,
 
     cancelAppointment,
 

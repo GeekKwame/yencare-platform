@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { normalizeGhanaPhone, toLocalGhanaPhone } from '../src/sms/normalizePhone.js';
+import { maskPhone, normalizeGhanaPhone, toLocalGhanaPhone } from '../src/sms/normalizePhone.js';
 
 describe('normalizeGhanaPhone', () => {
   it('keeps E.164 numbers', () => {
@@ -47,5 +47,24 @@ describe('toLocalGhanaPhone', () => {
   it('converts E.164 to a 0-prefixed local number for mNotify', () => {
     assert.equal(toLocalGhanaPhone('+233241234567'), '0241234567');
     assert.equal(toLocalGhanaPhone('0551234567'), '0551234567');
+  });
+});
+
+describe('maskPhone', () => {
+  it('masks E.164 Ghana phone numbers to +233 XX **** XXX', () => {
+    assert.equal(maskPhone('+233241234567'), '+233 24 **** 567');
+  });
+
+  it('masks local 0-prefixed Ghana phone numbers', () => {
+    assert.equal(maskPhone('0241234567'), '+233 24 **** 567');
+    assert.equal(maskPhone('024 123 4567'), '+233 24 **** 567');
+    assert.equal(maskPhone('055 987 6543'), '+233 55 **** 543');
+    assert.equal(maskPhone('020 888 9999'), '+233 20 **** 999');
+  });
+
+  it('handles empty or null gracefully', () => {
+    assert.equal(maskPhone(''), '');
+    assert.equal(maskPhone(null), '');
+    assert.equal(maskPhone(undefined), '');
   });
 });

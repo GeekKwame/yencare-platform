@@ -126,4 +126,6 @@ export {
   normalizeGhanaPhone,
   toLocalGhanaPhone,
   ghanaNationalNumber,
+  maskPhone,
+  maskGhanaPhone,
 } from './normalizePhone.js';

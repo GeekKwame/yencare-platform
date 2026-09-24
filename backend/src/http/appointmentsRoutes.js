@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { logger } from '../lib/logger.js';
+import { maskPhone } from '../sms/normalizePhone.js';
 import { asyncHandler } from './asyncHandler.js';
 import {
   appointmentEvents,
@@ -16,6 +17,45 @@ function toJson(doc) {
   if (!doc) return null;
 
   return typeof doc.toJSON === 'function' ? doc.toJSON() : doc;
+}
+
+/**
+ * Mask patient phone number in public lookup responses to protect privacy.
+ *
+ * @param {object | null} appointmentJson
+ * @param {boolean} [isStaff=false]
+ * @returns {object | null}
+ */
+function maskAppointmentForLookup(appointmentJson, isStaff = false) {
+  if (!appointmentJson || typeof appointmentJson !== 'object' || isStaff) {
+    return appointmentJson;
+  }
+
+  const copy = { ...appointmentJson };
+
+  const raw =
+    (copy.patientId &&
+      typeof copy.patientId === 'object' &&
+      (copy.patientId.phone || copy.patientId.phoneNumber)) ||
+    copy.phone ||
+    copy.phoneNumber;
+
+  const masked = maskPhone(raw);
+
+  if (copy.patientId && typeof copy.patientId === 'object') {
+    copy.patientId = {
+      ...copy.patientId,
+      phone: masked,
+      phoneNumber: masked,
+      maskedPhone: masked,
+    };
+  }
+
+  if (copy.phone) copy.phone = masked;
+  if (copy.phoneNumber) copy.phoneNumber = masked;
+  if (masked) copy.maskedPhone = masked;
+
+  return copy;
 }
 
 /**
@@ -37,6 +77,7 @@ async function toLookupJson(appointmentService, doc, req) {
   const json = toJson(doc);
   if (!json) return null;
 
+  const isStaff = Boolean(req?.staff);
   const isHistorical = isHistoricalAppointment(json);
   let supersededBy = null;
 
@@ -44,7 +85,10 @@ async function toLookupJson(appointmentService, doc, req) {
     try {
       const active = toJson(await appointmentService.findActiveAppointmentForPatient(doc));
       if (active) {
-        supersededBy = { ...active, isHistorical: false, supersededBy: null };
+        supersededBy = maskAppointmentForLookup(
+          { ...active, isHistorical: false, supersededBy: null },
+          isStaff,
+        );
       }
     } catch (err) {
       // The historical flag is the load-bearing part of this response; do not
@@ -63,7 +107,9 @@ async function toLookupJson(appointmentService, doc, req) {
     try {
       const all = await appointmentService.findActiveAppointmentsForPatient(doc);
       if (Array.isArray(all) && all.length > 0) {
-        activeAppointments = all.map((item) => toJson(item));
+        activeAppointments = all.map((item) =>
+          maskAppointmentForLookup(toJson(item), isStaff),
+        );
       }
     } catch (err) {
       logger.warn('could not resolve active appointments list', {
@@ -75,7 +121,8 @@ async function toLookupJson(appointmentService, doc, req) {
     }
   }
 
-  return { ...json, isHistorical, supersededBy, activeAppointments };
+  const result = { ...json, isHistorical, supersededBy, activeAppointments };
+  return maskAppointmentForLookup(result, isStaff);
 }
 
 /**
@@ -232,6 +279,7 @@ export function createAppointmentsRouter(
   router.get(
     '/lookup',
     publicLookupLimiter,
+    maybeStaff,
     asyncHandler(async (req, res) => {
       if (!appointmentService.lookupAppointment) {
         return res.status(501).json({
@@ -309,11 +357,72 @@ export function createAppointmentsRouter(
     }),
   );
 
+  // POST /api/appointments/:id/request-cancel-otp
+  // Sends a 4-digit SMS OTP to registered phone before cancellation.
+  router.post(
+    '/:id/request-cancel-otp',
+    publicLookupLimiter,
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.requestCancelOtp) {
+        return res.status(501).json({
+          error: 'Cancellation OTP service is not available',
+        });
+      }
+
+      const result = await appointmentService.requestCancelOtp(req.params.id);
+      res.status(200).json(result);
+    }),
+  );
+
+  // POST /api/appointments/:id/request-reschedule-otp
+  // Sends a 4-digit SMS OTP to registered phone before reschedule.
+  router.post(
+    '/:id/request-reschedule-otp',
+    publicLookupLimiter,
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.requestRescheduleOtp) {
+        return res.status(501).json({
+          error: 'Reschedule OTP service is not available',
+        });
+      }
+
+      const result = await appointmentService.requestRescheduleOtp(req.params.id);
+      res.status(200).json(result);
+    }),
+  );
+
+  // POST /api/appointments/:id/request-otp
+  // Generic OTP request endpoint supporting action: 'cancel' | 'reschedule'
+  router.post(
+    '/:id/request-otp',
+    publicLookupLimiter,
+    asyncHandler(async (req, res) => {
+      const action = String(req.body?.action || 'cancel').toLowerCase();
+      if (action === 'reschedule') {
+        if (!appointmentService.requestRescheduleOtp) {
+          return res.status(501).json({
+            error: 'Reschedule OTP service is not available',
+          });
+        }
+        const result = await appointmentService.requestRescheduleOtp(req.params.id);
+        return res.status(200).json(result);
+      }
+
+      if (!appointmentService.requestCancelOtp) {
+        return res.status(501).json({
+          error: 'Cancellation OTP service is not available',
+        });
+      }
+      const result = await appointmentService.requestCancelOtp(req.params.id);
+      return res.status(200).json(result);
+    }),
+  );
+
   // PATCH /api/appointments/:id/cancel
   //
-  // Staff (valid JWT) may cancel without a phone number. Patients must send the
-  // phone number the appointment was booked with; the service verifies it
-  // against the appointment's patient and answers 403 otherwise.
+  // Staff (valid JWT) may cancel without an OTP code. Patients must send a valid
+  // otpCode (sent via POST /api/appointments/:id/request-cancel-otp); the service
+  // verifies it and answers 403 otherwise.
   router.patch(
     '/:id/cancel',
     publicLookupLimiter,
@@ -332,6 +441,10 @@ export function createAppointmentsRouter(
           {
             cancelReason: req.body?.cancelReason,
             actorIsStaff: Boolean(req.staff),
+            otpCode:
+              req.body?.otpCode ||
+              req.body?.otp ||
+              null,
             phone:
               req.body?.phone ||
               req.body?.phoneNumber ||
@@ -356,7 +469,7 @@ export function createAppointmentsRouter(
 
   // PATCH /api/appointments/:id/reschedule
   //
-  // Same ownership rule as cancel: staff token, or the booking phone number.
+  // Same ownership rule as cancel: staff token, or valid otpCode / phone.
   router.patch(
     '/:id/reschedule',
     publicLookupLimiter,
@@ -376,6 +489,10 @@ export function createAppointmentsRouter(
             newSlotId: req.body?.newSlotId,
             staffChangeReason: req.body?.staffChangeReason,
             actorIsStaff: Boolean(req.staff),
+            otpCode:
+              req.body?.otpCode ||
+              req.body?.otp ||
+              null,
             phone:
               req.body?.phone ||
               req.body?.phoneNumber ||
@@ -422,6 +539,7 @@ export function createAppointmentsRouter(
   router.get(
     '/:reference',
     publicLookupLimiter,
+    maybeStaff,
     asyncHandler(async (req, res) => {
       const ref = req.params.reference;
 
