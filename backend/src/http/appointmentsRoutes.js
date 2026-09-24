@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 
 import { logger } from '../lib/logger.js';
 import { maskPhone } from '../sms/normalizePhone.js';
@@ -12,6 +13,63 @@ import { optionalStaffGuard, staffGuard } from './staffGuard.js';
 const ALL_STAFF_ROLES = ['RECEPTIONIST', 'DOCTOR', 'ADMIN'];
 
 const passthrough = (_req, _res, next) => next();
+
+/**
+ * Resolve the acting user (staff or patient) from the request context or auth token.
+ *
+ * @param {import('express').Request} req
+ * @returns {{ actorType: 'STAFF' | 'PATIENT', actorId: string | null, actingUserId: string | null, actorIsStaff: boolean, staff: object | null }}
+ */
+function resolveActingUser(req) {
+  let staff = req.staff || req.user || null;
+
+  // Resolve directly from Authorization Bearer token if not already populated
+  if (!staff && req.headers?.authorization) {
+    const match = String(req.headers.authorization).match(/^Bearer\s+(.+)$/i);
+    if (match) {
+      try {
+        const decoded = jwt.decode(match[1].trim());
+        if (decoded && typeof decoded === 'object') {
+          staff = {
+            id: decoded.sub || decoded.id,
+            _id: decoded.sub || decoded._id,
+            staffId: decoded.staffId,
+            name: decoded.name,
+            role: decoded.role ? String(decoded.role).toUpperCase() : null,
+          };
+        }
+      } catch {
+        /* best effort */
+      }
+    }
+  }
+
+  if (staff) {
+    const staffId =
+      staff.staffId ||
+      staff._id ||
+      staff.id ||
+      staff.sub ||
+      staff.email ||
+      null;
+
+    return {
+      actorType: 'STAFF',
+      actorId: staffId ? String(staffId) : null,
+      actingUserId: staffId ? String(staffId) : null,
+      actorIsStaff: true,
+      staff,
+    };
+  }
+
+  return {
+    actorType: 'PATIENT',
+    actorId: null,
+    actingUserId: null,
+    actorIsStaff: false,
+    staff: null,
+  };
+}
 
 function toJson(doc) {
   if (!doc) return null;
@@ -435,12 +493,30 @@ export function createAppointmentsRouter(
         });
       }
 
+      const acting = resolveActingUser(req);
+      const actorType = req.body?.actorType || acting.actorType;
+      const actorId =
+        req.body?.actorId ||
+        req.body?.actingUserId ||
+        acting.actorId;
+      const cancelReason =
+        req.body?.cancelReason ||
+        req.body?.reason ||
+        req.body?.changeReason ||
+        null;
+
       const result =
         await appointmentService.cancelAppointment(
           req.params.id,
           {
-            cancelReason: req.body?.cancelReason,
-            actorIsStaff: Boolean(req.staff),
+            cancelReason,
+            reason: cancelReason,
+            changeReason: cancelReason,
+            actorIsStaff: acting.actorIsStaff,
+            actorType,
+            actorId,
+            actingUserId: actorId,
+            performedBy: actorId,
             otpCode:
               req.body?.otpCode ||
               req.body?.otp ||
@@ -448,10 +524,6 @@ export function createAppointmentsRouter(
             phone:
               req.body?.phone ||
               req.body?.phoneNumber ||
-              null,
-            performedBy:
-              req.user?._id ||
-              req.user?.id ||
               null,
           },
         );
@@ -482,13 +554,31 @@ export function createAppointmentsRouter(
         });
       }
 
+      const acting = resolveActingUser(req);
+      const actorType = req.body?.actorType || acting.actorType;
+      const actorId =
+        req.body?.actorId ||
+        req.body?.actingUserId ||
+        acting.actorId;
+      const changeReason =
+        req.body?.staffChangeReason ||
+        req.body?.changeReason ||
+        req.body?.reason ||
+        null;
+
       const result =
         await appointmentService.rescheduleAppointment(
           req.params.id,
           {
             newSlotId: req.body?.newSlotId,
-            staffChangeReason: req.body?.staffChangeReason,
-            actorIsStaff: Boolean(req.staff),
+            staffChangeReason: changeReason,
+            changeReason,
+            reason: changeReason,
+            actorIsStaff: acting.actorIsStaff,
+            actorType,
+            actorId,
+            actingUserId: actorId,
+            performedBy: actorId,
             otpCode:
               req.body?.otpCode ||
               req.body?.otp ||
@@ -496,10 +586,6 @@ export function createAppointmentsRouter(
             phone:
               req.body?.phone ||
               req.body?.phoneNumber ||
-              null,
-            performedBy:
-              req.user?._id ||
-              req.user?.id ||
               null,
           },
         );

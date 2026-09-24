@@ -12,7 +12,7 @@ import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
 import { QueueCounter } from '../models/QueueCounter.js';
-import { AuditLog } from '../models/AuditLog.js';
+import { AuditLog, recordAuditLog } from '../models/AuditLog.js';
 import { normalizeGhanaPhone, maskPhone } from '../sms/normalizePhone.js';
 import {
   generateOtpCode,
@@ -959,8 +959,13 @@ export async function cancelAppointment(
   idOrReference,
   {
     cancelReason = '',
+    reason = '',
+    changeReason = '',
     performedBy = null,
     actorIsStaff = false,
+    actorType = null,
+    actorId = null,
+    actingUserId = null,
     phone = null,
     otpCode = null,
   } = {},
@@ -1117,20 +1122,50 @@ export async function cancelAppointment(
         );
       }
 
-      // Audit stamp.
-      await AuditLog.create(
-        [
-          {
-            action: 'APPOINTMENT_CANCELLED',
-            appointmentId: appointment._id,
-            cancelledTime,
-            cancelReason: cancelReason
-              ? String(cancelReason).trim()
-              : null,
-            performedBy: performedBy || null,
-          },
-        ],
-        { session },
+      const finalActorType = actorType || (actorIsStaff ? 'STAFF' : 'PATIENT');
+      const finalActorId =
+        actorId ||
+        actingUserId ||
+        performedBy ||
+        (finalActorType === 'STAFF'
+          ? null
+          : appointment.patientId?.studentIndex ||
+            patientPhone(appointment) ||
+            (appointment.patientId?._id
+              ? String(appointment.patientId._id)
+              : 'PATIENT_SELF_SERVICE'));
+
+      const finalReason = String(
+        reason ||
+          cancelReason ||
+          changeReason ||
+          (finalActorType === 'PATIENT'
+            ? 'Cancelled by patient via self-service'
+            : 'Cancelled by staff via portal'),
+      ).trim();
+
+      const oldDate = appointment.appointmentDate || slot?.date || null;
+      const oldTime = appointment.appointmentTime || slot?.startTime || null;
+
+      // Comprehensive audit log.
+      await recordAuditLog(
+        {
+          action: 'APPOINTMENT_CANCELLED',
+          appointmentId: appointment._id,
+          actorType: finalActorType,
+          actorId: finalActorId,
+          actingUserId: finalActorId,
+          oldDate,
+          oldTime,
+          newDate: null,
+          newTime: null,
+          reason: finalReason,
+          changeReason: finalReason,
+          cancelReason: finalReason,
+          cancelledTime,
+          performedBy: finalActorId,
+        },
+        session,
       );
 
       result = {
@@ -1181,7 +1216,12 @@ export async function rescheduleAppointment(
     newSlotId,
     performedBy = null,
     staffChangeReason = '',
+    changeReason = '',
+    reason = '',
     actorIsStaff = false,
+    actorType = null,
+    actorId = null,
+    actingUserId = null,
     phone = null,
     otpCode = null,
   } = {},
@@ -1408,19 +1448,53 @@ export async function rescheduleAppointment(
         );
       }
 
-      // Audit log.
-      await AuditLog.create(
-        [
-          {
-            action: 'APPOINTMENT_RESCHEDULED',
-            appointmentId: appointment._id,
-            oldSlotId: oldSlot._id,
-            newSlotId: newSlot._id,
-            rescheduledTime: new Date(),
-            performedBy: performedBy || null,
-          },
-        ],
-        { session },
+      const finalActorType = actorType || (actorIsStaff ? 'STAFF' : 'PATIENT');
+      const finalActorId =
+        actorId ||
+        actingUserId ||
+        performedBy ||
+        (finalActorType === 'STAFF'
+          ? null
+          : appointment.patientId?.studentIndex ||
+            patientPhone(appointment) ||
+            (appointment.patientId?._id
+              ? String(appointment.patientId._id)
+              : 'PATIENT_SELF_SERVICE'));
+
+      const finalReason = String(
+        reason ||
+          changeReason ||
+          staffChangeReason ||
+          (finalActorType === 'PATIENT'
+            ? 'Rescheduled by patient via self-service'
+            : 'Rescheduled by staff via portal'),
+      ).trim();
+
+      const oldDate = appointment.appointmentDate || oldSlot.date || null;
+      const oldTime = appointment.appointmentTime || oldSlot.startTime || null;
+      const newDate = newSlot.date;
+      const newTime = newSlot.startTime;
+
+      // Comprehensive audit log.
+      await recordAuditLog(
+        {
+          action: 'APPOINTMENT_RESCHEDULED',
+          appointmentId: appointment._id,
+          actorType: finalActorType,
+          actorId: finalActorId,
+          actingUserId: finalActorId,
+          oldDate,
+          oldTime,
+          newDate,
+          newTime,
+          reason: finalReason,
+          changeReason: finalReason,
+          oldSlotId: oldSlot._id,
+          newSlotId: newSlot._id,
+          rescheduledTime: new Date(),
+          performedBy: finalActorId,
+        },
+        session,
       );
 
       result = {
