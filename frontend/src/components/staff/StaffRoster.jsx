@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { ROSTER_FILTERS, sortRoster } from "./staffUtils";
+import { getStaffActionState } from "./staffUtils";
 import { StatusBadge } from "../ui";
 
 export default function StaffRoster({
@@ -15,7 +17,13 @@ export default function StaffRoster({
   onOpenWalkIn,
   onOpenRecord,
 }) {
+  const [, setNow] = useState(() => new Date());
   const sorted = sortRoster(filteredAppointments);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   return (
     <div className="space-y-5">
@@ -75,6 +83,9 @@ export default function StaffRoster({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((appt) => (
+            (() => {
+              const actionState = getStaffActionState(appt);
+              return (
             <div
               key={appt.id}
               id={`staff-appt-${appt.id}`}
@@ -117,28 +128,34 @@ export default function StaffRoster({
 
               {appt.status === "BOOKED" && (
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onCheckIn(appt.id);
-                    }}
-                    disabled={updatingId === appt.id}
-                    className="rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
-                  >
-                    {updatingId === appt.id ? "Updating…" : "Check In"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onNoShow(appt.id);
-                    }}
-                    disabled={updatingId === appt.id}
-                    className="rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:opacity-60"
-                  >
-                    No-Show
-                  </button>
+                  <span title={actionState.checkInNote || undefined}>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onCheckIn(appt.id);
+                      }}
+                      disabled={updatingId === appt.id || !actionState.canCheckIn}
+                      aria-label={actionState.checkInNote || "Check in"}
+                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {updatingId === appt.id ? "Updating…" : "Check In"}
+                    </button>
+                  </span>
+                  <span title={actionState.noShowNote || undefined}>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onNoShow(appt.id);
+                      }}
+                      disabled={updatingId === appt.id || !actionState.canNoShow}
+                      aria-label={actionState.noShowNote || "Mark no-show"}
+                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      No-Show
+                    </button>
+                  </span>
                 </div>
               )}
 
@@ -156,6 +173,8 @@ export default function StaffRoster({
                 </button>
               )}
             </div>
+              );
+            })()
           ))}
         </div>
       )}

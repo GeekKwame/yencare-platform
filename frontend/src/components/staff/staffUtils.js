@@ -1,3 +1,5 @@
+import { accraTodayIso } from "../../lib/accraTime";
+
 export const STATUS_RANK = {
   CHECKED_IN: 0,
   BOOKED: 1,
@@ -7,6 +9,71 @@ export const STATUS_RANK = {
   NO_SHOW: 5,
   CANCELLED: 6,
 };
+
+function parseAppointmentTime(value) {
+  const match = String(value || "").trim().match(/^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i);
+  if (!match) return null;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3]?.toUpperCase();
+  if (minutes > 59 || hours > 23 || (meridiem && hours > 12)) return null;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+  if (meridiem === "PM" && hours !== 12) hours += 12;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function formatUnlockDate(dateIso) {
+  const [year, month, day] = String(dateIso).split("-").map(Number);
+  if (!year || !month || !day) return dateIso;
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+function formatUnlockTime(hhmm) {
+  const [hours, minutes] = hhmm.split(":").map(Number);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const hour12 = ((hours + 11) % 12) + 1;
+  return `${hour12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
+export function getStaffActionState(appointment, now = new Date()) {
+  const date = appointment?.date || appointment?.appointmentDate;
+  const startTime = parseAppointmentTime(appointment?.appointmentTime || appointment?.time);
+  const isVisitDate = Boolean(date) && date === accraTodayIso(now);
+  const checkInNote = isVisitDate
+    ? ""
+    : `Check-in opens on ${formatUnlockDate(date)}`;
+
+  if (!date || !startTime) {
+    return {
+      canCheckIn: isVisitDate,
+      checkInNote,
+      canNoShow: false,
+      noShowNote: "No-show availability cannot be determined yet",
+    };
+  }
+
+  const [year, month, day] = date.split("-").map(Number);
+  const [hours, minutes] = startTime.split(":").map(Number);
+  const unlockAt = new Date(Date.UTC(year, month - 1, day, hours, minutes + 15));
+  const canNoShow = now >= unlockAt;
+  const unlockLabel = formatUnlockTime(
+    `${String(unlockAt.getUTCHours()).padStart(2, "0")}:${String(unlockAt.getUTCMinutes()).padStart(2, "0")}`,
+  );
+
+  return {
+    canCheckIn: isVisitDate,
+    checkInNote,
+    canNoShow,
+    noShowNote: canNoShow
+      ? ""
+      : `No-show available after ${unlockLabel}${date === accraTodayIso(now) ? "" : ` on ${formatUnlockDate(date)}`}`,
+  };
+}
 
 export const ROSTER_FILTERS = [
   { id: "all", label: "All" },

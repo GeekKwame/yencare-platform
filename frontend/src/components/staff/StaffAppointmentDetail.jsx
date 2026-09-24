@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { formatAppointmentTime } from "../../data/mockAppointments";
+import { getStaffActionState } from "./staffUtils";
 
 function Row({ label, value, muted }) {
   return (
@@ -18,6 +20,13 @@ export default function StaffAppointmentDetail({
   onNoShow,
   onOpenQueue,
 }) {
+  const [, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   if (!appointment) {
     return (
       <div className="max-w-xl space-y-4">
@@ -38,6 +47,7 @@ export default function StaffAppointmentDetail({
   const isBooked = appointment.status === "BOOKED";
   const isArrived = appointment.status === "CHECKED_IN";
   const canStaffCheckIn = isBooked || isArrived;
+  const actionState = getStaffActionState(appointment);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -116,18 +126,21 @@ export default function StaffAppointmentDetail({
         <div className="space-y-3 pt-2">
           {canStaffCheckIn && (
             <>
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() => onCheckInToQueue(appointment.id)}
-                className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
-              >
-                {updating
-                  ? "Updating…"
-                  : isArrived
-                    ? `Check in to live queue (${appointment.patientName})`
-                    : `Check in student (${appointment.patientName})`}
-              </button>
+              <span title={actionState.checkInNote || undefined}>
+                <button
+                  type="button"
+                  disabled={updating || !actionState.canCheckIn}
+                  onClick={() => onCheckInToQueue(appointment.id)}
+                  aria-label={actionState.checkInNote || "Check in"}
+                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {updating
+                    ? "Updating…"
+                    : isArrived
+                      ? `Check in to live queue (${appointment.patientName})`
+                      : `Check in student (${appointment.patientName})`}
+                </button>
+              </span>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
@@ -136,13 +149,17 @@ export default function StaffAppointmentDetail({
                 >
                   Change time
                 </button>
-                <button
-                  type="button"
-                  onClick={onNoShow}
-                  className="rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8]"
-                >
-                  Mark no-show
-                </button>
+                <span title={actionState.noShowNote || undefined}>
+                  <button
+                    type="button"
+                    onClick={onNoShow}
+                    disabled={!actionState.canNoShow || updating}
+                    aria-label={actionState.noShowNote || "Mark no-show"}
+                    className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Mark no-show
+                  </button>
+                </span>
               </div>
             </>
           )}

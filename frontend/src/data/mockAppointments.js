@@ -36,6 +36,7 @@ export function mapAppointmentToCard(appt) {
     patientName: patient?.fullName || appt.patientName || "Unknown patient",
     reference: appt.referenceCode || appt.reference || "",
     service: VISIT_TYPE_LABELS[appt.visitType] || appt.service || appt.visitType || "Visit",
+    appointmentTime: appt.appointmentTime || "",
     time: appt.appointmentTime
       ? formatAppointmentTime(appt.appointmentTime)
       : appt.time || "",
