@@ -25,9 +25,14 @@ const PATIENT_ID = oid();
 // The verified identity the route passes for a reception-desk walk-in.
 const AS_RECEPTION = { staff: { staffId: 'stf_01', role: 'RECEPTIONIST' } };
 
-// 2026-09-16 is a Wednesday, 2026-09-20 a Sunday.
+// 2026-09-16 is a Wednesday, 2026-09-20 a Sunday, 2026-09-28 a Monday.
 const WEDNESDAY = '2026-09-16';
 const SUNDAY = '2026-09-20';
+const MONDAY = '2026-09-28';
+
+// Fixed clock for public bookings (past-slot guard, cap window): Tuesday
+// 2026-09-15 07:00 Accra, before every booking date used in this file.
+const NOW = new Date('2026-09-15T07:00:00Z');
 
 function basePayload(overrides = {}) {
   return {
@@ -46,9 +51,17 @@ function basePayload(overrides = {}) {
  * Replaces the model calls `createAppointment` makes with an in-memory stand-in
  * whose slot claim is atomic in the same way Mongo's is: the first writer wins.
  *
- * @param {{ catalogSlot?: boolean, existingAppointment?: boolean, existingAppointments?: object[] }} [options]
+ * @param {{ catalogSlot?: boolean, existingAppointment?: boolean, existingAppointments?: object[], slotDate?: string, slotTime?: string }} [options]
+ *   `slotDate` / `slotTime` are the catalog slot record's own date and start time
+ *   (defaults match `basePayload`).
  */
-function stubModels({ catalogSlot = true, existingAppointment = false, existingAppointments = [] } = {}) {
+function stubModels({
+  catalogSlot = true,
+  existingAppointment = false,
+  existingAppointments = [],
+  slotDate = WEDNESDAY,
+  slotTime = '10:00',
+} = {}) {
   const original = {
     findOneAndUpdate: TimeSlot.findOneAndUpdate,
     slotFindById: TimeSlot.findById,
@@ -63,7 +76,15 @@ function stubModels({ catalogSlot = true, existingAppointment = false, existingA
   };
 
   const slot = catalogSlot
-    ? { _id: oid(), clinicianId: CLINICIAN_ID, roomId: ROOM_ID, isBooked: false, appointmentId: null }
+    ? {
+        _id: oid(),
+        clinicianId: CLINICIAN_ID,
+        roomId: ROOM_ID,
+        date: slotDate,
+        startTime: slotTime,
+        isBooked: false,
+        appointmentId: null,
+      }
     : null;
 
   const state = { created: [], claims: 0, released: 0 };
@@ -348,6 +369,8 @@ describe('student booking cap policy (Issue B)', () => {
   it('allows booking when student has 0 or 1 active booking', async () => {
     stubs = stubModels({
       catalogSlot: true,
+      slotDate: '2026-09-25',
+      slotTime: '10:30',
       existingAppointments: [
         { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-24', status: 'BOOKED' },
       ],
@@ -359,6 +382,7 @@ describe('student booking cap policy (Issue B)', () => {
         appointmentDate: '2026-09-25',
         appointmentTime: '10:30',
       }),
+      { now: NOW },
     );
 
     assert.ok(result.appointment);
@@ -366,8 +390,11 @@ describe('student booking cap policy (Issue B)', () => {
   });
 
   it('rejects booking request with HTTP 409 if student already has 2 active upcoming bookings', async () => {
+    // Booked on an open day: the opening-hours check runs before the cap.
     stubs = stubModels({
       catalogSlot: true,
+      slotDate: MONDAY,
+      slotTime: '11:00',
       existingAppointments: [
         { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
         { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'BOOKED' },
@@ -379,9 +406,10 @@ describe('student booking cap policy (Issue B)', () => {
         createAppointment(
           basePayload({
             studentIndex: STUDENT_INDEX,
-            appointmentDate: '2026-09-27',
+            appointmentDate: MONDAY,
             appointmentTime: '11:00',
           }),
+          { now: NOW },
         ),
       (err) => {
         assert.equal(err.status, 409);
@@ -400,8 +428,11 @@ describe('student booking cap policy (Issue B)', () => {
   });
 
   it('resolves studentIndex through Patient record if not passed in booking payload', async () => {
+    // Booked on an open day: the opening-hours check runs before the cap.
     stubs = stubModels({
       catalogSlot: true,
+      slotDate: MONDAY,
+      slotTime: '11:00',
       existingAppointments: [
         { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
         { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'WAITING' },
@@ -420,9 +451,10 @@ describe('student booking cap policy (Issue B)', () => {
         createAppointment(
           basePayload({
             // studentIndex omitted from payload, resolved via Patient.findById
-            appointmentDate: '2026-09-27',
+            appointmentDate: MONDAY,
             appointmentTime: '11:00',
           }),
+          { now: NOW },
         ),
       (err) => {
         assert.equal(err.status, 409);
@@ -436,7 +468,7 @@ describe('student booking cap policy (Issue B)', () => {
   });
 
   it('allows non-student booking with no studentIndex even if other records exist', async () => {
-    stubs = stubModels({ catalogSlot: true });
+    stubs = stubModels({ catalogSlot: true, slotDate: '2026-09-25', slotTime: '10:00' });
     Patient.findById = async () => ({
       _id: PATIENT_ID,
       fullName: 'Community Member',
@@ -449,6 +481,7 @@ describe('student booking cap policy (Issue B)', () => {
         appointmentDate: '2026-09-25',
         appointmentTime: '10:00',
       }),
+      { now: NOW },
     );
 
     assert.ok(result.appointment);
@@ -564,7 +597,7 @@ describe('walk-ins require a verified reception or admin identity', () => {
   it('the same student booking online is still capped', async () => {
     const cap = stubCappedStudent();
 
-    await assert.rejects(() => createAppointment(basePayload()), {
+    await assert.rejects(() => createAppointment(basePayload(), { now: NOW }), {
       name: 'ConflictError',
       status: 409,
       message: STUDENT_BOOKING_CAP_MESSAGE,
@@ -577,7 +610,7 @@ describe('walk-ins require a verified reception or admin identity', () => {
   it('a reception-staff booking that is not a walk-in stays capped', async () => {
     stubCappedStudent();
 
-    await assert.rejects(() => createAppointment(basePayload(), AS_RECEPTION), {
+    await assert.rejects(() => createAppointment(basePayload(), { ...AS_RECEPTION, now: NOW }), {
       status: 409,
       message: STUDENT_BOOKING_CAP_MESSAGE,
     });
@@ -585,3 +618,142 @@ describe('walk-ins require a verified reception or admin identity', () => {
   });
 });
 
+describe('already-started slots are refused before claiming', () => {
+  /** @type {{ restore: () => void } | null} */
+  let stubs = null;
+
+  afterEach(() => {
+    stubs?.restore();
+    stubs = null;
+  });
+
+  // Wednesday 2026-09-16, 10:20 Accra.
+  const DURING_CLINIC = new Date('2026-09-16T10:20:00Z');
+  const STARTED_MESSAGE = 'That time slot has already started. Please choose a later slot.';
+  const STUDENT_INDEX = '20612345';
+
+  function assertStartedSlot(err) {
+    assert.equal(err.name, 'ValidationError');
+    assert.equal(err.status, 400);
+    assert.equal(err.message, STARTED_MESSAGE);
+    return true;
+  }
+
+  /** Student at the cap, to prove the cap is not the reason reported. */
+  function stubCappedStudent(options) {
+    stubs = stubModels({
+      ...options,
+      existingAppointments: [
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-05', status: 'BOOKED' },
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2099-01-06', status: 'BOOKED' },
+      ],
+    });
+    // No phone on purpose: createAppointment then stops before any SMS is sent.
+    Patient.findById = async () => ({ _id: PATIENT_ID, studentIndex: STUDENT_INDEX });
+
+    let capQueries = 0;
+    const countDocuments = Appointment.countDocuments;
+    Appointment.countDocuments = async (query) => {
+      capQueries += 1;
+      return countDocuments(query);
+    };
+    return { capQueries: () => capQueries };
+  }
+
+  it('refuses a slot that started earlier today, before claiming it', async () => {
+    stubs = stubModels({ slotDate: WEDNESDAY, slotTime: '10:00' });
+
+    await assert.rejects(
+      () => createAppointment(basePayload(), { now: DURING_CLINIC }),
+      assertStartedSlot,
+    );
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.slot.isBooked, false);
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('refuses a started slot addressed by timeSlotId', async () => {
+    stubs = stubModels({ slotDate: WEDNESDAY, slotTime: '10:00' });
+
+    await assert.rejects(
+      () =>
+        createAppointment(basePayload({ timeSlotId: stubs.slot._id }), { now: DURING_CLINIC }),
+      assertStartedSlot,
+    );
+    assert.equal(stubs.state.claims, 0);
+  });
+
+  it('judges by the slot record, not the date and time the client sent', async () => {
+    stubs = stubModels({ slotDate: WEDNESDAY, slotTime: '10:00' });
+
+    await assert.rejects(
+      () =>
+        createAppointment(
+          basePayload({ timeSlotId: stubs.slot._id, appointmentTime: '11:00' }),
+          { now: DURING_CLINIC },
+        ),
+      assertStartedSlot,
+    );
+    assert.equal(stubs.state.claims, 0);
+  });
+
+  it('accepts a later slot today and a slot tomorrow', async () => {
+    stubs = stubModels({ slotDate: WEDNESDAY, slotTime: '10:30' });
+    await createAppointment(basePayload({ appointmentTime: '10:30' }), { now: DURING_CLINIC });
+    assert.equal(stubs.state.created.length, 1);
+    stubs.restore();
+
+    stubs = stubModels({ slotDate: '2026-09-17', slotTime: '09:00' });
+    await createAppointment(
+      basePayload({ appointmentDate: '2026-09-17', appointmentTime: '09:00' }),
+      { now: DURING_CLINIC },
+    );
+    assert.equal(stubs.state.created.length, 1);
+  });
+
+  it('leaves a missing catalog slot for the claim to report', async () => {
+    stubs = stubModels({ catalogSlot: false });
+
+    await assert.rejects(
+      () => createAppointment(basePayload(), { now: DURING_CLINIC }),
+      { status: 409, message: 'That consultation slot is no longer available' },
+    );
+  });
+
+  it('exempts a reception walk-in at the current time', async () => {
+    stubs = stubModels({ slotDate: WEDNESDAY, slotTime: '10:00' });
+
+    const { appointment } = await createAppointment(basePayload({ bookingType: 'WALK_IN' }), {
+      ...AS_RECEPTION,
+      now: DURING_CLINIC,
+    });
+
+    assert.equal(String(appointment.timeSlotId), String(stubs.slot._id));
+    assert.equal(stubs.state.claims, 1);
+  });
+
+  it('reports a started slot, not the cap, for a student already at the maximum', async () => {
+    const cap = stubCappedStudent({ slotDate: WEDNESDAY, slotTime: '10:00' });
+
+    await assert.rejects(
+      () => createAppointment(basePayload(), { now: DURING_CLINIC }),
+      assertStartedSlot,
+    );
+    assert.equal(cap.capQueries(), 0);
+  });
+
+  it('reports a closed day, not the cap, for a student already at the maximum', async () => {
+    const cap = stubCappedStudent({ slotDate: SUNDAY, slotTime: '10:00' });
+
+    await assert.rejects(
+      () => createAppointment(basePayload({ appointmentDate: SUNDAY }), { now: NOW }),
+      (err) => {
+        assert.equal(err.status, 400);
+        assert.match(err.message, /Monday to Friday/);
+        return true;
+      },
+    );
+    assert.equal(cap.capQueries(), 0);
+    assert.equal(stubs.state.claims, 0);
+  });
+});

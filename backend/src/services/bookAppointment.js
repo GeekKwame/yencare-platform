@@ -14,6 +14,7 @@ import { ConflictError, ForbiddenError, ValidationError } from '../patients/erro
 import { resolvePatientPhone, resolveSmsDestination, bookingSmsDestinations } from '../patients/fields.js';
 import { sendSms } from '../sms/sendSms.js';
 import { appointmentEvents } from './appointmentOps.js';
+import { assertSlotNotInPast } from './visitDayGuard.js';
 
 export const MAX_ACTIVE_STUDENT_BOOKINGS = 2;
 
@@ -119,6 +120,34 @@ async function releaseClaimedSlot(slotId) {
     { _id: slotId, appointmentId: null },
     { $set: { isBooked: false, appointmentId: null } },
   );
+}
+
+/**
+ * Refuse a catalog slot that has already started, judged by the slot record's
+ * own date and start time rather than the client's copy. Read-only, so it runs
+ * before `claimOpenSlot` and a refused booking never touches the slot. A slot
+ * that cannot be found is left for `claimOpenSlot` to report. The slot could
+ * start between this check and the claim; that window is seconds wide.
+ *
+ * @param {object} payload
+ * @param {Date} now
+ * @throws {ValidationError}
+ */
+async function assertRequestedSlotNotStarted(payload, now) {
+  let slot = null;
+  if (payload.timeSlotId) {
+    slot = await TimeSlot.findById(payload.timeSlotId);
+  } else if (payload.clinicianId && payload.appointmentDate && payload.appointmentTime) {
+    slot = await TimeSlot.findOne({
+      clinicianId: payload.clinicianId,
+      date: payload.appointmentDate,
+      startTime: payload.appointmentTime,
+    });
+  }
+
+  if (slot) {
+    assertSlotNotInPast({ date: slot.date, startTime: slot.startTime }, now);
+  }
 }
 
 /**
@@ -247,12 +276,13 @@ export async function assertStudentBookingCap(payload, { minDate = accraTodayIso
  *   (patientId, clinicianId, roomId, clinicSite, visitType,
  *    appointmentDate "YYYY-MM-DD", appointmentTime "HH:mm", timeSlotId?)
  *   Optional `phone` / `phoneNumber` is the SMS destination for this booking.
- * @param {{ staff?: { role?: string } | null }} [context]
+ * @param {{ staff?: { role?: string } | null, now?: Date }} [context]
  *   `staff` is the verified staff identity (`req.staff`) or null. It is the only
  *   thing that can make a booking a walk-in; `bookingType` in the body cannot.
+ *   `now` is injectable for tests.
  * @returns {Promise<{ appointment: object, sms: { ok: boolean, error?: string } }>}
  */
-export async function createAppointment(data, { staff = null } = {}) {
+export async function createAppointment(data, { staff = null, now = new Date() } = {}) {
   const payload = { ...data };
   const requestedPhone = payload.phone ?? payload.phoneNumber ?? null;
   delete payload.phone;
@@ -272,16 +302,21 @@ export async function createAppointment(data, { staff = null } = {}) {
   );
   let claimedSlot = null;
 
-  // Enforce student booking cap policy before reserving any slot. Staff
-  // walk-ins are exempt: reception is admitting the patient in person.
+  // Public-booking checks, all before any slot is claimed. Order matters: a
+  // closed day or an already-started slot reports that reason, so the booking
+  // cap runs last and never masks them. Staff walk-ins skip all three:
+  // reception is admitting the patient in person.
   let preloadedPatient = null;
   if (!isWalkIn) {
-    ({ patient: preloadedPatient } = await assertStudentBookingCap(payload));
+    assertWithinClinicHours(payload);
+    await assertRequestedSlotNotStarted(payload, now);
+    ({ patient: preloadedPatient } = await assertStudentBookingCap(payload, {
+      minDate: accraTodayIso(now),
+    }));
   }
   delete payload.studentIndex;
 
   if (!isWalkIn) {
-    assertWithinClinicHours(payload);
     claimedSlot = await claimOpenSlot(payload);
     payload.timeSlotId = claimedSlot._id;
   } else if (isScheduledAgainstClinician) {
