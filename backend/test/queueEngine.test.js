@@ -373,7 +373,7 @@ describe('callNextPatient and advanceQueue clinician scoping', () => {
     assert.equal(docAPatient.save.mock.callCount(), 1);
     // Crucially: query was strictly filtered by clinicianId
     assert.equal(capturedWaiterQuery.clinicianId, docAId);
-    assert.equal(capturedWaiterQuery.roomId, roomId);
+    assert.equal(capturedWaiterQuery.roomId, undefined);
   });
 
   it('callNextPatient returns message when no patients are waiting for that specific doctor', async () => {
@@ -433,5 +433,165 @@ describe('callNextPatient and advanceQueue clinician scoping', () => {
         return true;
       },
     );
+  });
+});
+describe('doctor isolation in the queue engine', () => {
+  afterEach(() => mock.restoreAll());
+
+  function query(value) {
+    const chain = {
+      populate: () => chain,
+      sort: () => chain,
+      then: (resolve, reject) => Promise.resolve(value).then(resolve, reject),
+    };
+    return chain;
+  }
+
+  function assertForbidden(err) {
+    assert.equal(err.status, 403);
+    assert.match(err.message, /Doctors can only/);
+    return true;
+  }
+
+  it("markNoShow refuses another doctor's patient before changing anything", async () => {
+    const docA = oid();
+    const appt = fakeAppointment({ status: 'CALLED', clinicianId: oid(), timeSlotId: oid() });
+    const { counterUpdate, appointmentUpdate, slotUpdate } = stubDb(appt);
+
+    await assert.rejects(
+      () => markNoShow({ referenceCode: 'YC-4821', clinicianId: String(docA) }),
+      assertForbidden,
+    );
+    assert.equal(appt.status, 'CALLED');
+    assert.equal(appt.save.mock.callCount(), 0);
+    assert.equal(appointmentUpdate.mock.callCount(), 0);
+    assert.equal(slotUpdate.mock.callCount(), 0);
+    assert.equal(counterUpdate.mock.callCount(), 0);
+  });
+
+  it("markNoShow lets a doctor no-show their own patient (clinician populated or raw id)", async () => {
+    const docA = oid();
+    for (const clinicianId of [docA, { _id: docA, name: 'Dr. Kwame Boateng' }]) {
+      const appt = fakeAppointment({ status: 'CALLED', clinicianId });
+      stubDb(appt);
+
+      await markNoShow({ referenceCode: 'YC-4821', clinicianId: String(docA) });
+      assert.equal(appt.status, 'NO_SHOW');
+      mock.restoreAll();
+    }
+  });
+
+  it('markNoShow without a clinicianId (reception, end-of-day closeout) is not restricted', async () => {
+    const appt = fakeAppointment({ status: 'WAITING', clinicianId: oid() });
+    stubDb(appt);
+
+    await markNoShow({ referenceCode: 'YC-4821', reason: 'Clinic day closed' });
+    assert.equal(appt.status, 'NO_SHOW');
+  });
+
+  it('markNoShow scoped to a clinician refuses an appointment with no clinician', async () => {
+    const appt = fakeAppointment({ status: 'CALLED' });
+    stubDb(appt);
+
+    await assert.rejects(
+      () => markNoShow({ referenceCode: 'YC-4821', clinicianId: String(oid()) }),
+      assertForbidden,
+    );
+    assert.equal(appt.status, 'CALLED');
+  });
+
+  it("markNoShow by room looks only for the doctor's own CALLED patient", async () => {
+    const roomId = oid();
+    const docA = oid();
+    let captured = null;
+    mock.method(Appointment, 'findOne', (filter) => {
+      captured = filter;
+      return query(null);
+    });
+
+    await assert.rejects(() => markNoShow({ roomId, clinicianId: docA }), { status: 404 });
+    assert.equal(captured.roomId, roomId);
+    assert.equal(captured.clinicianId, docA);
+    assert.equal(captured.status, 'CALLED');
+  });
+
+  it("advanceQueue by room completes only the doctor's own consultation", async () => {
+    const roomId = oid();
+    const docA = oid();
+    mock.method(Room, 'findById', async () => ({ _id: roomId, name: 'Room 1' }));
+    let captured = null;
+    mock.method(Appointment, 'findOne', (filter) => {
+      captured = filter;
+      return query(null);
+    });
+
+    await assert.rejects(() => advanceQueue({ roomId, clinicianId: docA }), {
+      message: 'No active consultation in Room 1 to advance',
+    });
+    assert.equal(captured.roomId, roomId);
+    assert.equal(captured.clinicianId, docA);
+  });
+
+  it('advanceQueue scoped to a clinician refuses an appointment with no clinician', async () => {
+    const appt = fakeAppointment({ status: 'CALLED' });
+    mock.method(Appointment, 'findById', () => query(appt));
+
+    await assert.rejects(
+      () => advanceQueue({ appointmentId: String(appt._id), clinicianId: String(oid()) }),
+      assertForbidden,
+    );
+    assert.equal(appt.save.mock.callCount(), 0);
+  });
+
+  it('callNextPatient for a doctor covering another room calls their patient into the booked room', async () => {
+    const coveringRoomId = oid();
+    const bookedRoom = { _id: oid(), name: 'Room 1' };
+    const docA = oid();
+    mock.method(Room, 'findById', async () => ({ _id: coveringRoomId, name: 'Room 2' }));
+    mock.method(Clinician, 'findById', async () => ({ _id: docA, name: 'Dr. Kwame Boateng' }));
+
+    const patient = {
+      _id: oid(),
+      queueToken: 'A-03',
+      status: 'WAITING',
+      clinicianId: docA,
+      roomId: bookedRoom,
+      save: mock.fn(async () => {}),
+    };
+    const queries = {};
+    mock.method(Appointment, 'findOne', (filter) => {
+      queries[filter.status] = filter;
+      return query(filter.status === 'WAITING' ? patient : null);
+    });
+    const counter = mock.method(QueueCounter, 'updateOne', async () => ({}));
+
+    const result = await callNextPatient({ roomId: coveringRoomId, clinicianId: docA });
+
+    for (const status of ['CALLED', 'WAITING']) {
+      assert.equal(queries[status].clinicianId, docA);
+      assert.equal(queries[status].roomId, undefined, `${status} lookup must not be room-scoped`);
+    }
+    assert.equal(patient.status, 'CALLED');
+    assert.equal(counter.mock.calls[0].arguments[0].roomId, bookedRoom._id);
+    assert.equal(result.room.name, 'Room 1');
+    assert.equal(result.message, 'Called token A-03 into Room 1');
+  });
+
+  it('callNextPatient by room only (admin) stays scoped to that room', async () => {
+    const roomId = oid();
+    mock.method(Room, 'findById', async () => ({ _id: roomId, name: 'Room 1' }));
+    const queries = {};
+    mock.method(Appointment, 'findOne', (filter) => {
+      queries[filter.status] = filter;
+      return query(null);
+    });
+
+    const result = await callNextPatient({ roomId });
+
+    assert.equal(result.appointment, null);
+    for (const status of ['CALLED', 'WAITING']) {
+      assert.equal(queries[status].roomId, roomId);
+      assert.equal(queries[status].clinicianId, undefined);
+    }
   });
 });

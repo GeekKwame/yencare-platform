@@ -141,10 +141,7 @@ const StaffPortal = () => {
     setBusyRoomId(room.id || room._id);
     setMessage("");
     try {
-      const result = await callNextPatient({
-        roomId: room.id || room._id,
-        clinicianId: staff?.role === "DOCTOR" ? staff?.clinicianId : undefined,
-      });
+      const result = await callNextPatient({ roomId: room.id || room._id });
       setMessage(
         result.appointment
           ? result.message || `Called next patient to ${room.name}.`

@@ -119,6 +119,17 @@ export async function assignDailyQueueToken(appointment, { dateOverride = null }
   return { queueToken, queueDate, queueSequence: sequence };
 }
 
+function assertAppointmentForClinician(appointment, clinicianId, message) {
+  if (!clinicianId) return;
+  const ref = appointment?.clinicianId;
+  const appointmentClinicianId = ref ? String(ref._id || ref) : null;
+  if (appointmentClinicianId !== String(clinicianId)) {
+    const err = new Error(message);
+    err.status = 403;
+    throw err;
+  }
+}
+
 /**
  * Resolves an appointment by ObjectId or referenceCode.
  */
@@ -168,15 +179,14 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
 
   const clinicDay = getAccraQueueDate();
 
+  const scopeFilter = clinicianId ? { clinicianId } : { roomId: room._id };
+
   // Check if a patient is currently CALLED today (scoped to clinician when provided)
   const activeQuery = {
-    roomId: room._id,
+    ...scopeFilter,
     status: 'CALLED',
     ...liveClinicDayFilter(clinicDay),
   };
-  if (clinicianId) {
-    activeQuery.clinicianId = clinicianId;
-  }
 
   const activeAppointment = await Appointment.findOne(activeQuery);
 
@@ -185,8 +195,9 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
       activeAppointment.status = 'COMPLETED';
       await activeAppointment.save();
     } else if (!force) {
+      const holder = clinicianId ? 'You already have' : `Room ${room.name} currently has`;
       const err = new Error(
-        `Room ${room.name} currently has an active consultation for token ${activeAppointment.queueToken}. Advance or mark no-show before calling next patient.`,
+        `${holder} an active consultation for token ${activeAppointment.queueToken}. Advance or mark no-show before calling next patient.`,
       );
       err.status = 409;
       err.activeAppointment = activeAppointment;
@@ -197,13 +208,10 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
   // Strict FIFO for today's visit day only — yesterday's waiters are closed out
   // Scoped to clinicianId so a booked doctor only calls their own booked patients
   const waiterQuery = {
-    roomId: room._id,
+    ...scopeFilter,
     status: 'WAITING',
     ...liveClinicDayFilter(clinicDay),
   };
-  if (clinicianId) {
-    waiterQuery.clinicianId = clinicianId;
-  }
 
   const nextAppointment = await Appointment.findOne(waiterQuery)
     .sort({ queueSequence: 1, checkInTime: 1, createdAt: 1 })
@@ -226,22 +234,24 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
   nextAppointment.status = 'CALLED';
   await nextAppointment.save();
 
+  const calledRoom = nextAppointment.roomId?.name ? nextAppointment.roomId : room;
+
   // Track active appointment on QueueCounter
   const queueDate = nextAppointment.queueDate || getAccraQueueDate();
   await QueueCounter.updateOne(
-    { roomId: room._id, queueDate },
+    { roomId: calledRoom._id, queueDate },
     { $set: { activeAppointmentId: nextAppointment._id } },
     { upsert: true },
   );
 
   // Dispatch SMS non-blocking (failures never undo the CALLED transition)
-  void notifyPatientCalled(nextAppointment, room);
+  void notifyPatientCalled(nextAppointment, calledRoom);
 
   return {
     appointment: nextAppointment,
     queueToken: nextAppointment.queueToken,
-    room,
-    message: `Called token ${nextAppointment.queueToken} into ${room.name}`,
+    room: calledRoom,
+    message: `Called token ${nextAppointment.queueToken} into ${calledRoom.name}`,
   };
 }
 
@@ -264,18 +274,11 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
       assertVisitIsToday(appointment);                                        
     }
 
-    if (clinicianId && appointment.clinicianId) {
-      const apptClinicianId = appointment.clinicianId._id
-        ? String(appointment.clinicianId._id)
-        : String(appointment.clinicianId);
-      if (apptClinicianId !== String(clinicianId)) {
-        const err = new Error(
-          'Doctors can only call or advance appointments booked for their consultation',
-        );
-        err.status = 403;
-        throw err;
-      }
-    }    
+    assertAppointmentForClinician(
+      appointment,
+      clinicianId,
+      'Doctors can only call or advance appointments booked for their consultation',
+    );
 
     switch (appointment.status) {
       case 'BOOKED':
@@ -348,6 +351,7 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
       roomId: room._id,
       status: 'CALLED',
       ...liveClinicDayFilter(),
+      ...(clinicianId ? { clinicianId } : {}),
     })
       .populate('patientId')
       .populate('clinicianId')
@@ -383,9 +387,9 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
 /**
  * Transitions an appointment to NO_SHOW, releasing any linked slot and clearing active counter.
  *
- * @param {{ appointmentId?: string, referenceCode?: string, roomId?: string, reason?: string }} params
+ * @param {{ appointmentId?: string, referenceCode?: string, roomId?: string, reason?: string, clinicianId?: string | null }} params
  */
-export async function markNoShow({ appointmentId, referenceCode, roomId, reason } = {}) {
+export async function markNoShow({ appointmentId, referenceCode, roomId, reason, clinicianId = null } = {}) {
   const key = appointmentId || referenceCode;
   let appointment = null;
 
@@ -396,6 +400,7 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason 
       roomId,
       status: 'CALLED',
       ...liveClinicDayFilter(),
+      ...(clinicianId ? { clinicianId } : {}),
     })
       .populate('patientId')
       .populate('clinicianId')
@@ -405,6 +410,12 @@ export async function markNoShow({ appointmentId, referenceCode, roomId, reason 
   if (!appointment) {
     throw new NotFoundError('Appointment not found to mark as no-show');
   }
+
+  assertAppointmentForClinician(
+    appointment,
+    clinicianId,
+    'Doctors can only manage consultations booked with them.',
+  );
 
   if (['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(appointment.status)) {
     const err = new Error(`Cannot mark appointment in status ${appointment.status} as no-show`);

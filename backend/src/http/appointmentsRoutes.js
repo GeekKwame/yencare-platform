@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { resolveDoctorScope } from '../auth/clinicianResolver.js';
 import { logger } from '../lib/logger.js';
 import { maskPhone } from '../sms/normalizePhone.js';
 import { asyncHandler } from './asyncHandler.js';
@@ -220,11 +221,21 @@ export function createAppointmentsRouter(
         });
       }
 
+      const scope = await resolveDoctorScope(req.staff);
+      if (scope.isDoctor && !scope.clinicianId) {
+        logger.warn('doctor account is not linked to a clinician; returning an empty roster', {
+          subsystem: 'appointments',
+          requestId: req.id,
+          staffId: req.staff?.staffId,
+        });
+        return res.status(200).json([]);
+      }
+
       const appointments = await appointmentService.listAppointments({
         date: req.query.date,
         clinicSite:
           req.query.clinicSite || req.query.clinic,
-        clinicianId: req.query.clinicianId,
+        ...(scope.isDoctor ? { clinicianId: scope.clinicianId } : {}),
       });
 
       res.status(200).json(
