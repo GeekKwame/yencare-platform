@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { accraTodayIso } from "../../lib/accraTime";
 import { mapAppointment } from "../../lib/appointmentView";
-import { arriveAppointment, cancelAppointment } from "../../services/appointments";
+import { arriveAppointment, cancelAppointment, requestCancelOtp } from "../../services/appointments";
 import { Button, ReferenceBlock, StatusBadge } from "../ui";
 
 const TERMINAL = new Set(["CANCELLED", "COMPLETED", "NO_SHOW"]);
@@ -22,6 +22,10 @@ export default function FoundAppointment({
   const isBooked = view.status === "BOOKED" && !isHistorical;
   const inQueue = ["CHECKED_IN", "WAITING", "CALLED"].includes(view.status);
   const [modal, setModal] = useState(null);
+  const [cancelStep, setCancelStep] = useState("prompt");
+  const [otpCode, setOtpCode] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpSentPhone, setOtpSentPhone] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
   const [arriving, setArriving] = useState(false);
@@ -68,19 +72,43 @@ export default function FoundAppointment({
     }
   };
 
-  const handleConfirmCancel = async () => {
+  const handleRequestCancelOtp = async () => {
+    setIsSendingOtp(true);
+    setCancelError("");
+    try {
+      const res = await requestCancelOtp(view.referenceCode || view.id);
+      setOtpSentPhone(res.maskedPhone || view.phoneNumber);
+      setCancelStep("otp");
+    } catch (err) {
+      setCancelError(
+        err.response?.data?.error ||
+          "Could not send verification code. Please try again or ask reception.",
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleConfirmCancel = async (e) => {
+    if (e) e.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 4) {
+      setCancelError("Please enter the 4-digit verification code.");
+      return;
+    }
+
     setIsCancelling(true);
     setCancelError("");
     try {
       await cancelAppointment(view.referenceCode || view.id, {
         cancelReason: "Cancelled by patient",
+        otpCode: otpCode.trim(),
         phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
       });
       onCancelled();
     } catch (err) {
       setCancelError(
         err.response?.data?.error ||
-          "Could not cancel this appointment. Please try again or ask reception.",
+          "Could not cancel this appointment. Check your code or ask reception.",
       );
     } finally {
       setIsCancelling(false);
@@ -261,6 +289,8 @@ export default function FoundAppointment({
               fullWidth
               onClick={() => {
                 setCancelError("");
+                setCancelStep("prompt");
+                setOtpCode("");
                 setModal("confirm");
               }}
             >
@@ -302,26 +332,105 @@ export default function FoundAppointment({
                   {view.dateLabel}, {view.timeLabel}
                 </span>
               </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-text-muted">Phone on record</span>
+                <span className="font-semibold text-primary">{view.phoneNumber}</span>
+              </div>
             </div>
-            {cancelError && (
-              <p className="mt-3 text-xs text-error" role="alert">
-                {cancelError}
-              </p>
+
+            {cancelStep === "prompt" ? (
+              <div className="mt-6 flex flex-col gap-3">
+                <p className="text-xs text-text-muted text-left">
+                  For your security and privacy, YenCare sends a 4-digit SMS OTP code to your registered phone to verify cancellation.
+                </p>
+                {cancelError && (
+                  <p className="text-xs text-error" role="alert">
+                    {cancelError}
+                  </p>
+                )}
+                <Button
+                  variant="destructive"
+                  fullWidth
+                  loading={isSendingOtp}
+                  loadingText="Sending OTP code…"
+                  onClick={handleRequestCancelOtp}
+                >
+                  Send verification code
+                </Button>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  disabled={isSendingOtp}
+                  onClick={() => setModal(null)}
+                >
+                  Keep appointment
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleConfirmCancel} className="mt-6 flex flex-col gap-3">
+                <div className="rounded-xl border border-accent-border bg-accent-soft p-3 text-xs text-accent text-left">
+                  Enter the 4-digit SMS code sent to{" "}
+                  <strong>{otpSentPhone || view.phoneNumber}</strong>.
+                </div>
+                <div className="text-left">
+                  <label htmlFor="cancel-otp-input" className="block text-xs font-bold text-primary">
+                    4-Digit Verification Code
+                  </label>
+                  <input
+                    id="cancel-otp-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d{4}"
+                    maxLength={4}
+                    autoFocus
+                    placeholder="e.g. 4829"
+                    value={otpCode}
+                    onChange={(e) => {
+                      setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 4));
+                      setCancelError("");
+                    }}
+                    className="mt-1.5 w-full rounded-xl border border-clinic-border bg-surface px-4 py-3 text-center font-mono text-xl font-bold tracking-widest text-primary focus:border-accent focus:outline-none"
+                  />
+                </div>
+                {cancelError && (
+                  <p className="text-xs text-error" role="alert">
+                    {cancelError}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  fullWidth
+                  loading={isCancelling}
+                  loadingText="Cancelling…"
+                  disabled={otpCode.length !== 4}
+                >
+                  Verify & cancel appointment
+                </Button>
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <button
+                    type="button"
+                    onClick={handleRequestCancelOtp}
+                    disabled={isSendingOtp || isCancelling}
+                    className="font-medium text-accent hover:underline cursor-pointer"
+                  >
+                    {isSendingOtp ? "Sending code…" : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModal(null);
+                      setCancelStep("prompt");
+                      setOtpCode("");
+                    }}
+                    disabled={isCancelling}
+                    className="text-text-muted hover:text-primary cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             )}
-            <div className="mt-6 flex flex-col gap-3">
-              <Button
-                variant="destructive"
-                fullWidth
-                loading={isCancelling}
-                loadingText="Cancelling…"
-                onClick={handleConfirmCancel}
-              >
-                Yes, cancel appointment
-              </Button>
-              <Button variant="secondary" fullWidth disabled={isCancelling} onClick={() => setModal(null)}>
-                Keep appointment
-              </Button>
-            </div>
           </div>
         </div>
       )}

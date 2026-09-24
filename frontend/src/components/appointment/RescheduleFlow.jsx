@@ -4,7 +4,7 @@ import { formatDateLabel, formatTimeLabel } from "../../data/bookingOptions";
 import { isFutureSlot } from "../../lib/accraTime";
 import { entityId, mapAppointment } from "../../lib/appointmentView";
 import { listTimeSlots } from "../../services/catalog";
-import { rescheduleAppointment } from "../../services/appointments";
+import { rescheduleAppointment, requestRescheduleOtp } from "../../services/appointments";
 
 function slotId(slot) {
   return slot?.id || slot?._id || "";
@@ -21,6 +21,10 @@ const RescheduleFlow = ({ appointment, onBack, onSuccess }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [confirmed, setConfirmed] = useState(null);
+  const [otpStep, setOtpStep] = useState("prompt");
+  const [otpCode, setOtpCode] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpSentPhone, setOtpSentPhone] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -285,41 +289,141 @@ const RescheduleFlow = ({ appointment, onBack, onSuccess }) => {
               {saveError}
             </p>
           )}
-          <div className="mt-7 flex flex-col gap-3">
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={async () => {
+          {otpStep === "prompt" ? (
+            <div className="mt-7 flex flex-col gap-3">
+              <p className="text-xs text-[#607672]">
+                For your security, YenCare sends a 4-digit SMS OTP code to your registered phone to verify rescheduling before confirming.
+              </p>
+              <button
+                type="button"
+                disabled={isSendingOtp}
+                onClick={async () => {
+                  setIsSendingOtp(true);
+                  setSaveError("");
+                  try {
+                    const res = await requestRescheduleOtp(view.referenceCode || view.id);
+                    setOtpSentPhone(res.maskedPhone || view.phoneNumber);
+                    setOtpStep("otp");
+                  } catch (err) {
+                    setSaveError(
+                      err.response?.data?.error ||
+                        "Could not send verification code. Please try again or ask reception.",
+                    );
+                  } finally {
+                    setIsSendingOtp(false);
+                  }
+                }}
+                className="w-full cursor-pointer rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:opacity-70"
+              >
+                {isSendingOtp ? "Sending code…" : "Send verification code via SMS"}
+              </button>
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full cursor-pointer rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
+              >
+                Keep current appointment
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!otpCode || otpCode.trim().length !== 4) {
+                  setSaveError("Please enter the 4-digit verification code.");
+                  return;
+                }
                 setIsSaving(true);
                 setSaveError("");
                 try {
                   const result = await rescheduleAppointment(
                     view.referenceCode || view.id,
                     slotId(selectedSlot),
-                    { phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined },
+                    {
+                      otpCode: otpCode.trim(),
+                      phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
+                    },
                   );
                   setConfirmed(result);
                 } catch (err) {
                   setSaveError(
                     err.response?.data?.error ||
-                      "Could not reschedule. That slot may have been taken.",
+                      "Could not reschedule. Check your verification code or that the slot is open.",
                   );
                 } finally {
                   setIsSaving(false);
                 }
               }}
-              className="w-full cursor-pointer rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:opacity-70"
+              className="mt-7 flex flex-col gap-3"
             >
-              {isSaving ? "Confirming…" : "Confirm new time"}
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="w-full cursor-pointer rounded-xl border border-[#dce8df] px-6 py-3.5 text-sm font-semibold text-[#173b3a] transition hover:bg-[#f5faf7]"
-            >
-              Keep current appointment
-            </button>
-          </div>
+              <div className="rounded-xl border border-[#176b5f]/20 bg-[#e7f5f1] p-3 text-xs text-[#087f6c] text-left">
+                Enter the 4-digit SMS code sent to <strong>{otpSentPhone || view.phoneNumber}</strong>.
+              </div>
+              <div className="text-left">
+                <label htmlFor="reschedule-otp-input" className="block text-xs font-bold text-[#173b3a]">
+                  4-Digit Verification Code
+                </label>
+                <input
+                  id="reschedule-otp-input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{4}"
+                  maxLength={4}
+                  autoFocus
+                  placeholder="e.g. 4829"
+                  value={otpCode}
+                  onChange={(e) => {
+                    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 4));
+                    setSaveError("");
+                  }}
+                  className="mt-1.5 w-full rounded-xl border border-[#dce8df] bg-white px-4 py-3 text-center font-mono text-xl font-bold tracking-widest text-[#173b3a] focus:border-[#176b5f] focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSaving || otpCode.length !== 4}
+                className="w-full cursor-pointer rounded-xl bg-[#176b5f] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:opacity-70"
+              >
+                {isSaving ? "Verifying & confirming…" : "Verify & confirm new time"}
+              </button>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsSendingOtp(true);
+                    setSaveError("");
+                    try {
+                      const res = await requestRescheduleOtp(view.referenceCode || view.id);
+                      setOtpSentPhone(res.maskedPhone || view.phoneNumber);
+                    } catch (err) {
+                      setSaveError(
+                        err.response?.data?.error ||
+                          "Could not resend verification code. Please try again.",
+                      );
+                    } finally {
+                      setIsSendingOtp(false);
+                    }
+                  }}
+                  disabled={isSendingOtp || isSaving}
+                  className="font-medium text-[#176b5f] hover:underline cursor-pointer"
+                >
+                  {isSendingOtp ? "Sending code…" : "Resend code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpStep("prompt");
+                    setOtpCode("");
+                    setSaveError("");
+                  }}
+                  disabled={isSaving}
+                  className="text-[#607672] hover:text-[#173b3a] cursor-pointer"
+                >
+                  Back to review
+                </button>
+              </div>
+            </form>
+          )}
         </>
       )}
     </section>
