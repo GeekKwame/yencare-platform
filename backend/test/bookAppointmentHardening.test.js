@@ -5,7 +5,15 @@ import mongoose from 'mongoose';
 import { Appointment } from '../src/models/Appointment.js';
 import { Patient } from '../src/models/Patient.js';
 import { TimeSlot } from '../src/models/TimeSlot.js';
-import { assertWithinClinicHours, createAppointment } from '../src/services/bookAppointment.js';
+import {
+  assertWithinClinicHours,
+  createAppointment,
+  countActiveBookingsForStudent,
+  assertStudentBookingCap,
+  MAX_ACTIVE_STUDENT_BOOKINGS,
+  STUDENT_BOOKING_CAP_MESSAGE,
+  ACTIVE_STUDENT_BOOKING_STATUSES,
+} from '../src/services/bookAppointment.js';
 
 const oid = () => new mongoose.Types.ObjectId();
 
@@ -34,9 +42,9 @@ function basePayload(overrides = {}) {
  * Replaces the model calls `createAppointment` makes with an in-memory stand-in
  * whose slot claim is atomic in the same way Mongo's is: the first writer wins.
  *
- * @param {{ catalogSlot?: boolean, existingAppointment?: boolean }} [options]
+ * @param {{ catalogSlot?: boolean, existingAppointment?: boolean, existingAppointments?: object[] }} [options]
  */
-function stubModels({ catalogSlot = true, existingAppointment = false } = {}) {
+function stubModels({ catalogSlot = true, existingAppointment = false, existingAppointments = [] } = {}) {
   const original = {
     findOneAndUpdate: TimeSlot.findOneAndUpdate,
     slotFindById: TimeSlot.findById,
@@ -44,7 +52,10 @@ function stubModels({ catalogSlot = true, existingAppointment = false } = {}) {
     updateOne: TimeSlot.updateOne,
     create: Appointment.create,
     appointmentFindOne: Appointment.findOne,
+    appointmentCountDocuments: Appointment.countDocuments,
+    appointmentFind: Appointment.find,
     patientFindById: Patient.findById,
+    patientFind: Patient.find,
   };
 
   const slot = catalogSlot
@@ -52,6 +63,7 @@ function stubModels({ catalogSlot = true, existingAppointment = false } = {}) {
     : null;
 
   const state = { created: [], claims: 0, released: 0 };
+  const mockAppointments = [...existingAppointments];
 
   TimeSlot.findOneAndUpdate = async () => {
     if (!slot || slot.isBooked) return null;
@@ -70,16 +82,39 @@ function stubModels({ catalogSlot = true, existingAppointment = false } = {}) {
   Appointment.create = async (payload) => {
     const doc = { ...payload, _id: oid(), referenceCode: 'YC-4821' };
     state.created.push(doc);
+    mockAppointments.push(doc);
     return doc;
   };
   Appointment.findOne = async () => (existingAppointment ? { _id: oid() } : null);
 
+  Appointment.countDocuments = async (query = {}) => {
+    return mockAppointments.filter((app) => {
+      if (query.status?.$in && !query.status.$in.includes(app.status)) return false;
+      if (query.appointmentDate?.$gte && app.appointmentDate < query.appointmentDate.$gte) return false;
+      if (query._id?.$ne && String(app._id) === String(query._id.$ne)) return false;
+      if (query.studentIndex && app.studentIndex && app.studentIndex !== query.studentIndex) return false;
+      return true;
+    }).length;
+  };
+
+  Appointment.find = async (query = {}) => {
+    return mockAppointments.filter((app) => {
+      if (query.status?.$in && !query.status.$in.includes(app.status)) return false;
+      if (query.appointmentDate?.$gte && app.appointmentDate < query.appointmentDate.$gte) return false;
+      if (query._id?.$ne && String(app._id) === String(query._id.$ne)) return false;
+      if (query.studentIndex && app.studentIndex && app.studentIndex !== query.studentIndex) return false;
+      return true;
+    });
+  };
+
   // No patient means createAppointment short-circuits before any SMS work.
   Patient.findById = async () => null;
+  Patient.find = async () => [];
 
   return {
     state,
     slot,
+    mockAppointments,
     restore() {
       TimeSlot.findOneAndUpdate = original.findOneAndUpdate;
       TimeSlot.findById = original.slotFindById;
@@ -87,7 +122,10 @@ function stubModels({ catalogSlot = true, existingAppointment = false } = {}) {
       TimeSlot.updateOne = original.updateOne;
       Appointment.create = original.create;
       Appointment.findOne = original.appointmentFindOne;
+      Appointment.countDocuments = original.appointmentCountDocuments;
+      Appointment.find = original.appointmentFind;
       Patient.findById = original.patientFindById;
+      Patient.find = original.patientFind;
     },
   };
 }
@@ -262,3 +300,146 @@ describe('clinic opening hours are enforced server-side', () => {
     assert.equal(stubs.state.created.length, 1);
   });
 });
+
+describe('student booking cap policy (Issue B)', () => {
+  /** @type {{ restore: () => void } | null} */
+  let stubs = null;
+
+  afterEach(() => {
+    stubs?.restore();
+    stubs = null;
+  });
+
+  const STUDENT_INDEX = '20612345';
+
+  it('counts active non-completed, non-cancelled bookings per studentIndex on future dates', async () => {
+    const existing = [
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'CHECKED_IN' },
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-27', status: 'WAITING' },
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-28', status: 'COMPLETED' },
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-29', status: 'CANCELLED' },
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-30', status: 'NO_SHOW' },
+      { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-20', status: 'BOOKED' }, // past date
+    ];
+
+    stubs = stubModels({ existingAppointments: existing });
+
+    // With minDate = '2026-09-24':
+    // 3 active upcoming (BOOKED on 09-25, CHECKED_IN on 09-26, WAITING on 09-27).
+    // COMPLETED, CANCELLED, NO_SHOW, and past 09-20 are excluded.
+    const count = await countActiveBookingsForStudent(STUDENT_INDEX, { minDate: '2026-09-24' });
+    assert.equal(count, 3);
+  });
+
+  it('allows booking when student has 0 or 1 active booking', async () => {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-24', status: 'BOOKED' },
+      ],
+    });
+
+    const result = await createAppointment(
+      basePayload({
+        studentIndex: STUDENT_INDEX,
+        appointmentDate: '2026-09-25',
+        appointmentTime: '10:30',
+      }),
+    );
+
+    assert.ok(result.appointment);
+    assert.equal(stubs.state.created.length, 1);
+  });
+
+  it('rejects booking request with HTTP 409 if student already has 2 active upcoming bookings', async () => {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'BOOKED' },
+      ],
+    });
+
+    await assert.rejects(
+      () =>
+        createAppointment(
+          basePayload({
+            studentIndex: STUDENT_INDEX,
+            appointmentDate: '2026-09-27',
+            appointmentTime: '11:00',
+          }),
+        ),
+      (err) => {
+        assert.equal(err.status, 409);
+        assert.equal(err.name, 'ConflictError');
+        assert.equal(
+          err.message,
+          'You have reached the maximum of 2 active appointments. Please complete or cancel existing visits.',
+        );
+        return true;
+      },
+    );
+
+    // Assert no slot was claimed and no appointment was created
+    assert.equal(stubs.state.claims, 0);
+    assert.equal(stubs.state.created.length, 0);
+  });
+
+  it('resolves studentIndex through Patient record if not passed in booking payload', async () => {
+    stubs = stubModels({
+      catalogSlot: true,
+      existingAppointments: [
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-25', status: 'BOOKED' },
+        { studentIndex: STUDENT_INDEX, appointmentDate: '2026-09-26', status: 'WAITING' },
+      ],
+    });
+
+    Patient.findById = async () => ({
+      _id: PATIENT_ID,
+      studentIndex: STUDENT_INDEX,
+      fullName: 'Akosua Boateng',
+      phone: '+233241234567',
+    });
+
+    await assert.rejects(
+      () =>
+        createAppointment(
+          basePayload({
+            // studentIndex omitted from payload, resolved via Patient.findById
+            appointmentDate: '2026-09-27',
+            appointmentTime: '11:00',
+          }),
+        ),
+      (err) => {
+        assert.equal(err.status, 409);
+        assert.equal(
+          err.message,
+          'You have reached the maximum of 2 active appointments. Please complete or cancel existing visits.',
+        );
+        return true;
+      },
+    );
+  });
+
+  it('allows non-student booking with no studentIndex even if other records exist', async () => {
+    stubs = stubModels({ catalogSlot: true });
+    Patient.findById = async () => ({
+      _id: PATIENT_ID,
+      fullName: 'Community Member',
+      phone: '+233241234567',
+    });
+
+    const result = await createAppointment(
+      basePayload({
+        clinicSite: 'knust-hospital',
+        appointmentDate: '2026-09-25',
+        appointmentTime: '10:00',
+      }),
+    );
+
+    assert.ok(result.appointment);
+    assert.equal(stubs.state.created.length, 1);
+  });
+});
+

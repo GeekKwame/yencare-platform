@@ -434,6 +434,45 @@ describe('appointments HTTP', () => {
     );
   });
 
+  it('POST /api/appointments rejects student exceeding 2 active bookings with 409 and policy message', async () => {
+    const mockService = {
+      createAppointment: async () => {
+        const err = new Error(
+          'You have reached the maximum of 2 active appointments. Please complete or cancel existing visits.',
+        );
+        err.status = 409;
+        err.name = 'ConflictError';
+        throw err;
+      },
+    };
+
+    const { url } = await client(mockService);
+
+    const res = await fetch(`${url}/api/appointments`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        patientId: '68bf2c0e9c1a2b0012345670',
+        studentIndex: '20612345',
+        clinicianId: '68bf2c0e9c1a2b0012345671',
+        roomId: '68bf2c0e9c1a2b0012345672',
+        clinicSite: 'students-clinic',
+        visitType: 'general-opd',
+        appointmentDate: '2026-09-25',
+        appointmentTime: '11:00',
+      }),
+    });
+
+    assert.equal(res.status, 409);
+    const body = await res.json();
+    assert.equal(
+      body.error,
+      'You have reached the maximum of 2 active appointments. Please complete or cancel existing visits.',
+    );
+  });
+
   // ------------------------------------------------------------
   // CANCELLATION TESTS
   // ------------------------------------------------------------

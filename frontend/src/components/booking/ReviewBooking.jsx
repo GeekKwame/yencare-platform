@@ -52,6 +52,7 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointme
 
       const created = await createAppointment({
         patientId: formData.patientId,
+        studentIndex: formData.studentIndex,
         phoneNumber: formData.phoneNumber,
         phone: formData.phoneNumber,
         clinicianId: formData.clinicianId,
@@ -69,11 +70,15 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointme
       setSmsResult(created.sms ?? null);
       setIsConfirmed(true);
     } catch (err) {
-      if (err.response?.status === 409 && typeof onSlotTaken === "function") {
+      const apiMessage = err.response?.data?.error || err.response?.data?.message;
+      const isCapError =
+        apiMessage?.includes("maximum of 2 active appointments") ||
+        apiMessage?.toLowerCase().includes("maximum of 2");
+
+      if (err.response?.status === 409 && !isCapError && typeof onSlotTaken === "function") {
         onSlotTaken();
         return;
       }
-      const apiMessage = err.response?.data?.error || err.response?.data?.message;
       setConfirmError(
         apiMessage ||
           err.message ||
