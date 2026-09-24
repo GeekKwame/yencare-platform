@@ -555,6 +555,10 @@ export async function listAppointments(filters = {}) {
     query.clinicSite = clinicSite;
   }
 
+  if (filters.clinicianId) {
+    query.clinicianId = filters.clinicianId;
+  }
+
   return Appointment.populateQueue(query);
 }
 

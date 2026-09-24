@@ -144,14 +144,17 @@ async function findAppointment(idOrReference) {
  */
 export async function callNextPatient({ roomId, clinicianId, force = false, completePrevious = false } = {}) {
   let targetRoomId = roomId;
+  let clinicianDoc = null;
 
-  if (!targetRoomId && clinicianId) {
+  if (clinicianId) {
     const { Clinician } = await import('../models/Clinician.js');
-    const clinician = await Clinician.findById(clinicianId);
-    if (!clinician) {
+    clinicianDoc = await Clinician.findById(clinicianId);
+    if (!clinicianDoc) {
       throw new NotFoundError(`Clinician not found: ${clinicianId}`);
     }
-    targetRoomId = clinician.roomId;
+    if (!targetRoomId) {
+      targetRoomId = clinicianDoc.roomId;
+    }
   }
 
   if (!targetRoomId) {
@@ -165,12 +168,17 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
 
   const clinicDay = getAccraQueueDate();
 
-  // Check if a patient is currently CALLED in this room today
-  const activeAppointment = await Appointment.findOne({
+  // Check if a patient is currently CALLED today (scoped to clinician when provided)
+  const activeQuery = {
     roomId: room._id,
     status: 'CALLED',
     ...liveClinicDayFilter(clinicDay),
-  });
+  };
+  if (clinicianId) {
+    activeQuery.clinicianId = clinicianId;
+  }
+
+  const activeAppointment = await Appointment.findOne(activeQuery);
 
   if (activeAppointment) {
     if (completePrevious) {
@@ -187,20 +195,29 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
   }
 
   // Strict FIFO for today's visit day only — yesterday's waiters are closed out
-  const nextAppointment = await Appointment.findOne({
+  // Scoped to clinicianId so a booked doctor only calls their own booked patients
+  const waiterQuery = {
     roomId: room._id,
     status: 'WAITING',
     ...liveClinicDayFilter(clinicDay),
-  })
+  };
+  if (clinicianId) {
+    waiterQuery.clinicianId = clinicianId;
+  }
+
+  const nextAppointment = await Appointment.findOne(waiterQuery)
     .sort({ queueSequence: 1, checkInTime: 1, createdAt: 1 })
     .populate('patientId')
     .populate('clinicianId')
     .populate('roomId');
 
   if (!nextAppointment) {
+    const doctorLabel = clinicianDoc?.name || null;
     return {
       appointment: null,
-      message: `No waiting patients for ${room.name}`,
+      message: doctorLabel
+        ? `No waiting patients for ${doctorLabel}`
+        : `No waiting patients for ${room.name}`,
       room,
     };
   }
@@ -233,9 +250,9 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
  * BOOKED -> CHECKED_IN -> WAITING -> CALLED -> COMPLETED.
  * Or if roomId is provided, advances the room's current CALLED patient to COMPLETED.
  *
- * @param {{ appointmentId?: string, referenceCode?: string, roomId?: string, callNext?: boolean }} params
+ * @param {{ appointmentId?: string, referenceCode?: string, roomId?: string, callNext?: boolean, clinicianId?: string }} params
  */
-export async function advanceQueue({ appointmentId, referenceCode, roomId, callNext = false } = {}) {
+export async function advanceQueue({ appointmentId, referenceCode, roomId, callNext = false, clinicianId = null } = {}) {
   const key = appointmentId || referenceCode;
 
   if (key) {
@@ -245,6 +262,19 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
     }
     if (['BOOKED', 'CHECKED_IN', 'WAITING'].includes(appointment.status)) {   
       assertVisitIsToday(appointment);                                        
+    }
+
+    if (clinicianId && appointment.clinicianId) {
+      const apptClinicianId = appointment.clinicianId._id
+        ? String(appointment.clinicianId._id)
+        : String(appointment.clinicianId);
+      if (apptClinicianId !== String(clinicianId)) {
+        const err = new Error(
+          'Doctors can only call or advance appointments booked for their consultation',
+        );
+        err.status = 403;
+        throw err;
+      }
     }    
 
     switch (appointment.status) {
@@ -337,7 +367,7 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
 
     let nextResult = null;
     if (callNext) {
-      nextResult = await callNextPatient({ roomId: room._id });
+      nextResult = await callNextPatient({ roomId: room._id, clinicianId });
     }
 
     return {

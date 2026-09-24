@@ -30,7 +30,7 @@ const StaffPortal = () => {
   const [clinicSite, setClinicSite] = useState(staff?.clinicSite || DEFAULT_CLINIC_SITE);
   const [selectedDate, setSelectedDate] = useState(() => accraTodayIso());
   const [followToday, setFollowToday] = useState(true);
-  const [view, setView] = useState(staff?.role === "DOCTOR" ? "queue" : "today");
+  const [view, setView] = useState(staff?.role === "DOCTOR" ? "room" : "today");
   const [deskQuery, setDeskQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [highlightedId, setHighlightedId] = useState(null);
@@ -141,7 +141,10 @@ const StaffPortal = () => {
     setBusyRoomId(room.id || room._id);
     setMessage("");
     try {
-      const result = await callNextPatient({ roomId: room.id || room._id });
+      const result = await callNextPatient({
+        roomId: room.id || room._id,
+        clinicianId: staff?.role === "DOCTOR" ? staff?.clinicianId : undefined,
+      });
       setMessage(
         result.appointment
           ? result.message || `Called next patient to ${room.name}.`
@@ -418,10 +421,17 @@ const StaffPortal = () => {
             canComplete={staff?.role === "DOCTOR"}
             updatingId={updatingId}
             busyRoomId={busyRoomId}
-            rooms={rooms.map((room) => ({
-              id: room.id || room._id,
-              name: room.name,
-            }))}
+            rooms={
+              staff?.role === "DOCTOR" && staff?.assignedRoom
+                ? rooms
+                    .filter(
+                      (r) =>
+                        String(r.name).toLowerCase() ===
+                        String(staff.assignedRoom).toLowerCase(),
+                    )
+                    .map((room) => ({ id: room.id || room._id, name: room.name }))
+                : rooms.map((room) => ({ id: room.id || room._id, name: room.name }))
+            }
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
             onCallNext={handleCallNext}
             onComplete={handleComplete}

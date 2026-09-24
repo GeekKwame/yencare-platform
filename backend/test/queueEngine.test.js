@@ -5,7 +5,7 @@ import {
   isAllowedStatusTransition,
   STATUS_TRANSITIONS,
 } from '../src/db/constants.js';
-import { Appointment, QueueCounter, Room, TimeSlot } from '../src/models/index.js';
+import { Appointment, Clinician, QueueCounter, Room, TimeSlot } from '../src/models/index.js';
 import { accraTodayIso } from '../src/lib/accraTime.js';
 import {
   AVERAGE_CONSULT_DURATION_MINUTES,
@@ -13,6 +13,8 @@ import {
   getAccraQueueDate,
   liveClinicDayFilter,
   markNoShow,
+  callNextPatient,
+  advanceQueue,
 } from '../src/services/queueEngine.js';
 
 const oid = () => new mongoose.Types.ObjectId();
@@ -318,5 +320,118 @@ describe('markNoShow', () => {
     const [filter, update] = counterUpdate.mock.calls[0].arguments;
     assert.deepEqual(filter, { roomId: appt.roomId, activeAppointmentId: appt._id });
     assert.deepEqual(update, { $set: { activeAppointmentId: null } });
+  });
+});
+
+describe('callNextPatient and advanceQueue clinician scoping', () => {
+  afterEach(() => mock.restoreAll());
+
+  it('callNextPatient scopes queries to clinicianId so doctor only calls their own patients', async () => {
+    const roomId = oid();
+    const docAId = oid();
+    const room = { _id: roomId, id: String(roomId), name: 'Room 1' };
+    const clinician = { _id: docAId, id: String(docAId), name: 'Dr. Kwame Boateng', roomId };
+
+    mock.method(Room, 'findById', async () => room);
+    mock.method(Clinician, 'findById', async () => clinician);
+
+    const docAPatient = {
+      _id: oid(),
+      queueToken: 'A-02',
+      status: 'WAITING',
+      clinicianId: docAId,
+      roomId,
+      save: mock.fn(async () => {}),
+    };
+
+    let capturedWaiterQuery = null;
+    mock.method(Appointment, 'findOne', (query) => {
+      if (query.status === 'CALLED') {
+        return Promise.resolve(null);
+      }
+      if (query.status === 'WAITING') {
+        capturedWaiterQuery = query;
+        return {
+          sort: () => ({
+            populate: () => ({
+              populate: () => ({
+                populate: () => Promise.resolve(docAPatient),
+              }),
+            }),
+          }),
+        };
+      }
+      return Promise.resolve(null);
+    });
+
+    mock.method(QueueCounter, 'updateOne', async () => ({}));
+
+    const result = await callNextPatient({ roomId, clinicianId: docAId });
+
+    assert.equal(result.queueToken, 'A-02');
+    assert.equal(docAPatient.status, 'CALLED');
+    assert.equal(docAPatient.save.mock.callCount(), 1);
+    // Crucially: query was strictly filtered by clinicianId
+    assert.equal(capturedWaiterQuery.clinicianId, docAId);
+    assert.equal(capturedWaiterQuery.roomId, roomId);
+  });
+
+  it('callNextPatient returns message when no patients are waiting for that specific doctor', async () => {
+    const roomId = oid();
+    const docAId = oid();
+    const room = { _id: roomId, id: String(roomId), name: 'Room 1' };
+    const clinician = { _id: docAId, id: String(docAId), name: 'Dr. Kwame Boateng', roomId };
+
+    mock.method(Room, 'findById', async () => room);
+    mock.method(Clinician, 'findById', async () => clinician);
+
+    mock.method(Appointment, 'findOne', (query) => {
+      if (query.status === 'CALLED') {
+        return Promise.resolve(null);
+      }
+      if (query.status === 'WAITING') {
+        return {
+          sort: () => ({
+            populate: () => ({
+              populate: () => ({
+                populate: () => Promise.resolve(null),
+              }),
+            }),
+          }),
+        };
+      }
+      return Promise.resolve(null);
+    });
+
+    const result = await callNextPatient({ roomId, clinicianId: docAId });
+
+    assert.equal(result.appointment, null);
+    assert.equal(result.message, 'No waiting patients for Dr. Kwame Boateng');
+  });
+
+  it('advanceQueue forbids advancing an appointment booked with a different doctor', async () => {
+    const docAId = oid();
+    const docBId = oid();
+    const appt = fakeAppointment({
+      status: 'WAITING',
+      clinicianId: docBId,
+    });
+    mock.method(Appointment, 'findById', () => ({
+      populate: () => ({
+        populate: () => ({
+          populate: () => Promise.resolve(appt),
+        }),
+      }),
+    }));
+
+    // Doc A tries to advance Doc B's appointment
+    await assert.rejects(
+      () => advanceQueue({ appointmentId: String(appt._id), clinicianId: String(docAId) }),
+      (err) => {
+        assert.equal(err.status, 403);
+        assert.match(err.message, /Doctors can only call or advance appointments/);
+        return true;
+      },
+    );
   });
 });

@@ -238,6 +238,7 @@ export function createAppointmentsRouter(
         date: req.query.date,
         clinicSite:
           req.query.clinicSite || req.query.clinic,
+        clinicianId: req.query.clinicianId,
       });
 
       res.status(200).json(

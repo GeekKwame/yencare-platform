@@ -40,6 +40,11 @@ const staffUserSchema = new mongoose.Schema(
       enum: CLINIC_SITES,
       default: 'students-clinic',
     },
+    clinicianId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Clinician',
+      default: null,
+    },
     active: {
       type: Boolean,
       default: true,

@@ -30,6 +30,7 @@ export const DEMO_STAFF = Object.freeze([
     role: 'DOCTOR',
     assignedRoom: 'Room 1',
     clinicSite: 'students-clinic',
+    clinicianId: '68bf2c0e9c1a2b0012345671',
   },
   {
     staffId: 'stf_03',
@@ -62,6 +63,7 @@ export function serializeStaff(user) {
     assignedRoom: user.assignedRoom || null,
     clinicSite: user.clinicSite || 'students-clinic',
     activeSite: user.clinicSite || 'students-clinic',
+    clinicianId: user.clinicianId ? String(user.clinicianId) : null,
   };
 }
 
@@ -160,8 +162,10 @@ export function createStaffAuthService({
         staffId: payload.staffId,
         role: payload.role,
         name: payload.name,
+        email: payload.email,
         assignedRoom: payload.assignedRoom,
         clinicSite: payload.clinicSite,
+        clinicianId: payload.clinicianId || null,
       },
       jwtSecret,
       { expiresIn },
@@ -224,6 +228,15 @@ export function createStaffAuthService({
 
     let seeded = 0;
     for (const person of DEMO_STAFF) {
+      let clinicianId = person.clinicianId || null;
+      if (person.role === 'DOCTOR') {
+        const { Clinician } = await import('../models/Clinician.js');
+        const clin = await Clinician.findOne({ name: person.name });
+        if (clin?._id) {
+          clinicianId = clin._id;
+        }
+      }
+
       await StaffUser.findOneAndUpdate(
         { email: person.email },
         {
@@ -234,6 +247,7 @@ export function createStaffAuthService({
             role: person.role,
             assignedRoom: person.assignedRoom,
             clinicSite: person.clinicSite,
+            clinicianId,
             active: true,
           },
           $setOnInsert: {
@@ -288,6 +302,7 @@ export function createStaffAuthService({
       role: String(payload.role || '').toUpperCase(),
       assignedRoom: payload.assignedRoom || null,
       clinicSite: payload.clinicSite,
+      clinicianId: payload.clinicianId || null,
     };
   }
 

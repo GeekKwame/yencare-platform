@@ -235,4 +235,75 @@ describe('staff auth HTTP', () => {
 
     assert.equal(res.status, 403);
   });
+
+  it('POST /api/queue/call-next forbids a doctor from calling another doctor clinicianId', async () => {
+    const { url } = await client();
+    const doctor = await loginAs(url, 'stf_02');
+
+    const res = await fetch(`${url}/api/queue/call-next`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${doctor.token}`,
+      },
+      body: JSON.stringify({
+        roomId: '68bf2c0e9c1a2b0012345671',
+        clinicianId: '68bf2c0e9c1a2b0099999999',
+      }),
+    });
+
+    assert.equal(res.status, 403);
+    const body = await res.json();
+    assert.match(body.error, /only call patients who booked a consultation with them/i);
+  });
+
+  it('POST /api/queue/call-next automatically injects authenticated doctor clinicianId', async () => {
+    let capturedClinicianId = null;
+    const mockQueue = {
+      callNextPatient: async ({ clinicianId }) => {
+        capturedClinicianId = clinicianId;
+        return {
+          appointment: { status: 'CALLED', queueToken: 'A-01' },
+          room: { name: 'Room 1' },
+          message: 'Called token A-01 into Room 1',
+        };
+      },
+    };
+
+    const { url } = await client({ mockQueueService: mockQueue });
+    const doctor = await loginAs(url, 'stf_02');
+
+    const res = await fetch(`${url}/api/queue/call-next`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${doctor.token}`,
+      },
+      body: JSON.stringify({ roomId: '68bf2c0e9c1a2b0012345671' }),
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(capturedClinicianId, '68bf2c0e9c1a2b0012345671');
+  });
+
+  it('POST /api/queue/advance forbids a doctor from advancing another doctor consultation', async () => {
+    const { url } = await client();
+    const doctor = await loginAs(url, 'stf_02');
+
+    const res = await fetch(`${url}/api/queue/advance`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${doctor.token}`,
+      },
+      body: JSON.stringify({
+        appointmentId: '68bf2c0e9c1a2b0012345678',
+        clinicianId: '68bf2c0e9c1a2b0099999999',
+      }),
+    });
+
+    assert.equal(res.status, 403);
+    const body = await res.json();
+    assert.match(body.error, /only advance appointments booked for their consultation/i);
+  });
 });
