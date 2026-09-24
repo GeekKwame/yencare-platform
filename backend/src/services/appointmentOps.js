@@ -313,6 +313,9 @@ export async function assertAppointmentCancelOtp(
   }
 }
 
+export const RESCHEDULE_OTP_REQUIRED_MESSAGE =
+  'A valid OTP verification code (otpCode) is required to reschedule this appointment unless initiated by staff.';
+
 /**
  * Proof of OTP verification or ownership for reschedule.
  * Staff skip the check; patients provide otpCode or registered phone.
@@ -338,7 +341,12 @@ export async function assertAppointmentRescheduleOtp(
     return;
   }
 
-  // Fall back to phone ownership check if no OTP code was supplied
+  // If a masked phone was sent (e.g. from public lookup), require OTP verification code
+  if (phone && String(phone).includes('*')) {
+    throw new ForbiddenError(RESCHEDULE_OTP_REQUIRED_MESSAGE);
+  }
+
+  // Fall back to phone ownership check if unmasked phone was supplied
   assertAppointmentOwnership(appointment, { actorIsStaff, phone });
 }
 

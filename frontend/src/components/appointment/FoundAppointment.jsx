@@ -55,7 +55,10 @@ export default function FoundAppointment({
     setArriveError("");
     try {
       const updated = await arriveAppointment(view.referenceCode || view.id, {
-        phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
+        phone:
+          view.phoneNumber && !view.phoneNumber.includes('*')
+            ? view.phoneNumber
+            : undefined,
       });
       onUpdated?.(updated);
       const ref = updated?.referenceCode || view.referenceCode;
@@ -102,7 +105,10 @@ export default function FoundAppointment({
       await cancelAppointment(view.referenceCode || view.id, {
         cancelReason: "Cancelled by patient",
         otpCode: otpCode.trim(),
-        phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
+        phone:
+          view.phoneNumber && !view.phoneNumber.includes('*')
+            ? view.phoneNumber
+            : undefined,
       });
       onCancelled();
     } catch (err) {

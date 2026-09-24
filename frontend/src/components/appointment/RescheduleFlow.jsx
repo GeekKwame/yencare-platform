@@ -341,7 +341,10 @@ const RescheduleFlow = ({ appointment, onBack, onSuccess }) => {
                     slotId(selectedSlot),
                     {
                       otpCode: otpCode.trim(),
-                      phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
+                      phone:
+                        view.phoneNumber && !view.phoneNumber.includes('*')
+                          ? view.phoneNumber
+                          : undefined,
                     },
                   );
                   setConfirmed(result);
