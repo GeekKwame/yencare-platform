@@ -1,10 +1,30 @@
+import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useStaffAuth } from "../context/StaffAuthContext";
 import StaffSessionExpired from "./staff/StaffSessionExpired";
+import { useToast } from "./ui";
 
 export default function RequireStaffAuth({ children, roles = [] }) {
   const { staff, loading, sessionExpired, clearSessionExpired } = useStaffAuth();
   const location = useLocation();
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!staff) return undefined;
+
+    // Guard navigation: push an entry so accidental back-button does not jump out of workstation
+    window.history.pushState({ staffGuard: true }, "", window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState({ staffGuard: true }, "", window.location.href);
+      toast.info("Navigation guarded. Please use Sign Out to exit the workstation.");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [staff, toast]);
 
   if (loading) {
     return (

@@ -11,6 +11,8 @@ export default function StaffRoster({
   highlightedId,
   updatingId,
   loading,
+  error,
+  onRetry,
   onCheckIn,
   onCheckInToQueue,
   onNoShow,
@@ -74,6 +76,23 @@ export default function StaffRoster({
 
       {loading ? (
         <p className="text-sm text-gray-500">Loading roster…</p>
+      ) : error ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-wrap items-center justify-between gap-3 border border-warning-border bg-warning-soft px-4 py-3 text-sm text-warning"
+        >
+          <p>{error}</p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="min-h-11 border border-clinic-border bg-surface px-3 py-2 text-xs font-semibold text-primary hover:bg-surface-secondary"
+            >
+              Retry
+            </button>
+          )}
+        </div>
       ) : sorted.length === 0 ? (
         <p className="text-sm text-gray-500">
           {appointments.length === 0

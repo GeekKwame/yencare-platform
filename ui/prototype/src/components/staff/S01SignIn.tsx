@@ -5,7 +5,7 @@ import { YenCareLogo } from '../common/YenCareLogo';
 import { StaffRole } from '../../types/clinic';
 
 export const S01SignIn: React.FC = () => {
-  const { setStaffScreen, setStaffRole, setActiveShell } = useClinic();
+  const { setStaffScreen, setStaffRole, setActiveShell, showToast } = useClinic();
   const [email, setEmail] = useState('abena.osei@yencare.gh');
   const [password, setPassword] = useState('••••••••');
   const [loading, setLoading] = useState(false);
@@ -16,6 +16,7 @@ export const S01SignIn: React.FC = () => {
     setTimeout(() => {
       setLoading(false);
       setStaffScreen('S02_TODAY');
+      showToast(`Signed in as ${role}`);
     }, 350);
   };
 

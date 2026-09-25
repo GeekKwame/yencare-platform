@@ -5,7 +5,14 @@ import { StatusBadge } from '../common/StatusBadge';
 import { VISIT_TYPE_LABELS } from '../../types/clinic';
 
 export const S03Appointments: React.FC = () => {
-  const { appointments, checkInPatient, setStaffScreen, setSelectedStaffAppointmentId } = useClinic();
+  const {
+    appointments,
+    checkInPatient,
+    setStaffScreen,
+    setSelectedStaffAppointmentId,
+    isOffline,
+    setIsOffline,
+  } = useClinic();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -145,6 +152,27 @@ export const S03Appointments: React.FC = () => {
         </div>
       </div>
 
+      {/* Offline Error Banner */}
+      {isOffline && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-wrap items-center justify-between gap-3 border border-[#FEB2B2] bg-[#FFF5F5] p-3 text-xs text-[#9B2C2C]"
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px]">wifi_off</span>
+            <span>Could not load appointment roster.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOffline(false)}
+            className="border border-[#FEB2B2] bg-white px-2.5 py-1 text-xs font-semibold text-[#9B2C2C] hover:bg-[#FFF0F0] cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Roster Table */}
       <div className="bg-white border border-[#D8DCD9] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -161,7 +189,13 @@ export const S03Appointments: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7E6] font-normal text-[#111111]">
-              {sortedAppointments.length === 0 ? (
+              {isOffline ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-[#9B2C2C] font-normal">
+                    Could not load appointment roster. [Retry]
+                  </td>
+                </tr>
+              ) : sortedAppointments.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-[#66706B] font-normal">
                     No appointments match your search or filter criteria.
