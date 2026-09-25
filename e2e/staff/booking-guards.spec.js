@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { ObjectId } from 'mongodb';
 import { RECEPTIONIST } from '../helpers/auth-helper.js';
+import { accraParts } from '../../backend/src/lib/accraTime.js';
 import {
   accraDateFromToday,
-  accraTimeFromNow,
   cleanupCreatedFixtures,
   closeDb,
   createFreeSlotFixture,
@@ -24,6 +24,11 @@ const MESSAGES = {
 };
 
 const pad = (n) => String(n).padStart(2, '0');
+
+function accraMinutesNow() {
+  const { hour, minute } = accraParts(new Date());
+  return hour * 60 + minute;
+}
 
 const created = { patientIds: [], appointmentIds: [], slotIds: [] };
 
@@ -226,18 +231,24 @@ test.describe('booking guards (API)', () => {
   });
 
   test('2 · an already-started slot today is refused, a later one is booked', async ({ request }, testInfo) => {
+    const now = accraMinutesNow();
+    test.skip(
+      now < 30 || now > 23 * 60 + 30,
+      'skipped near Accra midnight: needs a slot at 00:05 that has started and one at 23:40 that has not',
+    );
+
     const repeat = testInfo.repeatEachIndex % 10;
     const patientId = await insertPatient({ digits: uniqueDigits(testInfo, 2) });
     const today = accraDateFromToday(0);
 
-    const started = await hospitalSlot({ date: today, time: accraTimeFromNow(-61 - repeat) });
+    const started = await hospitalSlot({ date: today, time: `00:${pad(5 + repeat)}` });
     const refused = await book(request, bookingBody(started, { patientId, clinicSite: 'knust-hospital' }));
     expect(refused.status).toBe(400);
     expect(refused.json.error).toBe(MESSAGES.slotStarted);
     expect((await getSlot(started._id)).isBooked).toBe(false);
     expect(await appointmentsFor(patientId)).toBe(0);
 
-    const later = await hospitalSlot({ date: today, time: accraTimeFromNow(31 + repeat) });
+    const later = await hospitalSlot({ date: today, time: `23:${pad(40 + repeat)}` });
     const accepted = await book(request, bookingBody(later, { patientId, clinicSite: 'knust-hospital' }));
     expect(accepted.status).toBe(201);
     expect(String(accepted.json.timeSlotId)).toBe(String(later._id));
