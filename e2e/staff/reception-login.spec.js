@@ -35,9 +35,10 @@ test.describe("Receptionist login Test", () => {
     // Trigger browser back button
     await page.goBack();
 
-    // Verify back navigation is intercepted: user stays on /staff and sees guard notification
+    // The popstate handler fires and re-pushes the staff URL.
+    // Wait for the guard toast first — it proves the handler ran.
+    await expect(page.getByText('Navigation guarded. Please use Sign Out to exit the workstation.')).toBeVisible({ timeout: 8000 });
     await expect(page).toHaveURL(/\/staff/);
-    await expect(page.getByText('Navigation guarded. Please use Sign Out to exit the workstation.')).toBeVisible();
   });
 
   test('offline roster error displays with interactive retry button', async ({ page, context }) => {
