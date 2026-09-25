@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { afterEach, describe, it, mock } from 'node:test';
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 import mongoose from 'mongoose';
 import { Appointment, QueueCounter, TimeSlot } from '../src/models/index.js';
 import { accraTodayIso } from '../src/lib/accraTime.js';
@@ -8,8 +8,15 @@ import { ValidationError } from '../src/patients/errors.js';
 
 const oid = () => new mongoose.Types.ObjectId();
 
+const PINNED_NOW = new Date('2026-09-16T10:30:00Z');
+
 describe('Check-in and arrival visit-day guards integration', () => {
-  afterEach(() => mock.restoreAll());
+  beforeEach(() => mock.timers.enable({ apis: ['Date'], now: PINNED_NOW }));
+
+  afterEach(() => {
+    mock.timers.reset();
+    mock.restoreAll();
+  });
 
   function fakeAppointment(overrides = {}) {
     return {
