@@ -15,24 +15,45 @@ import {
   staffToken,
   supportsTransactions,
 } from '../helpers/db-helper.js';
+import { accraParts } from '../../backend/src/lib/accraTime.js';
 import { LATE_GRACE_MINUTES } from '../../backend/src/services/visitDayGuard.js';
 
 const API = 'http://localhost:4000/api';
 
+const MIDNIGHT_MARGIN_MINUTES = 10;
+const DAY_MINUTES = 24 * 60;
 
 const OFFSETS = {
   earlyArrival: 97,
   inWindow: 37,
   lateArrival: -27,
   lateForDesk: -41,
-  rescheduleAppointment: 73,
-  rescheduleStartedSlot: -53,
   calledNoShow: -59,
   arrivedNoShow: -23,
   noShowInsideGrace: -Math.max(1, Math.floor(LATE_GRACE_MINUTES / 2)),
   noShowAfterGrace: -(LATE_GRACE_MINUTES + 18),
 };
 
+
+function accraMinutesNow() {
+  const { hour, minute } = accraParts(new Date());
+  return hour * 60 + minute;
+}
+
+function todayTimeOrSkip(offsetMinutes) {
+  const now = accraMinutesNow();
+  const target = now + offsetMinutes;
+  const nearMidnight =
+    target < MIDNIGHT_MARGIN_MINUTES ||
+    target > DAY_MINUTES - MIDNIGHT_MARGIN_MINUTES ||
+    now > DAY_MINUTES - MIDNIGHT_MARGIN_MINUTES;
+  const sign = offsetMinutes >= 0 ? '+' : '';
+  test.skip(
+    nearMidnight,
+    `skipped near Accra midnight: needs a same-day appointment at now${sign}${offsetMinutes}m`,
+  );
+  return accraTimeFromNow(offsetMinutes);
+}
 
 function addMinutesHm(hhmm, minutes) {
   const [hour, minute] = hhmm.split(':').map(Number);
@@ -101,7 +122,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     await createAppointmentFixture({
       referenceCode: 'YC-9503',
       date,
-      time: accraTimeFromNow(OFFSETS.earlyArrival),
+      time: todayTimeOrSkip(OFFSETS.earlyArrival),
     });
 
     await page.goto('/appointments?ref=YC-9503');
@@ -118,7 +139,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     await createAppointmentFixture({
       referenceCode: 'YC-9504',
       date,
-      time: accraTimeFromNow(OFFSETS.inWindow),
+      time: todayTimeOrSkip(OFFSETS.inWindow),
     });
 
     await page.goto('/appointments?ref=YC-9504');
@@ -133,7 +154,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     await createAppointmentFixture({
       referenceCode: 'YC-9505',
       date,
-      time: accraTimeFromNow(OFFSETS.lateArrival),
+      time: todayTimeOrSkip(OFFSETS.lateArrival),
     });
 
     await page.goto('/appointments?ref=YC-9505');
@@ -150,7 +171,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     await createAppointmentFixture({
       referenceCode: 'YC-9506',
       date,
-      time: accraTimeFromNow(OFFSETS.lateForDesk),
+      time: todayTimeOrSkip(OFFSETS.lateForDesk),
     });
 
     await loginStaff(page, RECEPTIONIST);
@@ -169,15 +190,19 @@ test.describe('visit-day check-in and no-show guards', () => {
       'rescheduleAppointment runs in a Mongo transaction; point E2E_MONGODB_URI at a replica set to cover this guard',
     );
 
-    const date = accraDateFromToday(0);
+    test.skip(
+      accraMinutesNow() < 30,
+      'skipped just after Accra midnight: needs a slot at 00:05 today that has already started',
+    );
+
     const appointment = await createAppointmentFixture({
       referenceCode: 'YC-9507',
-      date,
-      time: accraTimeFromNow(OFFSETS.rescheduleAppointment),
+      date: accraDateFromToday(1),
+      time: '13:43',
     });
     const startedSlot = await createFreeSlotFixture({
-      date,
-      time: accraTimeFromNow(OFFSETS.rescheduleStartedSlot),
+      date: accraDateFromToday(0),
+      time: '00:05',
     });
 
     const response = await request.patch(`${API}/appointments/YC-9507/reschedule`, {
@@ -190,7 +215,7 @@ test.describe('visit-day check-in and no-show guards', () => {
 
     const after = await getAppointment('YC-9507');
     expect(after.appointmentTime).toBe(appointment.time);
-    expect(after.appointmentDate).toBe(date);
+    expect(after.appointmentDate).toBe(appointment.date);
     expect(String(after.timeSlotId)).toBe(String(appointment.timeSlotId));
 
     const originalSlot = await getSlot(appointment.timeSlotId);
@@ -224,7 +249,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     const fixture = await createAppointmentFixture({
       referenceCode: 'YC-9509',
       date,
-      time: accraTimeFromNow(OFFSETS.calledNoShow),
+      time: todayTimeOrSkip(OFFSETS.calledNoShow),
       status: 'CALLED',
       queued: true,
       activeInRoom: true,
@@ -255,7 +280,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     const fixture = await createAppointmentFixture({
       referenceCode: 'YC-9510',
       date,
-      time: accraTimeFromNow(OFFSETS.arrivedNoShow),
+      time: todayTimeOrSkip(OFFSETS.arrivedNoShow),
       status: 'CHECKED_IN',
     });
 
@@ -279,7 +304,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     const fixture = await createAppointmentFixture({
       referenceCode: 'YC-9511',
       date,
-      time: accraTimeFromNow(OFFSETS.noShowInsideGrace),
+      time: todayTimeOrSkip(OFFSETS.noShowInsideGrace),
     });
     const graceEnds = addMinutesHm(fixture.time, LATE_GRACE_MINUTES);
 
@@ -306,7 +331,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     const fixture = await createAppointmentFixture({
       referenceCode: 'YC-9512',
       date,
-      time: accraTimeFromNow(OFFSETS.noShowAfterGrace),
+      time: todayTimeOrSkip(OFFSETS.noShowAfterGrace),
     });
 
     await loginStaff(page, RECEPTIONIST);
