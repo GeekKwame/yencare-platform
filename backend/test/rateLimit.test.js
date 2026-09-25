@@ -8,7 +8,13 @@ import {
   resetRateLimitStore,
   setRateLimitStore,
 } from '../src/http/rateLimitStore.js';
-import { rateLimit, rateLimitEnabled, TOO_MANY_REQUESTS_MESSAGE } from '../src/http/security.js';
+import { arrivalReferenceKey, queueStatusReferenceKey } from '../src/http/app.js';
+import {
+  rateLimit,
+  rateLimitDisableRequested,
+  rateLimitEnabled,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '../src/http/security.js';
 
 function startLimited(middleware) {
   const app = express();
@@ -99,10 +105,16 @@ describe('public endpoint rate limiting', () => {
     assert.equal(rateLimitEnabled({ NODE_ENV: 'production' }), true);
     assert.equal(rateLimitEnabled({}), true);
     assert.equal(rateLimitEnabled({ NODE_ENV: 'test' }), false);
-    assert.equal(
-      rateLimitEnabled({ NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'true' }),
-      false,
-    );
+    assert.equal(rateLimitEnabled({ NODE_ENV: 'development', RATE_LIMIT_DISABLED: 'true' }), false);
+    assert.equal(rateLimitEnabled({ RATE_LIMIT_DISABLED: 'TRUE' }), false);
+  });
+
+  it('cannot be switched off in production', () => {
+    for (const flag of ['true', 'TRUE', 'True']) {
+      assert.equal(rateLimitEnabled({ NODE_ENV: 'production', RATE_LIMIT_DISABLED: flag }), true);
+    }
+    assert.equal(rateLimitDisableRequested({ NODE_ENV: 'production', RATE_LIMIT_DISABLED: 'true' }), true);
+    assert.equal(rateLimitDisableRequested({ NODE_ENV: 'production' }), false);
   });
 
   it('uses the installed store, so a shared store can replace the buckets', async () => {
@@ -186,10 +198,7 @@ describe('public endpoint rate limiting', () => {
         windowMs: 15 * 60_000,
         max: 5,
         store: createMemoryRateLimitStore(),
-        keyGenerator: (req) =>
-          `${req.ip || req.socket?.remoteAddress || 'unknown'}|${String(
-            req.body?.reference || req.body?.referenceCode || req.params?.reference || '',
-          ).toUpperCase()}`,
+        keyGenerator: arrivalReferenceKey,
       }),
     ];
 
@@ -239,5 +248,109 @@ describe('public endpoint rate limiting', () => {
     await otherRef.json();
     assert.equal(otherRef.status, 200,
       'a different reference should not be blocked');
+  });
+});
+
+describe('reference normalisation in the per-reference limiter keys', () => {
+  const started = [];
+
+  after(async () => {
+    await Promise.all(
+      started.map(
+        ({ server }) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  async function listen(app) {
+    const instance = await new Promise((resolve) => {
+      const server = app.listen(0, '127.0.0.1', () => {
+        resolve({ server, url: `http://127.0.0.1:${server.address().port}` });
+      });
+    });
+    started.push(instance);
+    return instance.url;
+  }
+
+  it('builds the same key for every spelling of one reference', () => {
+    const ip = '10.0.0.7';
+    const arrivalKeys = [
+      { ip, body: { reference: 'YC-4821' } },
+      { ip, body: { reference: '  yc-4821\t' } },
+      { ip, body: { referenceCode: ' YC-4821' } },
+      { ip, body: {}, params: { reference: 'yc-4821 ' } },
+    ].map(arrivalReferenceKey);
+    assert.deepEqual(new Set(arrivalKeys), new Set([`${ip}|YC-4821`]));
+
+    assert.equal(queueStatusReferenceKey({ ip, params: { reference: ' yc-4821 ' } }), `${ip}|YC-4821`);
+  });
+
+  it('gives whitespace and case variants of an arrival reference one shared budget', async () => {
+    const limiter = rateLimit({
+      name: 'arrival-reference',
+      windowMs: 15 * 60_000,
+      max: 5,
+      store: createMemoryRateLimitStore(),
+      keyGenerator: arrivalReferenceKey,
+    });
+    const app = express();
+    app.use(express.json());
+    const handler = (_req, res) => res.status(200).json({ ok: true });
+    app.post('/api/appointments/arrive', limiter, handler);
+    app.post('/api/appointments/:reference/arrive', limiter, handler);
+    const url = await listen(app);
+
+    const byBody = (reference) =>
+      fetch(`${url}/api/appointments/arrive`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reference }),
+      });
+    const byPath = (reference) =>
+      fetch(`${url}/api/appointments/${encodeURIComponent(reference)}/arrive`, { method: 'POST' });
+
+    const statuses = [];
+    for (const send of [
+      () => byBody('YC-0001'),
+      () => byBody(' YC-0001'),
+      () => byBody('YC-0001 '),
+      () => byBody('\tyc-0001'),
+      () => byPath(' yc-0001 '),
+    ]) {
+      statuses.push((await send()).status);
+    }
+    assert.deepEqual(statuses, [200, 200, 200, 200, 200]);
+
+    const blocked = await byBody('  YC-0001  ');
+    assert.equal(blocked.status, 429);
+    assert.equal((await blocked.json()).error, TOO_MANY_REQUESTS_MESSAGE);
+    assert.ok(Number(blocked.headers.get('retry-after')) > 0);
+
+    assert.equal((await byBody('YC-0002')).status, 200);
+  });
+
+  it('gives whitespace and case variants of a queue-status reference one shared budget', async () => {
+    const limiter = rateLimit({
+      name: 'queue-status-reference',
+      windowMs: 60_000,
+      max: 3,
+      store: createMemoryRateLimitStore(),
+      keyGenerator: queueStatusReferenceKey,
+    });
+    const app = express();
+    app.get('/api/appointments/:reference/queue-status', limiter, (_req, res) => res.json({ ok: true }));
+    const url = await listen(app);
+
+    const poll = (reference) =>
+      fetch(`${url}/api/appointments/${encodeURIComponent(reference)}/queue-status`);
+
+    const statuses = [];
+    for (const reference of ['YC-0001', ' yc-0001', 'yc-0001 ', 'YC-0001']) {
+      statuses.push((await poll(reference)).status);
+    }
+    assert.deepEqual(statuses, [200, 200, 200, 429]);
   });
 });

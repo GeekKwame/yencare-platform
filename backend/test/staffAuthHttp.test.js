@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
+import jwt from 'jsonwebtoken';
+import { UNLINKED_DOCTOR_MESSAGE } from '../src/auth/clinicianResolver.js';
 import { createStaffAuthService, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
 import { createApp } from '../src/http/app.js';
 import { createMemoryStore } from '../src/patients/memoryStore.js';
@@ -305,5 +307,157 @@ describe('staff auth HTTP', () => {
     assert.equal(res.status, 403);
     const body = await res.json();
     assert.match(body.error, /only advance appointments booked for their consultation/i);
+  });
+});
+
+describe('doctor isolation over HTTP (identity from the verified login only)', () => {
+  const started = [];
+
+  after(async () => {
+    await Promise.all(
+      started.map(
+        ({ server }) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  const KWAME_CLINICIAN_ID = '68bf2c0e9c1a2b0012345671';
+  const OTHER_CLINICIAN_ID = '68bf2c0e9c1a2b0012345672';
+
+  async function client() {
+    const calls = { listAppointments: [], callNextPatient: [], advanceQueue: [], markNoShow: [] };
+    const record = (name, result) => async (args) => {
+      calls[name].push(args);
+      return result;
+    };
+    const instance = await startApp({
+      mockAppointmentService: { listAppointments: record('listAppointments', []) },
+      mockQueueService: {
+        callNextPatient: record('callNextPatient', { appointment: null, message: 'none' }),
+        advanceQueue: record('advanceQueue', { appointment: null, message: 'done' }),
+        markNoShow: record('markNoShow', { appointment: null, message: 'no-show' }),
+      },
+    });
+    started.push(instance);
+    return { ...instance, calls };
+  }
+
+  async function login(url, identifier) {
+    const res = await fetch(`${url}/api/auth/staff-login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ identifier, password: DEMO_STAFF_PASSWORD }),
+    });
+    assert.equal(res.status, 200);
+    return (await res.json()).token;
+  }
+
+  const unlinkedDoctorToken = jwt.sign(
+    { sub: 'stf_99', staffId: 'stf_99', role: 'DOCTOR', name: 'Dr. Unlinked', clinicSite: 'students-clinic' },
+    TEST_SECRET,
+    { expiresIn: '1h' },
+  );
+
+  function get(url, token, qs = '') {
+    return fetch(`${url}/api/appointments?date=2026-09-15${qs}`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+  }
+
+  function post(url, path, token, body = {}) {
+    return fetch(`${url}/api/queue/${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("scopes a linked doctor's roster to their own clinician, ignoring a client clinicianId", async () => {
+    const { url, calls } = await client();
+    const token = await login(url, 'kwame.boateng@yencare.gh');
+
+    assert.equal((await get(url, token)).status, 200);
+    assert.equal((await get(url, token, `&clinicianId=${OTHER_CLINICIAN_ID}`)).status, 200);
+
+    assert.deepEqual(
+      calls.listAppointments.map((filters) => filters.clinicianId),
+      [KWAME_CLINICIAN_ID, KWAME_CLINICIAN_ID],
+    );
+  });
+
+  it('leaves reception and admin unscoped, ignoring a client clinicianId', async () => {
+    const { url, calls } = await client();
+
+    for (const identifier of ['abena.osei@yencare.gh', 'kojo.mensah@yencare.gh']) {
+      const res = await get(url, await login(url, identifier), `&clinicianId=${OTHER_CLINICIAN_ID}`);
+      assert.equal(res.status, 200);
+    }
+
+    assert.equal(calls.listAppointments.length, 2);
+    for (const filters of calls.listAppointments) {
+      assert.equal('clinicianId' in filters, false);
+    }
+  });
+
+  it('gives an unlinked doctor an empty roster without querying', async () => {
+    const { url, calls } = await client();
+
+    const res = await get(url, unlinkedDoctorToken);
+
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), []);
+    assert.equal(calls.listAppointments.length, 0);
+  });
+
+  it('refuses queue actions from an unlinked doctor with 403, before the service', async () => {
+    const { url, calls } = await client();
+
+    for (const path of ['call-next', 'advance', 'no-show']) {
+      const res = await post(url, path, unlinkedDoctorToken, { roomId: '68bf2c0e9c1a2b0012345600' });
+      assert.equal(res.status, 403, path);
+      assert.equal((await res.json()).error, UNLINKED_DOCTOR_MESSAGE);
+    }
+    assert.equal(calls.callNextPatient.length + calls.advanceQueue.length + calls.markNoShow.length, 0);
+  });
+
+  it("scopes a linked doctor's no-show to their clinician and refuses another's", async () => {
+    const { url, calls } = await client();
+    const token = await login(url, 'kwame.boateng@yencare.gh');
+
+    assert.equal((await post(url, 'no-show', token, { appointmentId: 'x' })).status, 200);
+    const refused = await post(url, 'no-show', token, {
+      appointmentId: 'x',
+      clinicianId: OTHER_CLINICIAN_ID,
+    });
+
+    assert.equal(refused.status, 403);
+    assert.match((await refused.json()).error, /only manage consultations booked with them/);
+    assert.deepEqual(calls.markNoShow.map((args) => args.clinicianId), [KWAME_CLINICIAN_ID]);
+  });
+
+  it('leaves a receptionist no-show unscoped', async () => {
+    const { url, calls } = await client();
+
+    const res = await post(url, 'no-show', await login(url, 'abena.osei@yencare.gh'), {
+      appointmentId: 'x',
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(calls.markNoShow[0].clinicianId, undefined);
+  });
+
+  it('rejects a doctor token signed with the wrong secret instead of decoding it', async () => {
+    const { url, calls } = await client();
+    const forged = jwt.sign(
+      { sub: 'stf_02', staffId: 'stf_02', role: 'DOCTOR', clinicianId: KWAME_CLINICIAN_ID },
+      'attacker-chosen-secret',
+    );
+
+    assert.equal((await get(url, forged)).status, 401);
+    assert.equal((await post(url, 'no-show', forged, { appointmentId: 'x' })).status, 401);
+    assert.equal(calls.listAppointments.length + calls.markNoShow.length, 0);
   });
 });

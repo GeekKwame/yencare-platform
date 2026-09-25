@@ -1,9 +1,8 @@
 import api from "./api";
 
-export async function callNextPatient({ roomId, clinicianId, force = false, completePrevious = false } = {}) {
+export async function callNextPatient({ roomId, force = false, completePrevious = false } = {}) {
   const response = await api.post("/queue/call-next", {
     roomId,
-    clinicianId,
     force,
     completePrevious,
   });

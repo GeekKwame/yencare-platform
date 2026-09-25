@@ -9,7 +9,7 @@ import {
   VISIT_TYPES,
   isAllowedStatusTransition,
 } from '../db/constants.js';
-import { allocateReferenceCode } from '../utils/referenceCode.js';
+import { allocateReferenceCode, normalizeReferenceInput } from '../utils/referenceCode.js';
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -241,7 +241,7 @@ appointmentSchema.pre('findOneAndDelete', async function releaseFromQuery() {
 });
 
 appointmentSchema.statics.findByReference = function findByReference(referenceCode) {
-  return this.findOne({ referenceCode: String(referenceCode).toUpperCase() })
+  return this.findOne({ referenceCode: normalizeReferenceInput(referenceCode) })
     .populate('patientId')
     .populate({ path: 'clinicianId', populate: { path: 'roomId' } })
     .populate('roomId')

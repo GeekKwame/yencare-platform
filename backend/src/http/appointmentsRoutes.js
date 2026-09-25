@@ -1,7 +1,9 @@
 import { Router } from 'express';
 
+import { resolveDoctorScope } from '../auth/clinicianResolver.js';
 import { logger } from '../lib/logger.js';
 import { maskPhone } from '../sms/normalizePhone.js';
+import { normalizeReferenceInput } from '../utils/referenceCode.js';
 import { asyncHandler } from './asyncHandler.js';
 import {
   appointmentEvents,
@@ -58,6 +60,12 @@ function toJson(doc) {
   if (!doc) return null;
 
   return typeof doc.toJSON === 'function' ? doc.toJSON() : doc;
+}
+
+export function arrivalReferenceFromRequest(req) {
+  return normalizeReferenceInput(
+    req.body?.reference || req.body?.referenceCode || req.params?.reference,
+  );
 }
 
 /**
@@ -168,7 +176,7 @@ async function toLookupJson(appointmentService, doc, req) {
 
 /**
  * @param {{
- *   createAppointment: (data: object) => Promise<{ appointment: object, sms: object }>,
+ *   createAppointment: (data: object, context?: { staff: object | null }) => Promise<{ appointment: object, sms: object }>,
  *   findByReference?: (referenceCode: string) => Promise<object | null>,
  *   lookupAppointment?: (query: object) => Promise<object>,
  *   findActiveAppointmentForPatient?: (appointment: object) => Promise<object | null>,
@@ -205,6 +213,9 @@ export function createAppointmentsRouter(
   // Cancel/reschedule serve both reception and patients: staff are recognised
   // here, everyone else has to prove ownership with their phone number.
   const maybeStaff = optionalStaffGuard(authenticateOptional, ALL_STAFF_ROLES);
+  // Booking is public, but only verified desk staff may admit a walk-in. A
+  // doctor, invalid or forged token leaves req.staff unset (a public booking).
+  const maybeDeskStaff = optionalStaffGuard(authenticateOptional, ['RECEPTIONIST', 'ADMIN']);
 
   // GET /api/appointments
   router.get(
@@ -217,11 +228,21 @@ export function createAppointmentsRouter(
         });
       }
 
+      const scope = await resolveDoctorScope(req.staff);
+      if (scope.isDoctor && !scope.clinicianId) {
+        logger.warn('doctor account is not linked to a clinician; returning an empty roster', {
+          subsystem: 'appointments',
+          requestId: req.id,
+          staffId: req.staff?.staffId,
+        });
+        return res.status(200).json([]);
+      }
+
       const appointments = await appointmentService.listAppointments({
         date: req.query.date,
         clinicSite:
           req.query.clinicSite || req.query.clinic,
-        clinicianId: req.query.clinicianId,
+        ...(scope.isDoctor ? { clinicianId: scope.clinicianId } : {}),
       });
 
       res.status(200).json(
@@ -233,10 +254,12 @@ export function createAppointmentsRouter(
   // POST /api/appointments
   router.post(
     '/',
+    maybeDeskStaff,
     asyncHandler(async (req, res) => {
       const result =
         await appointmentService.createAppointment(
           req.body,
+          { staff: req.staff || null },
         );
 
       const appointmentJson =
@@ -359,10 +382,7 @@ export function createAppointmentsRouter(
       });
     }
 
-    const reference =
-      req.body?.reference ||
-      req.body?.referenceCode ||
-      req.params?.reference;
+    const reference = arrivalReferenceFromRequest(req);
 
     const appointment = await appointmentService.markPatientArrived(
       reference,

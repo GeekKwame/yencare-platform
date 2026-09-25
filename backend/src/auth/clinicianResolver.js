@@ -28,3 +28,13 @@ export async function resolveClinicianIdForStaff(staff) {
 
   return null;
 }
+
+export const UNLINKED_DOCTOR_MESSAGE =
+  'Your staff account is not linked to a clinician. Ask an admin to link it.';
+
+export async function resolveDoctorScope(staff) {
+  if (staff?.role !== 'DOCTOR') {
+    return { isDoctor: false, clinicianId: null };
+  }
+  return { isDoctor: true, clinicianId: await resolveClinicianIdForStaff(staff) };
+}
