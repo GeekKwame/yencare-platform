@@ -9,7 +9,7 @@ import { createOpsRouter } from './opsRoutes.js';
 import { createPatientsRouter } from './patientsRoutes.js';
 import { createQueueRouter } from './queueRoutes.js';
 import { requestId } from './requestId.js';
-import { rateLimit, rateLimitEnabled, securityHeaders } from './security.js';
+import { nosqlSanitizer, rateLimit, rateLimitEnabled, securityHeaders } from './security.js';
 import { logger } from '../lib/logger.js';
 import { normalizeReferenceInput } from '../utils/referenceCode.js';
 
@@ -143,6 +143,7 @@ export function createApp({
   app.use(securityHeaders);
   app.use(cors(buildCorsOptions()));
   app.use(express.json({ limit: '32kb' }));
+  app.use(nosqlSanitizer);
 
   app.get('/health', async (_req, res) => {
     try {

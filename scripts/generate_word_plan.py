@@ -823,5 +823,9 @@ def build_document(output_path):
     print(f"Master document successfully created at: {output_path}")
 
 if __name__ == "__main__":
-    out = os.path.join(os.getcwd(), "YenCare-Week2-Task-Assignments.docx")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(script_dir) if os.path.basename(script_dir) == "scripts" else script_dir
+    docs_dir = os.path.join(base_dir, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+    out = os.path.join(docs_dir, "YenCare-Week2-Task-Assignments.docx")
     build_document(out)

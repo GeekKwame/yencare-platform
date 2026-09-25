@@ -128,4 +128,5 @@ export {
   ghanaNationalNumber,
   maskPhone,
   maskGhanaPhone,
+  maskStudentIndex,
 } from './normalizePhone.js';

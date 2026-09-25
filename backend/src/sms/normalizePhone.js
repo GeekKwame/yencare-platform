@@ -108,4 +108,26 @@ export function maskPhone(raw) {
   return '****';
 }
 
+/**
+ * Mask KNUST 8-digit student index number for public display (e.g. `2061****`).
+ * Protects student privacy in public lookup and queue endpoints.
+ *
+ * @param {unknown} raw
+ * @returns {string}
+ */
+export function maskStudentIndex(raw) {
+  if (raw == null) return '';
+  const str = String(raw).trim();
+  if (!str) return '';
+  if (str.includes('*')) return str;
+
+  if (str.length >= 8) {
+    return `${str.slice(0, 4)}****`;
+  }
+  if (str.length > 4) {
+    return `${str.slice(0, 4)}${'*'.repeat(str.length - 4)}`;
+  }
+  return '****';
+}
+
 export const maskGhanaPhone = maskPhone;

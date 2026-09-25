@@ -119,3 +119,68 @@ export function rateLimit({
     return next();
   };
 }
+
+const PROHIBITED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Recursively inspects and sanitizes objects or arrays, removing keys that
+ * begin with '$' (MongoDB operator injection vectors like $gt, $ne, $regex)
+ * or contain '.' (dotted property path injection). Also strips dangerous
+ * prototype pollution keys (__proto__, constructor, prototype).
+ *
+ * Mutates the object in-place and returns it for convenience.
+ *
+ * @template T
+ * @param {T} value
+ * @returns {T}
+ */
+export function sanitizeNoSql(value) {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  if (value instanceof Date || (typeof Buffer !== 'undefined' && Buffer.isBuffer(value))) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      value[i] = sanitizeNoSql(value[i]);
+    }
+    return value;
+  }
+
+  for (const key of Object.getOwnPropertyNames(value)) {
+    if (PROHIBITED_KEYS.has(key) || key.startsWith('$') || key.includes('.')) {
+      delete value[key];
+    } else {
+      value[key] = sanitizeNoSql(value[key]);
+    }
+  }
+
+  return value;
+}
+
+/**
+ * Global defense-in-depth Express middleware that recursively sanitizes
+ * `req.body`, `req.query`, and `req.params` against NoSQL operator injection.
+ *
+ * Strips all operator keys (starting with '$' or containing '.') before
+ * parameters reach application routes or database queries.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} _res
+ * @param {import('express').NextFunction} next
+ */
+export function nosqlSanitizer(req, _res, next) {
+  if (req.body && typeof req.body === 'object') {
+    sanitizeNoSql(req.body);
+  }
+  if (req.query && typeof req.query === 'object') {
+    sanitizeNoSql(req.query);
+  }
+  if (req.params && typeof req.params === 'object') {
+    sanitizeNoSql(req.params);
+  }
+  return next();
+}

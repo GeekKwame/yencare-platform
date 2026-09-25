@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import { resolveDoctorScope } from '../auth/clinicianResolver.js';
 import { logger } from '../lib/logger.js';
-import { maskPhone } from '../sms/normalizePhone.js';
+import { maskPhone, maskStudentIndex } from '../sms/normalizePhone.js';
 import { normalizeReferenceInput } from '../utils/referenceCode.js';
 import { asyncHandler } from './asyncHandler.js';
 import {
@@ -82,14 +82,22 @@ function maskAppointmentForLookup(appointmentJson, isStaff = false) {
 
   const copy = { ...appointmentJson };
 
-  const raw =
+  const rawPhone =
     (copy.patientId &&
       typeof copy.patientId === 'object' &&
       (copy.patientId.phone || copy.patientId.phoneNumber)) ||
     copy.phone ||
     copy.phoneNumber;
 
-  const masked = maskPhone(raw);
+  const masked = maskPhone(rawPhone);
+
+  const rawIndex =
+    (copy.patientId &&
+      typeof copy.patientId === 'object' &&
+      copy.patientId.studentIndex) ||
+    copy.studentIndex;
+
+  const maskedIndex = maskStudentIndex(rawIndex);
 
   if (copy.patientId && typeof copy.patientId === 'object') {
     copy.patientId = {
@@ -97,12 +105,16 @@ function maskAppointmentForLookup(appointmentJson, isStaff = false) {
       phone: masked,
       phoneNumber: masked,
       maskedPhone: masked,
+      ...(maskedIndex
+        ? { studentIndex: maskedIndex, maskedStudentIndex: maskedIndex }
+        : {}),
     };
   }
 
   if (copy.phone) copy.phone = masked;
   if (copy.phoneNumber) copy.phoneNumber = masked;
   if (masked) copy.maskedPhone = masked;
+  if (copy.studentIndex && maskedIndex) copy.studentIndex = maskedIndex;
 
   return copy;
 }

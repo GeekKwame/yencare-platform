@@ -1119,28 +1119,26 @@ def convert_html_to_pdf(html_path, pdf_path):
         return False
 
 if __name__ == "__main__":
-    base_dir = os.getcwd()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(script_dir) if os.path.basename(script_dir) == "scripts" else script_dir
+    docs_dir = os.path.join(base_dir, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
     
-    # 1. Output Week 3 PDF
-    html_file = os.path.join(base_dir, "week3_report_temp.html")
-    pdf_file = os.path.join(base_dir, "YenCare-Week3-Task-Assignments.pdf")
+    # 1. Output Week 3 HTML -> PDF directly in docs/
+    html_file = os.path.join(docs_dir, "week3_report_temp.html")
+    docs_pdf = os.path.join(docs_dir, "YenCare-Week3-Task-Assignments.pdf")
     
     with open(html_file, "w", encoding="utf-8") as f:
         f.write(generate_week3_html())
     
-    success = convert_html_to_pdf(html_file, pdf_file)
+    success = convert_html_to_pdf(html_file, docs_pdf)
     
     # Clean up temp html
     if os.path.exists(html_file):
         os.remove(html_file)
+    print(f"PDF successfully generated at: {docs_pdf}")
         
-    # 2. Output Week 3 DOCX in sync
-    docx_file = os.path.join(base_dir, "YenCare-Week3-Task-Assignments.docx")
-    build_week3_docx(docx_file)
-    
-    # Also place a copy of the PDF into docs/ for easy reference
-    docs_pdf = os.path.join(base_dir, "docs", "YenCare-Week3-Task-Assignments.pdf")
-    if os.path.exists(pdf_file):
-        import shutil
-        shutil.copyfile(pdf_file, docs_pdf)
-        print(f"Copied PDF to docs/ folder: {docs_pdf}")
+    # 2. Output Week 3 DOCX directly in docs/
+    docs_docx = os.path.join(docs_dir, "YenCare-Week3-Task-Assignments.docx")
+    build_week3_docx(docs_docx)
+    print(f"DOCX successfully generated at: {docs_docx}")

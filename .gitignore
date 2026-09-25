@@ -35,8 +35,9 @@ pnpm-debug.log*
 # OS generated files
 .DS_Store
 Thumbs.db
-
-generate_word_plan.py
+# Temporary report artifacts
+*_temp.html
+*.tmp
 
 *.docx
 

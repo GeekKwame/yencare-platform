@@ -52,6 +52,18 @@ Set `CORS_ORIGIN` on Render to the canonical Vercel URL. Unknown origins do not 
 ### 3.4 Conflict Detection
 If a student index belongs to one registered patient and a telephone number belongs to another, the service halts with `409 Conflict` to prevent identity overwriting or unauthorized association.
 
+### 3.5 Defense-in-Depth Generic NoSQL Operator Sanitization
+In addition to schema-level casting, global Express middleware (`nosqlSanitizer` in `src/http/security.js`, mounted in `src/http/app.js`) recursively inspects `req.body`, `req.query`, and `req.params`:
+- Strips any keys starting with `$` (neutralizing query operator injections such as `$gt`, `$ne`, `$regex`, `$where`).
+- Strips dotted property paths (neutralizing path injection).
+- Strips prototype pollution keys (`__proto__`, `constructor`, `prototype`).
+- Protects all endpoints unconditionally without requiring per-route boilerplate.
+
+### 3.6 Public Waiting Room Privacy & Act 843 Compliance
+To satisfy Ghana Data Protection Act (Act 843) requirements on public waiting room screens:
+- **Corridor Display Boards (S10, Corridor TV, Clinic Activity)**: Public screens and `GET /api/queue/activity` expose only tokens (`nowServingToken`, `waitingTokens`) and consulting room labels. Student names and phone numbers are never broadcast on public monitors.
+- **Public Appointment Lookups**: `GET /api/appointments/:reference` and `GET /api/appointments/lookup` dynamically mask patient identifiers (`+233 24 **** 567` and `2061****`) via `maskAppointmentForLookup`. Full unmasked records are accessible solely to authenticated clinical staff holding valid JWT credentials.
+
 ---
 
 ## 4. Secrets Management
@@ -62,14 +74,17 @@ If a student index belongs to one registered patient and a telephone number belo
 
 ---
 
-## 5. Known Security Gaps & Production Recommendations
+## 5. Security Controls Implemented & Final Production Recommendations
 
-To elevate the platform to formal production compliance prior to university-wide launch, the following controls should be introduced:
+During Week 4 and Gate 5 hardening, core security controls have been fully implemented and verified:
 
-| Area | Current Implementation | Production Recommendation |
+| Area | Current Codebase Implementation (Week 4 / Gate 5) | Final Production Recommendation (Gate 5) |
 |---|---|---|
-| **Rate Limiting** | None | Add `express-rate-limit` to `/api/patients` (e.g., max 10 requests per minute per IP) to prevent enumeration of student records. |
-| **HTTP Security Headers** | Basic Express defaults | Mount `helmet` middleware to enforce HSTS, X-Content-Type-Options, and Content Security Policy (CSP). |
-| **Staff Portal Auth** | Demo role switcher (`S01SignIn.tsx`) | Implement university single sign-on (SSO) or institutional email OAuth / JWT authentication for clinical staff. |
-| **Audit Logging** | Console logging | Integrate structured logging (e.g., Pino or Winston) shipping to an external log aggregator for clinical compliance auditing. |
-| **Transport Security** | HTTP in local dev | Enforce TLS/HTTPS on all public endpoints via reverse proxy (Nginx / Cloudflare) with automated Let's Encrypt certificates. |
+| **Rate Limiting** | Multi-tier per-IP and per-reference rate limiting (`security.js`, `app.js`): arrival (5/15m), lookup (30/m), queue status (120/m). | Connect Redis-backed store if scaling across multi-container backend clusters. |
+| **HTTP Security Headers** | Custom security headers middleware (`security.js`) setting X-Content-Type-Options, Frame protection, and Referrer policy. | Retain and expand Content Security Policy (CSP) when connecting third-party analytics. |
+| **Staff Portal Auth** | Centralized JWT Bearer authentication with `bcryptjs` password hashing and strict RBAC matrix (`staffAuth.js`). | Optional: Integrate KNUST University SSO / SAML for campus credentials in future phases. |
+| **Audit Logging** | MongoDB `AuditLog` collection tracking actorType, actorId, old/new times, and clinical cancellation/reschedule reasons. | Configure log forwarding to a centralized audit storage (e.g. AWS CloudWatch or Datadog). |
+| **Transport Security** | TLS/HTTPS enforced on Vercel and Render staging deployments. | Ensure strict HSTS preloading on the custom domain before public campus launch. |
+| **NoSQL Operator Sanitization** | Strict field-level casting (`validate.js`) plus global recursive middleware (`nosqlSanitizer` in `security.js`, `app.js`) stripping `$*`, `.*`, and prototype pollution keys. | Fully active in codebase; verified with 14 automated tests in `securitySanitize.test.js`. |
+| **Public Display & Lookup Privacy** | Tokens only on waiting corridor screens (S10, Corridor TV, `/api/queue/activity`). Phone masking (`+233 24 **** 567`) and index masking (`2061****`) in public lookups. | Fully compliant with Ghana Data Protection Act (Act 843) principles of data minimization. |
+

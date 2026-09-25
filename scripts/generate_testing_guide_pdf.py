@@ -594,11 +594,6 @@ def generate_pdf():
 
     if os.path.exists(abs_pdf) and os.path.getsize(abs_pdf) > 0:
         print(f"SUCCESS: PDF generated at: {abs_pdf} ({os.path.getsize(abs_pdf):,} bytes)")
-        
-        # Copy to root
-        root_pdf = os.path.join(base_dir, "YenCare_Live_Testing_Guide.pdf")
-        shutil.copyfile(abs_pdf, root_pdf)
-        print(f"SUCCESS: Copied PDF to root: {root_pdf}")
         return True
     else:
         print(f"FAILED: {res.stderr}")

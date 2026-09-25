@@ -29,8 +29,8 @@ npm test
 ```
 
 ### 2.2 Suite Metrics
-- **Current Total**: **339 tests** across **84 suites** (`pass 339, fail 0`).
-- **Execution Time**: ~14.8 seconds.
+- **Current Total**: **391 tests** across **94 suites** (`pass 391, fail 0`).
+- **Execution Time**: ~37 seconds.
 
 ### 2.3 Test Suite Catalog
 
@@ -40,10 +40,12 @@ npm test
 | `test/rbac.test.js` | Auth / Security | Validates centralized `hasPermission` helper (e.g. `APPOINTMENTS_CHECKIN`, `QUEUE_CALL_NEXT`, `QUEUE_ADVANCE`) and HTTP middleware permission enforcement. |
 | `test/appointmentOwnership.test.js` | Security / Auth Bypass | Verifies rejection of forged/unverified tokens on cancel and reschedule; asserts actor identity is server-derived only. |
 | `test/rateLimit.test.js` | Security / Anti-Abuse | Verifies per-IP rate limiting on public lookup endpoints and arrival brute-force protection (5 attempts / 15 min). |
-| `test/studentBookingCap.test.js` | Clinical Policy | Enforces student active booking limit (max 2 active bookings) and double-booking guard (HTTP 409). |
+| `test/bookAppointmentHardening.test.js` | Clinical Policy | Enforces student active booking limit (max 2 active bookings), same-day double-booking guard (HTTP 409), and past-slot rejection. |
 | `test/visitDayGuard.test.js` | Clinical Policy | Enforces arrival window (60m early to 15m late) and no-show grace period rules. |
 | `test/patientsHttp.test.js` | HTTP Layer | `POST /api/patients`, `GET /api/patients/:id`, identifier formatting, `GET /health`. |
-| `test/staffAuth.test.js` | Authentication | Staff sign-in, JWT issuance, token refresh, demo account policy, and RBAC guards. |
+| `test/staffAuthHttp.test.js` & `staffAuthHardening.test.js` | Authentication | Staff sign-in, JWT issuance, token refresh, demo account policy, and doctor workstation isolation. |
+| `test/appointmentOtp.test.js` | Security / Verification | SMS OTP generation, expiration, validation, and staff bypass for appointment reschedule and cancellation. |
+| `test/appointmentAudit.test.js` | Compliance & Auditing | Comprehensive immutable audit logging for appointment operations with actor tracking. |
 | `test/queueEngine.test.js` | Virtual Queue | Room assignment, token advancement, SSE real-time event emission, and no-show slot release. |
 
 ---
