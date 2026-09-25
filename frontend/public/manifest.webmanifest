@@ -1,0 +1,73 @@
+{
+  "name": "YɛnCare — Outpatient Clinic & Queue Platform",
+  "short_name": "YɛnCare",
+  "description": "Outpatient clinic appointment scheduling and live virtual queue management for KNUST Health Services.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#F7F8F7",
+  "theme_color": "#087F6C",
+  "orientation": "portrait-primary",
+  "lang": "en-GH",
+  "dir": "ltr",
+  "categories": [
+    "health",
+    "medical",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book Appointment",
+      "short_name": "Book",
+      "description": "Book a new outpatient appointment",
+      "url": "/appointments",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Clinic Activity",
+      "short_name": "Activity",
+      "description": "Check live queue tokens and wait times",
+      "url": "/clinic-activity",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Queue Tracker",
+      "short_name": "Queue",
+      "description": "Check your live queue status or token position",
+      "url": "/queue",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

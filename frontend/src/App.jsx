@@ -8,6 +8,7 @@ import StaffLogin from './pages/StaffLogin'
 import CorridorDisplay from './pages/CorridorDisplay'
 import RequireStaffAuth from './components/RequireStaffAuth'
 import ConnectivityBanner from './components/ConnectivityBanner'
+import PwaInstallPrompt from './components/PwaInstallPrompt'
 import NotFound from './pages/NotFound'
 import Footer from './components/Footer'
 import ScrollToTop from './components/ScrollToTop'
@@ -20,6 +21,7 @@ const App = () => {
   return (
     <section className="min-h-screen overflow-hidden">
       <ConnectivityBanner />
+      <PwaInstallPrompt />
       {!isStaffShell && <Nav />}
       <ScrollToTop />
       <Routes>
