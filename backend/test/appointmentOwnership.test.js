@@ -165,25 +165,29 @@ describe('cancel / reschedule HTTP ownership wiring', () => {
     return (await res.json()).token;
   }
 
-  /** Mock service that enforces the real domain guards against a fixed appointment. */
+  /** Mock cancel service that runs the real cancel guards, in the real order, against a fixed appointment. */
   function guardedService(appointment) {
-    const handle = (id, options) => {
-      assertAppointmentOwnership(appointment, options);
-      assertNotInLiveQueue(appointment, options);
-      return {
-        appointment: { ...appointment, patientId: undefined, status: 'CANCELLED' },
-        releasedSlotId: '68bf2c0e9c1a2b0099999999',
-        cancelledTime: new Date().toISOString(),
-        oldSlotId: '68bf2c0e9c1a2b0088888888',
-        newSlotId: '68bf2c0e9c1a2b0099999999',
-        seenOptions: options,
-      };
-    };
-
     return {
-      cancelAppointment: async (id, options) => handle(id, options),
-      rescheduleAppointment: async (id, options) => handle(id, options),
+      cancelAppointment: async (id, options) => {
+        await assertAppointmentCancelOtp(appointment, options);
+        assertNotInLiveQueue(appointment, options);
+        return {
+          appointment: { ...appointment, patientId: undefined, status: 'CANCELLED' },
+          releasedSlotId: '68bf2c0e9c1a2b0099999999',
+          cancelledTime: new Date().toISOString(),
+        };
+      },
     };
+  }
+
+  function issueCancelOtp(appointment, code) {
+    return storeOtp({
+      appointmentId: appointment._id,
+      referenceCode: appointment.referenceCode,
+      action: 'CANCEL',
+      phone: appointment.patientId.phone,
+      code,
+    });
   }
 
   async function cancel(url, { token, body } = {}) {
@@ -197,13 +201,14 @@ describe('cancel / reschedule HTTP ownership wiring', () => {
     });
   }
 
-  it('a staff token cancels without a phone number', async () => {
+  it('a staff token cancels without a phone number or OTP', async () => {
+    clearAllOtps();
     /** @type {object[]} */
     const seen = [];
     const { url } = await client({
       cancelAppointment: async (id, options) => {
         seen.push(options);
-        assertAppointmentOwnership(bookedByAkosua, options);
+        await assertAppointmentCancelOtp(bookedByAkosua, options);
         return { appointment: { referenceCode: 'YC-4821', status: 'CANCELLED' } };
       },
     });
@@ -213,47 +218,63 @@ describe('cancel / reschedule HTTP ownership wiring', () => {
     assert.equal(res.status, 200);
     assert.equal(seen[0].actorIsStaff, true);
     assert.equal(seen[0].phone, null);
+    assert.equal(seen[0].otpCode ?? null, null);
   });
 
-  it('an unauthenticated caller with the correct phone succeeds', async () => {
+  it('an unauthenticated caller needs the OTP: the booking phone alone is refused, a valid OTP succeeds', async () => {
+    clearAllOtps();
     const { url } = await client(guardedService(bookedByAkosua));
 
-    const res = await cancel(url, { body: { phone: '0241234567' } });
+    const denied = await cancel(url, { body: { phone: '0241234567' } });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error, OTP_REQUIRED_MESSAGE);
+
+    await issueCancelOtp(bookedByAkosua, '7314');
+    const res = await cancel(url, { body: { phone: '0241234567', otpCode: '7314' } });
 
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.equal(body.message, 'Appointment cancelled successfully');
+    clearAllOtps();
   });
 
-  it('an unauthenticated caller with the wrong phone gets 403', async () => {
+  it('an unauthenticated caller with a wrong OTP gets 403', async () => {
+    clearAllOtps();
+    await issueCancelOtp(bookedByAkosua, '7314');
     const { url } = await client(guardedService(bookedByAkosua));
 
-    const res = await cancel(url, { body: { phone: '0209998888' } });
+    const res = await cancel(url, { body: { phone: '0241234567', otpCode: '1111' } });
 
     assert.equal(res.status, 403);
-    assert.equal((await res.json()).error, OWNERSHIP_CHECK_FAILED_MESSAGE);
+    assert.match((await res.json()).error, /Incorrect verification code/);
+    clearAllOtps();
   });
 
-  it('an unauthenticated caller with no phone gets 403', async () => {
+  it('an unauthenticated caller with no OTP gets 403', async () => {
+    clearAllOtps();
     const { url } = await client(guardedService(bookedByAkosua));
 
     const res = await cancel(url, { body: {} });
 
     assert.equal(res.status, 403);
-    assert.equal((await res.json()).error, PHONE_REQUIRED_MESSAGE);
+    assert.equal((await res.json()).error, OTP_REQUIRED_MESSAGE);
   });
 
-  it('a stale or invalid staff token falls back to the patient phone path', async () => {
+  it('a stale or invalid staff token falls back to the patient OTP path', async () => {
+    clearAllOtps();
     const { url } = await client(guardedService(bookedByAkosua));
 
-    const denied = await cancel(url, { token: 'not-a-real-token', body: {} });
+    const denied = await cancel(url, { token: 'not-a-real-token', body: { phone: '0241234567' } });
     assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error, OTP_REQUIRED_MESSAGE);
 
+    await issueCancelOtp(bookedByAkosua, '7314');
     const allowed = await cancel(url, {
       token: 'not-a-real-token',
-      body: { phone: '0241234567' },
+      body: { otpCode: '7314' },
     });
     assert.equal(allowed.status, 200);
+    clearAllOtps();
   });
 
   it('reschedule requires the OTP: the booking phone alone is refused, a valid OTP is accepted', async () => {
@@ -294,16 +315,19 @@ describe('cancel / reschedule HTTP ownership wiring', () => {
     clearAllOtps();
   });
 
-  it('a WAITING patient is blocked but reception is not', async () => {
+  it('a WAITING patient is blocked even with a valid OTP, but reception is not', async () => {
+    clearAllOtps();
     const waiting = { ...bookedByAkosua, status: 'WAITING' };
+    await issueCancelOtp(waiting, '7314');
     const { url } = await client(guardedService(waiting));
 
-    const blocked = await cancel(url, { body: { phone: '0241234567' } });
+    const blocked = await cancel(url, { body: { otpCode: '7314' } });
     assert.equal(blocked.status, 400);
-    assert.match((await blocked.json()).error, /live queue/i);
+    assert.equal((await blocked.json()).error, LIVE_QUEUE_LOCKED_MESSAGE);
 
     const allowed = await cancel(url, { token: await staffToken(url) });
     assert.equal(allowed.status, 200);
+    clearAllOtps();
   });
 });
 
