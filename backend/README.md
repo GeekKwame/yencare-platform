@@ -18,9 +18,10 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone — **receptionist/admin JWT** |
 | `GET` | `/api/appointments` | List appointments — **staff JWT** (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
 | `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
-| `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
-| `GET` | `/api/appointments/lookup` | Patient search by `reference`, `studentIndex`, or `phone` (exactly one) |
-| `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, and room token |
+| `GET` | `/api/appointments/:reference` | Booking details. Public: reference + booking phone in the **`X-Booking-Phone` header**. Staff JWT: reference alone |
+| `GET` | `/api/appointments/lookup` | Public: `?reference=` + `X-Booking-Phone` header. Staff JWT: `reference`, `studentIndex`, or `phone` |
+| `POST` | `/api/appointments/:reference/arrive` | Patient "I've arrived" (reference only); returns a minimal status object, no personal details |
+| `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, room token and schedule; no personal details |
 | `PATCH` | `/api/appointments/:id/status` | Desk status change — **receptionist/admin JWT** |
 | `PATCH` | `/api/appointments/:id/cancel` | Cancel — **staff JWT, or a valid `otpCode` in the body** |
 | `PATCH` | `/api/appointments/:id/reschedule` | Move to `newSlotId` — **staff JWT, or a valid `otpCode` in the body** |
@@ -31,7 +32,7 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
 
-No auth on **patient** registration, booking, appointment lookup, or catalog routes. `GET /api/patients/:identifier` is reception/admin only. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+No auth on **patient** registration, booking, appointment lookup, or catalog routes; a public appointment lookup must prove the booking phone (see **Lookup Booking** below). `GET /api/patients/:identifier` is reception/admin only. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
 
 **Cancel and reschedule need proof of ownership.** A verified staff token (receptionist / doctor / admin) is enough on its own; staff never need a code. Patients must send `otpCode`: the 4-digit code texted to the phone on record by `POST /api/appointments/:id/request-cancel-otp` or `POST /api/appointments/:id/request-reschedule-otp`. A code is valid for 10 minutes, for one use, for that appointment and that action only, and is locked after 5 wrong attempts. A phone number in the body does not prove ownership. Otherwise the API answers **403**:
 
@@ -305,13 +306,23 @@ Create an appointment and automatically dispatch an SMS confirmation to the pati
 
 **Lookup Booking (`GET /api/appointments/:reference`)**:
 
-Retrieve an existing booking by its speakable reference code (e.g., `YC-4821`) or MongoDB ObjectId:
+Retrieve an existing booking by its speakable reference code (e.g., `YC-4821`) or MongoDB ObjectId.
+
+Public callers (no staff token) must send the phone number used for the booking in the **`X-Booking-Phone`** request header. The phone is never sent in the URL, so it does not end up in access logs; a `?phone=` query parameter is **ignored** for public callers.
 
 ```bash
-curl -s http://localhost:4000/api/appointments/YC-4821
+curl -s http://localhost:4000/api/appointments/YC-4821 -H "X-Booking-Phone: 024 123 4567"
 ```
 
-Returns **200** with populated `patientId`, `clinicianId`, `roomId`, and `timeSlotId`, or **404** if not found.
+| Case | Status | Body |
+|---|---|---|
+| Reference + matching phone | **200** | Appointment with populated `patientId`, `clinicianId`, `roomId`, `timeSlotId`; patient phone and student index masked |
+| No phone header (whether or not the reference exists) | **400** | `{ "error": "Enter the phone number used for this booking." }` |
+| Unknown reference **or** wrong phone | **404** | `{ "error": "Appointment not found or phone number does not match" }` — identical for both, so a code cannot be confirmed by guessing |
+
+`GET /api/appointments/lookup?reference=YC-4821` follows the same rules (phone in the `X-Booking-Phone` header). With a verified staff token, both endpoints work with the reference alone, and `/lookup` also accepts `studentIndex` or `phone` (header or query).
+
+Logged request paths mask phone numbers, student indexes, NHIS numbers, OTP codes, tokens and passwords; booking references stay readable for tracing.
 
 Both this endpoint and `GET /api/appointments/lookup` add two fields on top of the serialized appointment, so a reference that is no longer live cannot be mistaken for one that is:
 
@@ -357,11 +368,14 @@ BOOKED ──(reception check-in)──> CHECKED_IN ──(enter queue)──> W
 ### Queue Endpoints
 
 #### 1. Real-Time Queue Status (`GET /api/appointments/:reference/queue-status`)
-Returns real-time queue position, dynamic wait time, and room token for Screen P18:
+Returns real-time queue position, dynamic wait time, and room token for Screen P18. It works with the reference alone and never includes the patient's name, phone, student index, NHIS number or notes. The patient Queue page, Clinic Activity and the home page booking card use this endpoint.
 ```json
 {
   "referenceCode": "YC-4821",
   "status": "WAITING",
+  "appointmentDate": "2026-09-30",
+  "appointmentTime": "10:00",
+  "clinicSite": "students-clinic",
   "queueToken": "A-02",
   "position": 2,
   "patientsAhead": 1,
@@ -370,6 +384,21 @@ Returns real-time queue position, dynamic wait time, and room token for Screen P
   "nowServingToken": "A-01",
   "room": { "id": "68bf2c0e9c1a2b0012345672", "name": "Room 1", "clinicSite": "students-clinic" },
   "clinician": { "id": "68bf2c0e9c1a2b0012345671", "name": "Dr. Kwame Boateng", "title": "Senior Medical Officer" }
+}
+```
+
+**Patient "I've arrived" (`POST /api/appointments/:reference/arrive`, or `POST /api/appointments/arrive` with `{ "reference": "YC-4821" }`)** moves `BOOKED` → `CHECKED_IN` inside the arrival window. It needs only the reference, so its response is deliberately minimal:
+
+```json
+{
+  "id": "68bf2c0e9c1a2b0012345678",
+  "referenceCode": "YC-4821",
+  "status": "CHECKED_IN",
+  "appointmentDate": "2026-09-30",
+  "appointmentTime": "10:00",
+  "clinicSite": "students-clinic",
+  "queueToken": null,
+  "checkInTime": "2026-09-30T09:12:00.000Z"
 }
 ```
 

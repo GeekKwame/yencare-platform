@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getArriveByLabel } from "../data/bookingOptions";
 import { CLINIC_SITE_LABELS } from "../data/mockAppointments";
-import { mapAppointment } from "../lib/appointmentView";
-import { arriveAppointment, lookupAppointment } from "../services/appointments";
+import { mapQueueStatus } from "../lib/appointmentView";
+import { arriveAppointment, getQueueStatus } from "../services/appointments";
 import { getClinicActivity } from "../services/queue";
 
 function waitText(minutes) {
@@ -29,7 +29,7 @@ export default function ClinicActivity() {
     async function loadAppointment() {
       if (!initialRef) return;
       try {
-        const found = await lookupAppointment({ reference: initialRef });
+        const found = await getQueueStatus(initialRef);
         if (!cancelled) {
           setAppointment(found);
           if (found?.clinicSite) setClinicSite(found.clinicSite);
@@ -63,7 +63,7 @@ export default function ClinicActivity() {
     return () => window.clearInterval(id);
   }, [clinicSite]);
 
-  const view = appointment ? mapAppointment(appointment) : null;
+  const view = appointment ? mapQueueStatus(appointment) : null;
   const isUserBookedHere = view && view.clinicSite === clinicSite;
   const waitingTokens = activity?.waitingTokens || [];
   const activeRooms = activity?.activeRooms || activity?.rooms || [];
@@ -72,9 +72,7 @@ export default function ClinicActivity() {
     if (!view?.referenceCode) return;
     setArriving(true);
     try {
-      const updated = await arriveAppointment(view.referenceCode, {
-        phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
-      });
+      const updated = await arriveAppointment(view.referenceCode);
       setAppointment(updated);
       setJustArrived(true);
       await loadActivity(true);

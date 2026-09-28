@@ -236,7 +236,8 @@ describe('HTTP End-to-End NoSQL Operator Sanitization & Privacy Guards', () => {
     const { url } = await client();
 
     const res = await fetch(
-      `${url}/api/appointments/lookup?reference=YC-4821&phone=${encodeURIComponent('0241234567')}`,
+      `${url}/api/appointments/lookup?reference=YC-4821`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
     assert.equal(res.status, 200);
 
@@ -255,7 +256,8 @@ describe('HTTP End-to-End NoSQL Operator Sanitization & Privacy Guards', () => {
     const { url } = await client();
 
     const res = await fetch(
-      `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+      `${url}/api/appointments/YC-4821`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
     assert.equal(res.status, 200);
 

@@ -31,19 +31,12 @@ export async function updateAppointmentStatus(id, status) {
 
 /**
  * Public patient lookup requires both reference code and phone number.
- * @param {{ reference?: string, phone?: string, phoneNumber?: string, studentIndex?: string }} query
+ * @param {{ reference: string, phone: string }} query
  */
-export async function lookupAppointment(query) {
-  const phone = query.phone || query.phoneNumber;
-  if (query.reference) {
-    const response = await api.get(
-      `/appointments/${encodeURIComponent(query.reference)}`,
-      { params: phone ? { phone } : undefined },
-    );
-    return response.data;
-  }
-
-  const response = await api.get("/appointments/lookup", { params: query });
+export async function lookupAppointment({ reference, phone }) {
+  const response = await api.get(`/appointments/${encodeURIComponent(reference)}`, {
+    headers: { "X-Booking-Phone": String(phone || "").trim() },
+  });
   return response.data;
 }
 

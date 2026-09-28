@@ -75,6 +75,7 @@ const BookingForm = () => {
   const [findReference, setFindReference] = useState(
     () => normalizeReference(searchParams.get("ref") || ""),
   );
+  const [verifiedBooking, setVerifiedBooking] = useState({ reference: "", phone: "" });
   const startInFind = searchParams.get("find") === "1" || Boolean(findReference);
 
   useEffect(() => {
@@ -124,6 +125,7 @@ const BookingForm = () => {
     setFormData(initialFormData);
     setSlotTaken(false);
     setFindReference("");
+    setVerifiedBooking({ reference: "", phone: "" });
     setSearchParams({});
     setStep(1);
   };
@@ -131,6 +133,7 @@ const BookingForm = () => {
   const handleViewAppointment = (reference) => {
     const ref = normalizeReference(reference);
     rememberBookingReference(ref);
+    setVerifiedBooking({ reference: ref, phone: formData.phoneNumber || "" });
     clearDraft();
     setFormData(initialFormData);
     setSlotTaken(false);
@@ -159,7 +162,14 @@ const BookingForm = () => {
 
   const renderStep = () => {
     if (step === 1) {
-      return <WelcomeForm onStartBooking={handleStartBooking} initialReference={findReference} initialFind={startInFind} />;
+      return (
+        <WelcomeForm
+          onStartBooking={handleStartBooking}
+          initialReference={findReference}
+          initialPhone={verifiedBooking.reference === findReference ? verifiedBooking.phone : ""}
+          initialFind={startInFind}
+        />
+      );
     }
 
     if (step === 2) {

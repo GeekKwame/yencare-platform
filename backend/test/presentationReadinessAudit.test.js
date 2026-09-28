@@ -112,7 +112,7 @@ describe('Presentation Readiness: Appointment Lookup Security (Section 2)', () =
   it('1. Valid reference + valid matching phone number returns 200 with masked details', async () => {
     const { url } = await client();
 
-    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-4821&phone=0241234567`);
+    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-4821`, { headers: { 'x-booking-phone': '0241234567' } });
     assert.equal(res.status, 200);
 
     const body = await res.json();
@@ -125,7 +125,7 @@ describe('Presentation Readiness: Appointment Lookup Security (Section 2)', () =
   it('2. Valid reference + wrong phone number returns 404 with generic error', async () => {
     const { url } = await client();
 
-    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-4821&phone=0209998877`);
+    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-4821`, { headers: { 'x-booking-phone': '0209998877' } });
     assert.equal(res.status, 404);
 
     const body = await res.json();
@@ -138,7 +138,7 @@ describe('Presentation Readiness: Appointment Lookup Security (Section 2)', () =
       findByReference: async () => null,
     });
 
-    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-9999&phone=0241234567`);
+    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-9999`, { headers: { 'x-booking-phone': '0241234567' } });
     assert.equal(res.status, 404);
 
     const body = await res.json();
@@ -152,12 +152,15 @@ describe('Presentation Readiness: Appointment Lookup Security (Section 2)', () =
     assert.equal(resLookup.status, 400);
     const bodyLookup = await resLookup.json();
     assert.ok(bodyLookup.error.toLowerCase().includes('phone number'));
+
+    const resDirect = await fetch(`${url}/api/appointments/YC-4821`);
+    assert.equal(resDirect.status, 400);
   });
 
   it('5. Phone number only is rejected with 400 (Reference required)', async () => {
     const { url } = await client();
 
-    const res = await fetch(`${url}/api/appointments/lookup?phone=0241234567`);
+    const res = await fetch(`${url}/api/appointments/lookup`, { headers: { 'x-booking-phone': '0241234567' } });
     assert.equal(res.status, 400);
     const body = await res.json();
     assert.ok(body.error.toLowerCase().includes('reference'));
@@ -176,16 +179,16 @@ describe('Presentation Readiness: Appointment Lookup Security (Section 2)', () =
     });
 
     // Valid ref + valid phone
-    const okRes = await fetch(`${url}/api/appointments/YC-4821?phone=0241234567`);
+    const okRes = await fetch(`${url}/api/appointments/YC-4821`, { headers: { 'x-booking-phone': '0241234567' } });
     assert.equal(okRes.status, 200);
 
     // Valid ref + wrong phone -> 404 generic
-    const wrongPhoneRes = await fetch(`${url}/api/appointments/YC-4821?phone=0200000000`);
+    const wrongPhoneRes = await fetch(`${url}/api/appointments/YC-4821`, { headers: { 'x-booking-phone': '0200000000' } });
     assert.equal(wrongPhoneRes.status, 404);
     assert.equal((await wrongPhoneRes.json()).error, 'Appointment not found or phone number does not match');
 
     // Invalid ref + phone -> 404 generic
-    const badRefRes = await fetch(`${url}/api/appointments/YC-0000?phone=0241234567`);
+    const badRefRes = await fetch(`${url}/api/appointments/YC-0000`, { headers: { 'x-booking-phone': '0241234567' } });
     assert.equal(badRefRes.status, 404);
     assert.equal((await badRefRes.json()).error, 'Appointment not found or phone number does not match');
   });

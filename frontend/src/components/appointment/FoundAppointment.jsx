@@ -60,10 +60,11 @@ export default function FoundAppointment({
             ? view.phoneNumber
             : undefined,
       });
-      onUpdated?.(updated);
       const ref = updated?.referenceCode || view.referenceCode;
       if (ref && ref !== "—") {
         navigate(`/queue?ref=${encodeURIComponent(ref)}`);
+      } else {
+        onUpdated?.(updated);
       }
     } catch (err) {
       setArriveError(

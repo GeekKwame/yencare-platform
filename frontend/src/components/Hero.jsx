@@ -10,10 +10,10 @@ import { MdAnalytics, MdArrowForward, MdLocalHospital, MdSchedule, MdSms } from 
 import Logo from "../assets/Yencare Logo.png";
 import { accraClockLabel, isStudentsClinicOpen, isClinicOpen } from "../lib/accraTime";
 import {
-  mapAppointment,
+  mapQueueStatus,
   readLastBookingReference,
 } from "../lib/appointmentView";
-import { lookupAppointment } from "../services/appointments";
+import { getQueueStatus } from "../services/appointments";
 import { getClinicActivity } from "../services/queue";
 import { Button, StatusBadge } from "./ui";
 
@@ -99,11 +99,10 @@ export default function Hero() {
     if (!ref) return undefined;
     let cancelled = false;
 
-    lookupAppointment({ reference: ref })
+    getQueueStatus(ref)
       .then((found) => {
         if (cancelled) return;
-        const view = mapAppointment(found);
-        if (LIVE_STATUSES.has(view.status)) setAppointment(found);
+        if (LIVE_STATUSES.has(found?.status)) setAppointment(found);
       })
       .catch(() => {
         if (!cancelled) setAppointment(null);
@@ -114,7 +113,7 @@ export default function Hero() {
     };
   }, []);
 
-  const view = appointment ? mapAppointment(appointment) : null;
+  const view = appointment ? mapQueueStatus(appointment) : null;
   const isLive = view && LIVE_STATUSES.has(view.status);
   const bookTo = studentsClinicOpen ? "/appointments?book=1" : "/appointments";
 
@@ -223,7 +222,9 @@ export default function Hero() {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
                     Your appointment today
                   </p>
-                  <p className="mt-1 text-sm font-bold text-primary">{view.fullName}</p>
+                  {view.fullName ? (
+                    <p className="mt-1 text-sm font-bold text-primary">{view.fullName}</p>
+                  ) : null}
                   <p className="mt-0.5 text-xs text-text-muted">
                     {view.clinic} · {view.timeLabel} · {view.referenceCode}
                   </p>
