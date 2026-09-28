@@ -12,14 +12,12 @@ import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
 import { QueueCounter } from '../models/QueueCounter.js';
-import { AuditLog, recordAuditLog } from '../models/AuditLog.js';
+import { recordAuditLog } from '../models/AuditLog.js';
 import { normalizeGhanaPhone, maskPhone } from '../sms/normalizePhone.js';
 import {
   generateOtpCode,
   storeOtp,
   verifyOtp,
-  DEFAULT_OTP_EXPIRY_MS,
-  getLatestOtpForTesting,
 } from './otpService.js';
 
 import {
@@ -318,12 +316,17 @@ export const RESCHEDULE_OTP_REQUIRED_MESSAGE =
   'A valid OTP verification code (otpCode) is required to reschedule this appointment unless initiated by staff.';
 
 /**
- * Proof of OTP verification for reschedule.
- * Staff skip the check; unauthenticated patients must provide a valid 4-digit OTP code.
+ * Proof of OTP verification for patient-initiated reschedule, same as cancel.
+ * Staff skip the check; everyone else must provide a valid otpCode sent to the
+ * registered phone. Knowing the booking phone number is not enough.
+ *
+ * @param {object | null} appointment
+ * @param {{ actorIsStaff?: boolean, otpCode?: unknown }} [context]
+ * @throws {ForbiddenError}
  */
 export async function assertAppointmentRescheduleOtp(
   appointment,
-  { actorIsStaff = false, otpCode = null, phone = null } = {},
+  { actorIsStaff = false, otpCode = null } = {},
 ) {
   if (actorIsStaff) return;
 
@@ -1296,7 +1299,7 @@ export async function cancelAppointment(
  *   performedBy?: string|null,
  *   staffChangeReason?: string,
  *   actorIsStaff?: boolean,
- *   phone?: string|null,
+ *   otpCode?: string|null,
  * }} options
  */
 export async function rescheduleAppointment(
@@ -1311,7 +1314,6 @@ export async function rescheduleAppointment(
     actorType = null,
     actorId = null,
     actingUserId = null,
-    phone = null,
     otpCode = null,
   } = {},
 ) {
@@ -1345,7 +1347,7 @@ export async function rescheduleAppointment(
         .session(session);
 
       // Before the 404, so an invalid code and an unknown reference look identical.
-      await assertAppointmentRescheduleOtp(appointment, { actorIsStaff, otpCode, phone });
+      await assertAppointmentRescheduleOtp(appointment, { actorIsStaff, otpCode });
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');

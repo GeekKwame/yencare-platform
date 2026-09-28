@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 
 import {
   createMemoryRateLimitStore,
@@ -8,7 +9,12 @@ import {
   resetRateLimitStore,
   setRateLimitStore,
 } from '../src/http/rateLimitStore.js';
+import { createStaffAuthService, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
 import { arrivalReferenceKey, queueStatusReferenceKey } from '../src/http/app.js';
+import { createAuthRouter } from '../src/http/authRoutes.js';
+import { createPatientsRouter } from '../src/http/patientsRoutes.js';
+import { createMemoryStore } from '../src/patients/memoryStore.js';
+import { createPatientService } from '../src/patients/service.js';
 import {
   rateLimit,
   rateLimitDisableRequested,
@@ -352,5 +358,95 @@ describe('reference normalisation in the per-reference limiter keys', () => {
       statuses.push((await poll(reference)).status);
     }
     assert.deepEqual(statuses, [200, 200, 200, 429]);
+  });
+});
+
+describe('public patient registration rate limiting', () => {
+  /** @type {import('node:http').Server[]} */
+  const servers = [];
+
+  after(async () => {
+    await Promise.all(
+      servers.map(
+        (server) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  async function startRegistration() {
+    const staffAuth = createStaffAuthService({
+      jwtSecret: 'rate-limit-test-staff-secret',
+      demoPassword: DEMO_STAFF_PASSWORD,
+    });
+    const app = express();
+    app.use(express.json());
+    app.use('/api/auth', createAuthRouter(staffAuth));
+    app.use(
+      '/api/patients',
+      createPatientsRouter(createPatientService(createMemoryStore()), {
+        authenticate: staffAuth.authenticate,
+        authenticateOptional: staffAuth.authenticateOptional,
+        publicRegisterLimiter: rateLimit({
+          name: 'patient-register-public',
+          windowMs: 15 * 60_000,
+          max: 10,
+          store: createMemoryRateLimitStore(),
+        }),
+      }),
+    );
+    const server = await new Promise((resolve) => {
+      const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
+    });
+    servers.push(server);
+    return `http://127.0.0.1:${server.address().port}`;
+  }
+
+  it('allows 10 public registrations per IP per 15 minutes, without counting or limiting verified reception', async () => {
+    const url = await startRegistration();
+    const login = await fetch(`${url}/api/auth/staff-login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ identifier: 'abena.osei@yencare.gh', password: DEMO_STAFF_PASSWORD }),
+    });
+    const reception = (await login.json()).token;
+    const forged = jwt.sign({ sub: 'x', staffId: 'stf_01', role: 'RECEPTIONIST' }, 'attacker-chosen-secret');
+    const patient = { fullName: 'Efua Darko', studentIndex: '20620111', phoneNumber: '024 700 1122' };
+    const register = (token) =>
+      fetch(`${url}/api/patients`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(patient),
+      });
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const res = await register(reception);
+      assert.equal(res.status, attempt === 0 ? 201 : 200);
+      await res.json();
+    }
+
+    const statuses = [];
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const res = await register(null);
+      statuses.push(res.status);
+      await res.json();
+    }
+    assert.deepEqual(statuses, Array(10).fill(200));
+
+    for (const token of [null, forged]) {
+      const blocked = await register(token);
+      assert.equal(blocked.status, 429);
+      assert.equal((await blocked.json()).error, TOO_MANY_REQUESTS_MESSAGE);
+      assert.ok(Number(blocked.headers.get('retry-after')) > 0);
+    }
+
+    const desk = await register(reception);
+    assert.equal(desk.status, 200);
+    assert.equal((await desk.json()).fullName, 'Efua Darko');
   });
 });

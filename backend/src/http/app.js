@@ -168,7 +168,14 @@ export function createApp({
   app.use(
     '/api/patients',
     maybeRateLimit({ name: 'patients', windowMs: 60_000, max: 30 }),
-    createPatientsRouter(patientService, staffHttp),
+    createPatientsRouter(patientService, {
+      ...staffHttp,
+      publicRegisterLimiter: maybeRateLimit({
+        name: 'patient-register-public',
+        windowMs: 15 * 60_000,
+        max: envInt('PATIENT_REGISTER_RATE_MAX', 10),
+      }),
+    }),
   );
 
   if (staffAuth) {

@@ -268,7 +268,8 @@ export async function assertStudentBookingCap(
  * @param {object} data - fields matching the Appointment schema
  *   (patientId, clinicianId, roomId, clinicSite, visitType,
  *    appointmentDate "YYYY-MM-DD", appointmentTime "HH:mm", timeSlotId?)
- *   Optional `phone` / `phoneNumber` is the SMS destination for this booking.
+ *   Optional `phone` / `phoneNumber` is the SMS destination for a desk-staff
+ *   booking; public bookings always use the phone stored on the patient.
  * @param {{ staff?: { role?: string } | null, now?: Date }} [context]
  *   `staff` is the verified staff identity (`req.staff`) or null. It is the only
  *   thing that can make a booking a walk-in; `bookingType` in the body cannot.
@@ -377,8 +378,9 @@ export async function createAppointment(data, { staff = null, now = new Date() }
     return { appointment, sms: { ok: false, error: 'Patient not found for SMS' } };
   }
 
-  const destinations = bookingSmsDestinations(patient, requestedPhone);
-  const phone = destinations[0] || resolveSmsDestination(patient, requestedPhone);
+  const smsRequestedPhone = isDeskStaff ? requestedPhone : null;
+  const destinations = bookingSmsDestinations(patient, smsRequestedPhone);
+  const phone = destinations[0] || resolveSmsDestination(patient, smsRequestedPhone);
   if (!phone) {
     logger.error('appointment created but patient has no usable Ghana phone for SMS', {
       subsystem: 'booking',

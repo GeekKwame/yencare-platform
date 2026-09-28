@@ -10,11 +10,21 @@ import { classifyIdentifier, parseRegisterInput } from './validate.js';
  * }} PatientStore
  */
 
+export const PATIENT_MATCH_FAILED_MESSAGE =
+  "We couldn't confirm these details. Please check them, or see reception for help.";
+
+export const INDEX_PHONE_CONFLICT_MESSAGE =
+  'This student index and phone number belong to different patients';
+
+const PATIENT_EDITOR_ROLES = Object.freeze(['RECEPTIONIST', 'ADMIN']);
+
 /**
  * Patient registration / verification — prototype P02 (register) + P09 (lookup).
  *
  * POST is find-or-create: return the existing record when the index or phone
- * matches, otherwise insert. GET is lookup-only.
+ * matches, otherwise insert. Only verified reception/admin may change an
+ * existing record's phone, name or NHIS; a public caller must give the stored
+ * phone to get the record back unchanged, otherwise a 409. GET is lookup-only.
  *
  * @param {PatientStore} store
  */
@@ -22,21 +32,18 @@ export function createPatientService(store) {
   return {
     /**
      * @param {unknown} body
+     * @param {{ staff?: { role?: string } | null }} [context] verified `req.staff`, or null
      * @returns {Promise<{ patient: object, created: boolean }>}
      */
-    async registerOrLookup(body) {
+    async registerOrLookup(body, { staff = null } = {}) {
       const input = parseRegisterInput(body);
-      const existing = await findExisting(store, input);
-      if (existing.conflict) {
-        throw new ConflictError(
-          'This student index and phone number belong to different patients',
-        );
+      const isEditor = PATIENT_EDITOR_ROLES.includes(staff?.role);
+      if (!isEditor && !input.phoneNumber) {
+        throw new ConflictError(PATIENT_MATCH_FAILED_MESSAGE);
       }
-      if (existing.patient) {
-        return {
-          patient: await syncExistingPatient(store, existing.patient, input),
-          created: false,
-        };
+      const existing = await findExisting(store, input);
+      if (existing.conflict || existing.patient) {
+        return resolveExisting(store, existing, input, isEditor);
       }
 
       if (!input.fullName) {
@@ -58,8 +65,8 @@ export function createPatientService(store) {
       } catch (error) {
         if (isDuplicateKey(error)) {
           const raced = await findExisting(store, input);
-          if (raced.patient) {
-            return { patient: raced.patient, created: false };
+          if (raced.conflict || raced.patient) {
+            return resolveExisting(store, raced, input, isEditor);
           }
         }
         throw error;
@@ -105,23 +112,26 @@ async function findExisting(store, input) {
     return { conflict: true, patient: null };
   }
 
-  // Prevent phone takeover: if student index is already registered with a different phone
-  if (byIndex) {
-    const storedPhone = byIndex.phoneNumber || byIndex.phone || null;
-    if (storedPhone && input.phoneNumber && storedPhone !== input.phoneNumber) {
-      return { conflict: true, patient: null };
-    }
-  }
-
-  // Prevent index takeover: if phone is already registered with a different student index
-  if (byPhone) {
-    const storedIndex = byPhone.studentIndex || null;
-    if (storedIndex && input.studentIndex && storedIndex !== input.studentIndex) {
-      return { conflict: true, patient: null };
-    }
-  }
-
   return { conflict: false, patient: byIndex || byPhone || null };
+}
+
+async function resolveExisting(store, existing, input, isEditor) {
+  if (existing.conflict) {
+    throw new ConflictError(isEditor ? INDEX_PHONE_CONFLICT_MESSAGE : PATIENT_MATCH_FAILED_MESSAGE);
+  }
+  if (isEditor) {
+    return { patient: await syncExistingPatient(store, existing.patient, input), created: false };
+  }
+
+  const storedPhone = existing.patient.phoneNumber || existing.patient.phone || null;
+  const storedIndex = existing.patient.studentIndex || null;
+  if (
+    input.phoneNumber !== storedPhone ||
+    (input.studentIndex && storedIndex && input.studentIndex !== storedIndex)
+  ) {
+    throw new ConflictError(PATIENT_MATCH_FAILED_MESSAGE);
+  }
+  return { patient: existing.patient, created: false };
 }
 
 /**
@@ -134,22 +144,15 @@ async function findExisting(store, input) {
 async function syncExistingPatient(store, patient, input) {
   if (typeof store.update !== 'function') return patient;
 
-  const storedPhone = patient.phoneNumber || patient.phone || null;
-  const storedIndex = patient.studentIndex || null;
-
-  if (storedIndex && storedPhone && input.phoneNumber && input.phoneNumber !== storedPhone) {
-    throw new ConflictError(
-      'This student index is already registered with a different phone number',
-    );
-  }
-
   const updates = {};
   if (input.fullName && input.fullName !== patient.fullName) {
     updates.fullName = input.fullName;
   }
-  if (!storedPhone && input.phoneNumber) {
+  const storedPhone = patient.phoneNumber || patient.phone || null;
+  if (input.phoneNumber && input.phoneNumber !== storedPhone) {
     updates.phoneNumber = input.phoneNumber;
   }
+  const storedIndex = patient.studentIndex || null;
   if (!storedIndex && input.studentIndex) {
     updates.studentIndex = input.studentIndex;
   }
@@ -162,9 +165,7 @@ async function syncExistingPatient(store, patient, input) {
     return (await store.update(patient.id, updates)) || patient;
   } catch (error) {
     if (isDuplicateKey(error)) {
-      throw new ConflictError(
-        'This student index and phone number belong to different patients',
-      );
+      throw new ConflictError(INDEX_PHONE_CONFLICT_MESSAGE);
     }
     throw error;
   }

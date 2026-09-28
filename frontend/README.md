@@ -111,8 +111,8 @@ All commands can be run from within `frontend/` or from the repository root:
 The application integrates with the backend Express API via `src/services/` and `src/hooks/`:
 
 ### 6.1 `patients.js`
-- `registerPatient(data)`: Posts `{ fullName, studentIndex, phoneNumber, nhis }` to `POST /api/patients`. The JSON response includes **`phone` and `phoneNumber`** (same E.164 value). Use `phone` when talking to Mongo/SMS.
-- `lookupPatient(identifier)`: Queries `GET /api/patients/:identifier` using student index or Ghana phone number.
+- `registerPatient(data)`: Posts `{ fullName, studentIndex, phoneNumber, nhis }` to `POST /api/patients`. Public callers get only `{ id }` (status **200** whether the patient was found or created); with a receptionist/admin token the response is the full record, including **`phone` and `phoneNumber`** (same E.164 value).
+- Looking a patient up by index or phone (`GET /api/patients/:identifier`) is reception/admin only; the web client has no wrapper for it.
 
 ### 6.2 `appointments.js`
 - `createAppointment(data)`: Client wrapper for `POST /api/appointments` (links patient, time slot, clinician, and room).
@@ -122,8 +122,8 @@ The application integrates with the backend Express API via `src/services/` and 
 - **`PersonalDetails.jsx`**:
   - Validates full name, 8-digit student index, and Ghana phone number.
   - Submits to `POST /api/patients` via the `useApiRequest(registerPatient)` hook.
-  - Captures `patientId: patient.id` into centralized `formData` on successful registration/find-or-create.
-  - Gracefully displays backend error responses (`400` validation failures, `409` index/phone conflict, or network drops) and disables submission during loading.
+  - Captures `patientId: patient.id` into centralized `formData` on successful registration/find-or-create, and keeps the phone number the student typed.
+  - Gracefully displays backend error responses (`400` validation failures, `409` when the details can't be matched, or network drops) and disables submission during loading.
 
 ---
 

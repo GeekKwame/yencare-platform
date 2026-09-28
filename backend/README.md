@@ -14,16 +14,16 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `POST` | `/api/auth/staff-login` | Staff JWT login (email or Staff ID + password) |
 | `POST` | `/api/auth/staff-refresh` | Exchange a still-valid staff token for a fresh 12h one (**Bearer token**) |
 | `GET` | `/api/auth/staff-me` | Current staff profile (**Bearer token**) |
-| `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone |
-| `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone |
+| `POST` | `/api/patients` | Find-or-create by student index and/or Ghana phone. Public callers get **200** `{ id }` only; a **receptionist/admin JWT** gets the full record |
+| `GET` | `/api/patients/:identifier` | Lookup by student index or Ghana phone — **receptionist/admin JWT** |
 | `GET` | `/api/appointments` | List appointments — **staff JWT** (`date=YYYY-MM-DD`, `clinicSite` or `clinic`) |
 | `POST` | `/api/appointments` | Book appointment & automatically dispatch SMS |
 | `GET` | `/api/appointments/:reference` | Lookup booking by `referenceCode` (e.g. `YC-4821`) |
 | `GET` | `/api/appointments/lookup` | Patient search by `reference`, `studentIndex`, or `phone` (exactly one) |
 | `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, and room token |
 | `PATCH` | `/api/appointments/:id/status` | Desk status change — **receptionist/admin JWT** |
-| `PATCH` | `/api/appointments/:id/cancel` | Cancel — **staff JWT, or the booking `phone` in the body** |
-| `PATCH` | `/api/appointments/:id/reschedule` | Move to `newSlotId` — **staff JWT, or the booking `phone` in the body** |
+| `PATCH` | `/api/appointments/:id/cancel` | Cancel — **staff JWT, or a valid `otpCode` in the body** |
+| `PATCH` | `/api/appointments/:id/reschedule` | Move to `newSlotId` — **staff JWT, or a valid `otpCode` in the body** |
 | `POST` | `/api/queue/call-next` | Call next patient — **doctor/admin JWT** |
 | `POST` | `/api/queue/advance` | Complete consultation — **doctor JWT** |
 | `POST` | `/api/queue/no-show` | Mark no-show — **staff JWT** |
@@ -31,16 +31,16 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
 | `GET` | `/api/time-slots` | Seeded slots (`id` → `timeSlotId`; filter `date`, `clinicSite`, `available`) |
 
-No auth on **patient** booking, lookup, or catalog routes. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
+No auth on **patient** registration, booking, appointment lookup, or catalog routes. `GET /api/patients/:identifier` is reception/admin only. Identifier is an 8-digit KNUST index (`20612345`) or a Ghana number (`0247001122`, `024 700 1122`, `+233247001122`). Encode `+` in URLs as `%2B`.
 
-**Cancel and reschedule need proof of ownership.** A valid staff token (receptionist / doctor / admin) is enough on its own. Without one, the request body must carry `phone` (any Ghana format) matching the phone the appointment was booked with, otherwise the API answers **403**:
+**Cancel and reschedule need proof of ownership.** A verified staff token (receptionist / doctor / admin) is enough on its own; staff never need a code. Patients must send `otpCode`: the 4-digit code texted to the phone on record by `POST /api/appointments/:id/request-cancel-otp` or `POST /api/appointments/:id/request-reschedule-otp`. A code is valid for 10 minutes, for one use, for that appointment and that action only, and is locked after 5 wrong attempts. A phone number in the body does not prove ownership. Otherwise the API answers **403**:
 
-- no phone supplied → `Enter the phone number used to book this appointment to change it.`
-- wrong phone, unusable phone, **or an unknown reference** → `We could not verify this appointment with that phone number. Check the reference code and the phone number used to book, or speak to reception.` (deliberately identical so the 4-digit reference space cannot be probed)
+- no code supplied → `A valid OTP verification code (otpCode) is required to cancel this appointment unless initiated by staff.` (or `…to reschedule…`)
+- wrong, expired, used or locked code → the verification error for that code. The code is checked before the appointment is looked up, so an unknown reference cannot be told apart from a wrong code.
 
 Patients also cannot cancel or reschedule once they are `WAITING` in the live queue (**400**, `You are already in the live queue for today. Please speak to reception to cancel or change this appointment.`); reception still can, and doing so clears the queue token.
 
-**Rate limits.** The reference-code endpoints (`GET /api/appointments/:reference`, `GET /api/appointments/lookup`, both mutations) allow 30 requests/minute/IP; `queue-status` allows 120/minute/IP plus 30/minute per IP+reference. Over the limit is **429** with `Retry-After`. Limits are active in every environment except test runs (`PUBLIC_LOOKUP_RATE_MAX`, `QUEUE_STATUS_RATE_MAX`, `QUEUE_STATUS_REFERENCE_RATE_MAX`, `RATE_LIMIT_DISABLED`). `RATE_LIMIT_DISABLED` is ignored when `NODE_ENV=production` (including Render staging); raise the `*_RATE_MAX` values there instead. Per-reference limits treat a reference the same however it is spaced or cased (` yc-4821 ` counts as `YC-4821`).
+**Rate limits.** The reference-code endpoints (`GET /api/appointments/:reference`, `GET /api/appointments/lookup`, both mutations) allow 30 requests/minute/IP; `queue-status` allows 120/minute/IP plus 30/minute per IP+reference. Public `POST /api/patients` allows 10 requests per 15 minutes per IP; requests with a verified receptionist/admin token skip that limit and do not count toward it. Over the limit is **429** with `Retry-After`. Limits are active in every environment except test runs (`PUBLIC_LOOKUP_RATE_MAX`, `QUEUE_STATUS_RATE_MAX`, `QUEUE_STATUS_REFERENCE_RATE_MAX`, `PATIENT_REGISTER_RATE_MAX`, `RATE_LIMIT_DISABLED`). `RATE_LIMIT_DISABLED` is ignored when `NODE_ENV=production` (including Render staging); raise the `*_RATE_MAX` values there instead. Per-reference limits treat a reference the same however it is spaced or cased (` yc-4821 ` counts as `YC-4821`).
 
 **Opening hours are enforced server-side.** Scheduled bookings outside the target clinic's hours are **400**: Students' Clinic is Monday–Friday 08:00–16:00 Accra, KNUST Hospital is 24h. Staff walk-ins (`bookingType: "WALK_IN"`) are exempt.
 
@@ -52,11 +52,13 @@ Staff workstation routes require `Authorization: Bearer <token>` from `POST /api
 
 | Status | When |
 |---|---|
-| **200** | `POST` found an existing patient, or `GET` lookup succeeded |
-| **201** | `POST` inserted a new patient |
+| **200** | Public `POST` found or created the patient (the status does not say which); staff `POST` found an existing patient; staff `GET` lookup succeeded |
+| **201** | Staff `POST` inserted a new patient |
 | **400** | Invalid JSON, invalid student index, or invalid Ghana phone |
-| **404** | `GET` — no patient for that identifier |
-| **409** | `POST` — the student index and phone belong to two different patients |
+| **401** / **403** | `GET` without a valid receptionist/admin token |
+| **404** | Staff `GET` — no patient for that identifier |
+| **409** | Public `POST` — the details could not be matched: no phone, a phone that is not the one on record, or an index and phone that belong to different patients. Always `We couldn't confirm these details. Please check them, or see reception for help.` so the response never confirms whether an index or phone is registered. Staff `POST` — `This student index and phone number belong to different patients` |
+| **429** | Public `POST` over the registration rate limit |
 | **500** | Unexpected server error |
 
 ### Field mapping
@@ -70,11 +72,19 @@ JSON (frontend / Postman) uses camelCase. MongoDB uses the Mongoose names.
 | `phone`, `phoneNumber`, `phone_number` | **`phone`** | Required **to create**. Ghana mobile; stored as E.164 (`+233…`) |
 | `nhisNumber`, `nhis`, `nhis_number` | **`nhisNumber`** | Optional |
 
-Responses include **both** `phone` and `phoneNumber` (same E.164 value) so Able’s `.populate('patientId', 'fullName phone studentIndex')` and the web client never read `undefined` for SMS.
+Full records include **both** `phone` and `phoneNumber` (same E.164 value) so Able’s `.populate('patientId', 'fullName phone studentIndex')` and the web client never read `undefined` for SMS.
 
-`POST` needs at least one of student index or phone so it can look someone up. Creating a **new** row also needs `fullName` and a valid phone (P02 + `Patient` schema).
+A public `POST` must include a phone. When the index or phone matches an existing patient, the phone must be the one on record, and the record is returned unchanged. Only a receptionist/admin token can change an existing patient's phone, name or NHIS, or look a patient up by index or phone alone. Creating a **new** row also needs `fullName` and a valid phone (P02 + `Patient` schema).
 
 ### Response body
+
+Public `POST` (no staff token), whether the patient was found or created:
+
+```json
+{ "id": "68bf2c0e9c1a2b0012345678" }
+```
+
+Staff `POST` and `GET` (receptionist/admin token):
 
 ```json
 {
@@ -205,7 +215,7 @@ Verification checklist:
 ### Postman
 
 1. Start the API (`npm run dev` in `backend`). Confirm `GET http://localhost:4000/health` returns **200**.
-2. No auth. For POST, set header `Content-Type: application/json`.
+2. For POST, set header `Content-Type: application/json`. `POST /api/patients` needs no auth; `GET /api/patients/:identifier` needs `Authorization: Bearer <token>` from a receptionist/admin `POST /api/auth/staff-login`.
 
 **Register (create)** — `POST http://localhost:4000/api/patients`
 
@@ -218,14 +228,16 @@ Verification checklist:
 }
 ```
 
-First send → **201**. Same body again → **200** and the same `id`.
+Without a token, both the first send and a repeat → **200** `{ id }` with the same `id`. With a receptionist token, the first send → **201** and a repeat → **200**, both with the full record.
 
 | Request | Expect |
 |---|---|
-| `GET http://localhost:4000/api/patients/20620111` | **200** by student index |
-| `GET http://localhost:4000/api/patients/0247001122` | **200** by local phone |
-| `GET http://localhost:4000/api/patients/%2B233247001122` | **200** (`+` encoded as `%2B`) |
-| `GET http://localhost:4000/api/patients/20699999` | **404** |
+| `GET http://localhost:4000/api/patients/20620111` (receptionist token) | **200** by student index |
+| `GET http://localhost:4000/api/patients/0247001122` (receptionist token) | **200** by local phone |
+| `GET http://localhost:4000/api/patients/%2B233247001122` (receptionist token) | **200** (`+` encoded as `%2B`) |
+| `GET http://localhost:4000/api/patients/20699999` (receptionist token) | **404** |
+| `GET http://localhost:4000/api/patients/20620111` (no token) | **401** |
+| POST `"studentIndex": "20620111"` only, no token | **409** (a public caller must give the phone on record) |
 | POST `"studentIndex": "12"` | **400** (must be 8 digits) |
 | POST `"phoneNumber": "123"` | **400** |
 
@@ -393,7 +405,7 @@ Transitions appointment to `NO_SHOW`, releases linked time slot, and clears acti
 
 ```bash
 curl -s -X POST http://localhost:4000/api/patients -H "content-type: application/json" -d "{\"fullName\":\"Efua Darko\",\"studentIndex\":\"20620111\",\"phoneNumber\":\"024 700 1122\"}"
-curl -s http://localhost:4000/api/patients/20620111
+curl -s http://localhost:4000/api/patients/20620111 -H "authorization: Bearer $RECEPTION_TOKEN"
 curl -s http://localhost:4000/api/appointments/YC-4821/queue-status
 ```
 

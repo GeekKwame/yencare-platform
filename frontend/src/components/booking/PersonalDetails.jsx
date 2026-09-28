@@ -74,7 +74,6 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
 
       updateFormData({
         patientId: patient.id || patient._id,
-        phoneNumber: patient.phoneNumber || patient.phone || formData.phoneNumber.trim(),
       });
       onNext();
     } catch (err) {
@@ -91,7 +90,7 @@ const PersonalDetails = ({ formData, updateFormData, onNext, onBack }) => {
       } else if (err.response.status === 409) {
         setApiError(
           err.response.data?.error ||
-            "This student index and phone number belong to different patients. Please double-check your details."
+            "We couldn't confirm these details. Please check them, or see reception for help."
         );
       } else {
         setApiError(

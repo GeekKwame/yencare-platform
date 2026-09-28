@@ -60,7 +60,7 @@ graph TB
 - **Role**: Clean, lightweight web application providing student landing, appointment booking UI, queue checking, and staff portal access.
 - **API Integration**: Talks to `backend` through centralized Axios instance configured via `VITE_API_BASE_URL` (default: `http://localhost:4000/api`).
 - **Services & Hooks**:
-  - `src/services/patients.js`: Handles `registerPatient()` (`POST /api/patients`) and `lookupPatient()` (`GET /api/patients/:identifier`).
+  - `src/services/patients.js`: Handles `registerPatient()` (`POST /api/patients`).
   - `src/services/appointments.js`: Client abstraction for booking creation and management.
   - `src/hooks/useApiRequest.js`: Reusable hook managing async `idle` / `loading` / `success` / `error` lifecycle.
   - `src/components/booking/`: 4-step interactive booking flow (`BookingForm`, `WelcomeForm`, `PersonalDetails`, `ClinicSelection`, `ServiceSelection`) with patient registration.

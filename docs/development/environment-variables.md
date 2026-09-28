@@ -34,6 +34,13 @@ These variables configure the Express server, MongoDB connection, and third-part
 | `AT_USERNAME` | Conditional | `sandbox` | SMS (AT) | Africa's Talking account username. For testing, always set to `sandbox`. | `sandbox` |
 | `AT_API_KEY` | Conditional | *Empty* | SMS (AT) | Required when `SMS_PROVIDER=africastalking`. Generated under your Africa's Talking sandbox app. | `atsk_test_987654321` |
 | `AT_SENDER_ID` | No | *Empty* | SMS (AT) | Custom sender ID or shortcode for Africa's Talking (if configured). | *Empty* |
+| `PUBLIC_LOOKUP_RATE_MAX` | No | `30` | Rate limit | Requests per minute per IP for the reference-code endpoints (`GET /api/appointments/:reference`, `GET /api/appointments/lookup`, cancel, reschedule and the OTP requests). | `30` |
+| `QUEUE_STATUS_RATE_MAX` | No | `120` | Rate limit | Requests per minute per IP for `GET /api/appointments/:reference/queue-status` (polled by the queue page). | `120` |
+| `QUEUE_STATUS_REFERENCE_RATE_MAX` | No | `30` | Rate limit | Requests per minute per IP + reference for queue status, so one code cannot be hammered. | `30` |
+| `ARRIVAL_RATE_MAX` | No | `30` | Rate limit | Requests per 15 minutes per IP for patient arrival (`POST /api/appointments/arrive` and `/:reference/arrive`). | `30` |
+| `ARRIVAL_REFERENCE_RATE_MAX` | No | `5` | Rate limit | Arrival attempts per 15 minutes per IP + reference (brute-force defence). | `5` |
+| `PATIENT_REGISTER_RATE_MAX` | No | `10` | Rate limit | Public `POST /api/patients` requests per 15 minutes per IP. Requests with a verified receptionist/admin token skip this limit and do not count toward it. | `10` |
+| `RATE_LIMIT_DISABLED` | No | *Unset* (limits on) | Rate limit | Set to `true` to turn rate limiting off, for local load testing only. **Ignored when `NODE_ENV=production`** (including Render staging): limits stay on there and can only be raised with the `*_RATE_MAX` variables. Limits are also off automatically during test runs (`NODE_ENV=test` or `node --test`). | *Unset* |
 
 ---
 
