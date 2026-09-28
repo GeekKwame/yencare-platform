@@ -10,8 +10,11 @@ import { classifyIdentifier, parseRegisterInput } from './validate.js';
  * }} PatientStore
  */
 
-export const PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE =
-  'This student index is registered with a different phone number. Please see reception to update it.';
+export const PATIENT_MATCH_FAILED_MESSAGE =
+  "We couldn't confirm these details. Please check them, or see reception for help.";
+
+export const INDEX_PHONE_CONFLICT_MESSAGE =
+  'This student index and phone number belong to different patients';
 
 const PATIENT_EDITOR_ROLES = Object.freeze(['RECEPTIONIST', 'ADMIN']);
 
@@ -20,8 +23,8 @@ const PATIENT_EDITOR_ROLES = Object.freeze(['RECEPTIONIST', 'ADMIN']);
  *
  * POST is find-or-create: return the existing record when the index or phone
  * matches, otherwise insert. Only verified reception/admin may change an
- * existing record's phone, name or NHIS; a public caller gets the record back
- * unchanged, or a 409 if they give a different phone. GET is lookup-only.
+ * existing record's phone, name or NHIS; a public caller must give the stored
+ * phone to get the record back unchanged, otherwise a 409. GET is lookup-only.
  *
  * @param {PatientStore} store
  */
@@ -34,25 +37,13 @@ export function createPatientService(store) {
      */
     async registerOrLookup(body, { staff = null } = {}) {
       const input = parseRegisterInput(body);
-      const existing = await findExisting(store, input);
-      if (existing.conflict) {
-        throw new ConflictError(
-          'This student index and phone number belong to different patients',
-        );
+      const isEditor = PATIENT_EDITOR_ROLES.includes(staff?.role);
+      if (!isEditor && !input.phoneNumber) {
+        throw new ConflictError(PATIENT_MATCH_FAILED_MESSAGE);
       }
-      if (existing.patient) {
-        if (PATIENT_EDITOR_ROLES.includes(staff?.role)) {
-          return {
-            patient: await syncExistingPatient(store, existing.patient, input),
-            created: false,
-          };
-        }
-
-        const storedPhone = existing.patient.phoneNumber || existing.patient.phone || null;
-        if (input.phoneNumber && input.phoneNumber !== storedPhone) {
-          throw new ConflictError(PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE);
-        }
-        return { patient: existing.patient, created: false };
+      const existing = await findExisting(store, input);
+      if (existing.conflict || existing.patient) {
+        return resolveExisting(store, existing, input, isEditor);
       }
 
       if (!input.fullName) {
@@ -74,8 +65,8 @@ export function createPatientService(store) {
       } catch (error) {
         if (isDuplicateKey(error)) {
           const raced = await findExisting(store, input);
-          if (raced.patient) {
-            return { patient: raced.patient, created: false };
+          if (raced.conflict || raced.patient) {
+            return resolveExisting(store, raced, input, isEditor);
           }
         }
         throw error;
@@ -124,6 +115,25 @@ async function findExisting(store, input) {
   return { conflict: false, patient: byIndex || byPhone || null };
 }
 
+async function resolveExisting(store, existing, input, isEditor) {
+  if (existing.conflict) {
+    throw new ConflictError(isEditor ? INDEX_PHONE_CONFLICT_MESSAGE : PATIENT_MATCH_FAILED_MESSAGE);
+  }
+  if (isEditor) {
+    return { patient: await syncExistingPatient(store, existing.patient, input), created: false };
+  }
+
+  const storedPhone = existing.patient.phoneNumber || existing.patient.phone || null;
+  const storedIndex = existing.patient.studentIndex || null;
+  if (
+    input.phoneNumber !== storedPhone ||
+    (input.studentIndex && storedIndex && input.studentIndex !== storedIndex)
+  ) {
+    throw new ConflictError(PATIENT_MATCH_FAILED_MESSAGE);
+  }
+  return { patient: existing.patient, created: false };
+}
+
 /**
  * Keep the on-file phone in sync with the number entered for this visit so
  * confirmation SMS goes to that patient, not a stale test/admin number.
@@ -152,9 +162,7 @@ async function syncExistingPatient(store, patient, input) {
     return (await store.update(patient.id, updates)) || patient;
   } catch (error) {
     if (isDuplicateKey(error)) {
-      throw new ConflictError(
-        'This student index and phone number belong to different patients',
-      );
+      throw new ConflictError(INDEX_PHONE_CONFLICT_MESSAGE);
     }
     throw error;
   }

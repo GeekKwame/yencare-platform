@@ -10,6 +10,12 @@ function iso(value) {
   return String(value);
 }
 
+export function maskNhisNumber(value) {
+  if (value == null || value === '') return null;
+  const str = String(value);
+  return str.length > 3 ? `****${str.slice(-3)}` : '****';
+}
+
 /**
  * Public patient record.
  * `phone` / `nhisNumber` match Mongo + Appointment.populate().
@@ -17,9 +23,9 @@ function iso(value) {
  *
  * @param {object} row
  */
-export function serializePatient(row) {
+export function serializePatient(row, { maskNhis = false } = {}) {
   const phone = resolvePatientPhone(row);
-  const nhis = resolveNhis(row);
+  const nhis = maskNhis ? maskNhisNumber(resolveNhis(row)) : resolveNhis(row);
   return {
     id: row.id,
     fullName: row.fullName,

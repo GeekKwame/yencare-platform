@@ -929,3 +929,52 @@ describe('student index is resolved from the Patient record (online bookings)', 
     assert.equal(stubs.state.created.length, 0);
   });
 });
+
+describe('booking confirmation SMS goes to the stored phone on public bookings', () => {
+  /** @type {{ restore: () => void } | null} */
+  let stubs = null;
+  /** @type {object[]} */
+  let saved = [];
+
+  afterEach(() => {
+    stubs?.restore();
+    stubs = null;
+    saved = [];
+  });
+
+  function withStoredPhone() {
+    stubs = stubModels({ catalogSlot: true });
+    Patient.findById = async () => ({
+      _id: PATIENT_ID,
+      studentIndex: DEFAULT_STUDENT_INDEX,
+      phone: '+233247001122',
+      async save() {
+        saved.push({ phone: this.phone });
+      },
+    });
+  }
+
+  it('ignores a phone typed in a public booking payload', async () => {
+    withStoredPhone();
+
+    const result = await createAppointment(
+      basePayload({ phoneNumber: '027 922 5566', phone: '027 922 5566' }),
+      { now: NOW },
+    );
+
+    assert.equal(result.sms.ok, true);
+    assert.equal(result.sms.to, '+233247001122');
+    assert.deepEqual(saved, []);
+  });
+
+  it('still sends a desk-staff walk-in to the phone reception entered', async () => {
+    withStoredPhone();
+
+    const result = await createAppointment(
+      basePayload({ bookingType: 'WALK_IN', phoneNumber: '027 922 5566' }),
+      AS_RECEPTION,
+    );
+
+    assert.equal(result.sms.to, '+233279225566');
+  });
+});

@@ -4,7 +4,11 @@ import jwt from 'jsonwebtoken';
 import { createStaffAuthService, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
 import { createApp } from '../src/http/app.js';
 import { createMemoryStore } from '../src/patients/memoryStore.js';
-import { createPatientService, PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE } from '../src/patients/service.js';
+import {
+  createPatientService,
+  INDEX_PHONE_CONFLICT_MESSAGE,
+  PATIENT_MATCH_FAILED_MESSAGE,
+} from '../src/patients/service.js';
 
 function startApp() {
   const app = createApp({
@@ -60,17 +64,18 @@ describe('patients HTTP', () => {
     assert.equal(createdBody.studentIndex, '20620111');
     assert.equal(createdBody.phone, '+233247001122');
     assert.equal(createdBody.phoneNumber, '+233247001122');
-    assert.equal(createdBody.nhisNumber, '12345678');
-    assert.equal(createdBody.nhis, '12345678');
+    assert.equal(createdBody.nhisNumber, '****678');
+    assert.equal(createdBody.nhis, '****678');
 
     const found = await fetch(`${url}/api/patients`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ studentIndex: '20620111' }),
+      body: JSON.stringify({ studentIndex: '20620111', phoneNumber: '0247001122' }),
     });
     assert.equal(found.status, 200);
     const foundBody = await found.json();
     assert.equal(foundBody.id, createdBody.id);
+    assert.equal(foundBody.nhisNumber, '****678');
   });
 
   it('GET /api/patients/:identifier returns 200 for index or phone', async () => {
@@ -205,12 +210,105 @@ describe('patients HTTP: who may change an existing record', () => {
     for (const token of [null, doctor, forged]) {
       const res = await register(url, takeover, token);
       assert.equal(res.status, 409);
-      assert.equal((await res.json()).error, PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE);
+      assert.equal((await res.json()).error, PATIENT_MATCH_FAILED_MESSAGE);
     }
 
-    const stored = await (await fetch(`${url}/api/patients/20620111`)).json();
+    const stored = await (
+      await fetch(`${url}/api/patients/20620111`, {
+        headers: { authorization: `Bearer ${await login(url, 'abena.osei@yencare.gh')}` },
+      })
+    ).json();
     assert.equal(stored.phoneNumber, '+233247001122');
     assert.equal(stored.fullName, 'Efua Darko');
+  });
+
+  it('refuses GET by index or phone without a verified reception token, and allows reception', async () => {
+    const url = await client();
+    assert.equal((await register(url, { ...original, nhis: '12345678' })).status, 201);
+
+    const forged = jwt.sign({ sub: 'x', staffId: 'stf_01', role: 'RECEPTIONIST' }, 'attacker-chosen-secret');
+    const doctor = await login(url, 'kwame.boateng@yencare.gh');
+    const lookup = (identifier, token) =>
+      fetch(`${url}/api/patients/${identifier}`, {
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      });
+
+    for (const identifier of ['20620111', '20699999', '0247001122']) {
+      for (const [token, status] of [[null, 401], [forged, 401], [doctor, 403]]) {
+        const res = await lookup(identifier, token);
+        assert.equal(res.status, status, `${identifier} with ${token ? 'a token' : 'no token'}`);
+        const body = await res.json();
+        assert.equal(body.id, undefined);
+        assert.equal(body.fullName, undefined);
+      }
+    }
+
+    const res = await lookup('20620111', await login(url, 'abena.osei@yencare.gh'));
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.fullName, 'Efua Darko');
+    assert.equal(body.nhisNumber, '12345678');
+  });
+
+  it('gives a public caller the generic message and no data for an index alone or a wrong phone, known or not', async () => {
+    const url = await client();
+    assert.equal((await register(url, original)).status, 201);
+
+    const probes = [
+      { studentIndex: '20620111' },
+      { studentIndex: '20699999' },
+      { fullName: 'Someone Else', studentIndex: '20620111' },
+      takeover,
+    ];
+    for (const probe of probes) {
+      const res = await register(url, probe);
+      assert.equal(res.status, 409, JSON.stringify(probe));
+      const body = await res.json();
+      assert.equal(body.error, PATIENT_MATCH_FAILED_MESSAGE);
+      assert.deepEqual(
+        Object.keys(body).filter((key) => key !== 'requestId'),
+        ['error'],
+      );
+    }
+  });
+
+  it('returns a public caller with the matching phone the record with NHIS masked, and reception the full record', async () => {
+    const url = await client();
+    assert.equal((await register(url, { ...original, nhis: '12345678' })).status, 201);
+
+    const publicRes = await register(url, original);
+    assert.equal(publicRes.status, 200);
+    const publicBody = await publicRes.json();
+    assert.equal(publicBody.nhisNumber, '****678');
+    assert.equal(publicBody.nhis, '****678');
+
+    const deskRes = await register(url, original, await login(url, 'abena.osei@yencare.gh'));
+    assert.equal(deskRes.status, 200);
+    const deskBody = await deskRes.json();
+    assert.equal(deskBody.id, publicBody.id);
+    assert.equal(deskBody.nhisNumber, '12345678');
+    assert.equal(deskBody.nhis, '12345678');
+  });
+
+  it('gives a public caller the same message for a phone mismatch and a crossed index/phone, and reception the specific one', async () => {
+    const url = await client();
+    assert.equal((await register(url, original)).status, 201);
+    assert.equal(
+      (await register(url, { fullName: 'Yaw Sarpong', studentIndex: '20620222', phoneNumber: '020 811 3344' })).status,
+      201,
+    );
+    const crossed = { fullName: 'Abena Kusi', studentIndex: '20620111', phoneNumber: '020 811 3344' };
+
+    const mismatch = await register(url, takeover);
+    const conflict = await register(url, crossed);
+    assert.equal(mismatch.status, 409);
+    assert.equal(conflict.status, 409);
+    assert.equal((await mismatch.json()).error, PATIENT_MATCH_FAILED_MESSAGE);
+    assert.equal((await conflict.json()).error, PATIENT_MATCH_FAILED_MESSAGE);
+
+    const atDesk = await register(url, crossed, await login(url, 'abena.osei@yencare.gh'));
+    assert.equal(atDesk.status, 409);
+    assert.equal((await atDesk.json()).error, INDEX_PHONE_CONFLICT_MESSAGE);
   });
 
   it('lets a verified receptionist update the phone', async () => {

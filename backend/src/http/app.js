@@ -163,7 +163,10 @@ export function createApp({
   app.use(
     '/api/patients',
     maybeRateLimit({ name: 'patients', windowMs: 60_000, max: 30 }),
-    createPatientsRouter(patientService, { authenticateOptional: staffAuth?.authenticateOptional }),
+    createPatientsRouter(patientService, {
+      authenticate: staffAuth?.authenticate,
+      authenticateOptional: staffAuth?.authenticateOptional,
+    }),
   );
 
   if (staffAuth) {
