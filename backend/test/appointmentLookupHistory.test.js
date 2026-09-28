@@ -12,6 +12,7 @@ const cancelled = {
   appointmentDate: '2026-09-15',
   appointmentTime: '10:00',
   cancelledTime: '2026-09-14T09:00:00.000Z',
+  patientId: { fullName: 'Akosua Boateng', phone: '+233241234567' },
 };
 
 const activeReplacement = {
@@ -20,6 +21,7 @@ const activeReplacement = {
   status: 'BOOKED',
   appointmentDate: '2026-09-18',
   appointmentTime: '09:30',
+  patientId: { fullName: 'Akosua Boateng', phone: '+233241234567' },
 };
 
 function startApp(appointmentService) {
@@ -73,10 +75,15 @@ describe('reference lookup flags superseded appointments', () => {
   }
 
   const endpoints = [
-    ['GET /api/appointments/:reference', (url) => `${url}/api/appointments/YC-4821`],
+    [
+      'GET /api/appointments/:reference',
+      (url) =>
+        `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+    ],
     [
       'GET /api/appointments/lookup',
-      (url) => `${url}/api/appointments/lookup?reference=YC-4821`,
+      (url) =>
+        `${url}/api/appointments/lookup?reference=YC-4821&phone=${encodeURIComponent('0241234567')}`,
     ],
   ];
 
@@ -127,7 +134,9 @@ describe('reference lookup flags superseded appointments', () => {
     for (const status of ['NO_SHOW', 'COMPLETED']) {
       const { url } = await client(serviceFor({ ...cancelled, status }, activeReplacement));
 
-      const res = await fetch(`${url}/api/appointments/YC-4821`);
+      const res = await fetch(
+        `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+      );
       const body = await res.json();
 
       assert.equal(body.isHistorical, true, `${status} should be historical`);
@@ -145,7 +154,9 @@ describe('reference lookup flags superseded appointments', () => {
       },
     });
 
-    const res = await fetch(`${url}/api/appointments/YC-7734`);
+    const res = await fetch(
+      `${url}/api/appointments/YC-7734?phone=${encodeURIComponent('0241234567')}`,
+    );
     await res.json();
 
     assert.equal(calls, 0);
@@ -159,7 +170,9 @@ describe('reference lookup flags superseded appointments', () => {
       },
     });
 
-    const res = await fetch(`${url}/api/appointments/YC-4821`);
+    const res = await fetch(
+      `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+    );
     assert.equal(res.status, 200);
     const body = await res.json();
 

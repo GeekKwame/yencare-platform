@@ -143,6 +143,10 @@ describe('appointments HTTP', () => {
             status: 'BOOKED',
             appointmentDate: '2026-09-15',
             appointmentTime: '10:00',
+            patientId: {
+              fullName: 'Kofi Mensah',
+              phone: '+233241234567',
+            },
           };
         }
 
@@ -153,7 +157,7 @@ describe('appointments HTTP', () => {
     const { url } = await client(mockService);
 
     const res = await fetch(
-      `${url}/api/appointments/YC-4821`,
+      `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
     );
 
     assert.equal(res.status, 200);
@@ -172,14 +176,14 @@ describe('appointments HTTP', () => {
     const { url } = await client(mockService);
 
     const res = await fetch(
-      `${url}/api/appointments/YC-9999`,
+      `${url}/api/appointments/YC-9999?phone=${encodeURIComponent('0241234567')}`,
     );
 
     assert.equal(res.status, 404);
 
     const body = await res.json();
 
-    assert.equal(body.error, 'Appointment not found');
+    assert.equal(body.error, 'Appointment not found or phone number does not match');
   });
 
   it('GET /api/appointments/lookup returns 200 for a matching reference', async () => {

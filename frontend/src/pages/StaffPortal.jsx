@@ -22,8 +22,6 @@ import { updateAppointmentStatus } from "../services/appointments";
 import { listRooms } from "../services/catalog";
 import { advanceQueue, callNextPatient, markQueueNoShow } from "../services/queue";
 
-const SEED_DATE = "2026-09-15";
-
 const StaffPortal = () => {
   const { staff, logout } = useStaffAuth();
   const toast = useToast();
@@ -232,7 +230,7 @@ const StaffPortal = () => {
       arrivedCount={arrivedCount}
       onSignOut={logout}
     >
-      {view !== "walkin" && view !== "room" && (
+      {view !== "walkin" && view !== "room" && view !== "queue" && (
           <div className="mb-5 flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
               <span className="font-semibold">Clinic site</span>
@@ -252,7 +250,7 @@ const StaffPortal = () => {
               <span className="font-semibold">Visit date</span>
               <input
                 type="date"
-                value={selectedDate}
+                value={selectedDate === "upcoming" ? accraTodayIso() : selectedDate}
                 onChange={(event) => {
                   setFollowToday(false);
                   setSelectedDate(event.target.value);
@@ -278,15 +276,15 @@ const StaffPortal = () => {
               type="button"
               onClick={() => {
                 setFollowToday(false);
-                setSelectedDate(SEED_DATE);
+                setSelectedDate("upcoming");
               }}
               className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
-                selectedDate === SEED_DATE
+                selectedDate === "upcoming"
                   ? "border-[#176b5f] bg-[#176b5f] text-white"
                   : "border-[#dce8df] bg-white text-[#173b3a]"
               }`}
             >
-              Seed day (15 Sep)
+              Upcoming (Next 14 Days)
             </button>
           </div>
         )}
@@ -416,6 +414,10 @@ const StaffPortal = () => {
           <StaffLiveQueue
             appointments={appointments}
             clinicLabel={clinicLabel}
+            selectedDate={selectedDate === "upcoming" ? accraTodayIso() : selectedDate}
+            selectedDateLabel={selectedDate === "upcoming" ? "Today" : selectedDateLabel}
+            error={error}
+            usingLive={usingLive}
             canCallNext={canCallNext}
             canComplete={staff?.role === "DOCTOR"}
             updatingId={updatingId}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import ElapsedTimer from "./ElapsedTimer";
 import { sortWaiting } from "./staffUtils";
 import { Button, StatusBadge } from "../ui";
@@ -5,6 +6,9 @@ import { Button, StatusBadge } from "../ui";
 export default function StaffLiveQueue({
   appointments,
   clinicLabel,
+  selectedDate,
+  selectedDateLabel,
+  error,
   canCallNext,
   canComplete,
   updatingId,
@@ -17,6 +21,21 @@ export default function StaffLiveQueue({
   onOpenWalkIn,
   showCorridor = false,
 }) {
+  const [lastUpdated, setLastUpdated] = useState(() =>
+    new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+  );
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (!error) {
+        setLastUpdated(
+          new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+        );
+      }
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, [error]);
+
   const called = appointments.filter((appt) => appt.status === "CALLED");
   const waiting = sortWaiting(appointments.filter((appt) => appt.status === "WAITING"));
   const arrived = appointments.filter((appt) => appt.status === "CHECKED_IN");
@@ -26,6 +45,9 @@ export default function StaffLiveQueue({
     return (
       <div className="mx-auto max-w-xl rounded-2xl border border-[#dce8df] bg-white p-10 text-center">
         <h2 className="text-2xl font-bold text-[#173b3a]">No patients in the queue</h2>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-[#176b5f]">
+          {selectedDateLabel || selectedDate || "Today"}
+        </p>
         <p className="mt-3 text-sm text-[#607672]">
           The waiting corridor and consultation rooms are currently clear for
           today&apos;s visits. Arriving patients can be checked in from the
@@ -44,7 +66,7 @@ export default function StaffLiveQueue({
             onClick={onOpenWalkIn}
             className="rounded-xl border border-[#dce8df] px-4 py-2.5 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
           >
-            Add Walk-In
+            + Add Walk-In
           </button>
         </div>
       </div>
@@ -59,6 +81,9 @@ export default function StaffLiveQueue({
             Clinical Workstation · {clinicLabel}
           </p>
           <h2 className="text-2xl font-bold text-[#173b3a]">Live Virtual Queue Board</h2>
+          <p className="mt-1 text-sm font-semibold text-[#176b5f]">
+            {selectedDateLabel || selectedDate || "Today"}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -94,10 +119,17 @@ export default function StaffLiveQueue({
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[#66706B]">
                 Active Consultations
               </span>
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#176b5f]">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-[#176b5f]" />
-                LIVE
-              </span>
+              {error ? (
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700" title={error}>
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  SYNC PAUSED · Last sync {lastUpdated}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#176b5f]">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-[#176b5f]" />
+                  LIVE · {lastUpdated}
+                </span>
+              )}
             </div>
             {called.length > 0 ? (
               <div className="space-y-3">

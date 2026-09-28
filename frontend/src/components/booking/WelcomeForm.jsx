@@ -19,7 +19,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "", initialFind = fals
   const [findAppointment, setFindAppointment] = useState(
     () => Boolean(initialReference) || Boolean(initialFind),
   );
-  const [afterHours, setAfterHours] = useState(() => !isStudentsClinicOpen());
+  const [afterHours, setAfterHours] = useState(false);
   const [activity, setActivity] = useState({
     nowServingToken: "—",
     waitingCount: "—",

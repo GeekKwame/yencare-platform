@@ -1,70 +1,46 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   FaArrowLeft,
   FaHashtag,
-  FaIdCard,
   FaPhone,
   FaSearch,
+  FaShieldAlt,
 } from "react-icons/fa";
-import { isValidGhanaPhone, isValidStudentIndex } from "../../data/bookingOptions";
+import { isValidGhanaPhone } from "../../data/bookingOptions";
 import { normalizeReference, REFERENCE_PATTERN } from "../../lib/appointmentView";
 import { lookupAppointment } from "../../services/appointments";
 import AppointmentCancelled from "./AppointmentCancelled";
 import FoundAppointment from "./FoundAppointment";
 import RescheduleFlow from "./RescheduleFlow";
 
-function validateSearch(method, searchInput) {
-  if (method === "reference") {
-    const reference = normalizeReference(searchInput);
-    if (!REFERENCE_PATTERN.test(reference)) {
-      return { error: "Enter a valid reference code (e.g. YC-4821)." };
-    }
-    return { query: { reference } };
-  }
-
-  const value = String(searchInput || "").trim();
-  if (!value) {
-    return { error: "Please enter a value to search." };
-  }
-
-  if (method === "studentId") {
-    const studentIndex = value.replace(/\s+/g, "");
-    if (!isValidStudentIndex(studentIndex)) {
-      return { error: "Enter a valid 8-digit student index number." };
-    }
-    return { query: { studentIndex } };
-  }
-
-  if (!isValidGhanaPhone(value)) {
-    return {
-      error: "Enter a valid Ghana phone number (e.g. 024 123 4567).",
-    };
-  }
-  return { query: { phone: value } };
-}
-
 const FindAppointment = ({ setAppointment, initialReference = "" }) => {
-  const [searchMethod, setSearchMethod] = useState("reference");
-  const [searchInput, setSearchInput] = useState(() =>
-    initialReference ? String(initialReference).toUpperCase() : "",
+  const [referenceInput, setReferenceInput] = useState(() =>
+    initialReference ? normalizeReference(initialReference) : "",
   );
+  const [phoneInput, setPhoneInput] = useState("");
+  const [verifiedPhone, setVerifiedPhone] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [appointment, setFoundAppointment] = useState(null);
   const [flow, setFlow] = useState("detail");
 
-  const methods = [
-    { id: "reference", label: "YC Reference", icon: FaHashtag },
-    { id: "studentId", label: "Student Index", icon: FaIdCard },
-    { id: "phone", label: "Phone Number", icon: FaPhone },
-  ];
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { error, query } = validateSearch(searchMethod, searchInput);
-    if (error) {
-      setErrorMessage(error);
+    const ref = normalizeReference(referenceInput);
+    if (!ref || !REFERENCE_PATTERN.test(ref)) {
+      setErrorMessage("Please enter a valid reference code (e.g. YC-4821).");
+      return;
+    }
+
+    const phone = String(phoneInput || "").trim();
+    if (!phone) {
+      setErrorMessage("Please enter the patient phone number used during booking.");
+      return;
+    }
+
+    if (!isValidGhanaPhone(phone)) {
+      setErrorMessage("Please enter a valid Ghana phone number (e.g. 024 123 4567).");
       return;
     }
 
@@ -72,15 +48,16 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
     setErrorMessage("");
 
     try {
-      const found = await lookupAppointment(query);
+      const found = await lookupAppointment({ reference: ref, phone });
+      setVerifiedPhone(phone);
       setFoundAppointment(found);
       setFlow("detail");
     } catch (err) {
       const status = err.response?.status;
       const apiMessage = err.response?.data?.error;
-      if (status === 404) {
+      if (status === 404 || status === 400) {
         setErrorMessage(
-          "Appointment not found. Please check your details and try again.",
+          "Appointment not found or phone number does not match. Please verify both details and try again.",
         );
       } else {
         setErrorMessage(
@@ -93,50 +70,15 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
     }
   };
 
-  useEffect(() => {
-    if (!initialReference) return undefined;
-    let cancelled = false;
-
-    async function loadRef() {
-      const { error, query } = validateSearch("reference", initialReference);
-      if (error) {
-        setErrorMessage(error);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const found = await lookupAppointment(query);
-        if (!cancelled) {
-          setFoundAppointment(found);
-          setFlow("detail");
-        }
-      } catch {
-        if (!cancelled) {
-          setErrorMessage(
-            "Appointment not found. Please check your details and try again.",
-          );
-        }
-      } finally {
-        if (!cancelled) setIsSearching(false);
-      }
-    }
-
-    void loadRef();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialReference]);
-
   if (appointment && flow === "reschedule") {
     return (
       <RescheduleFlow
         appointment={appointment}
         onBack={() => setFlow("detail")}
         onSuccess={async (updated) => {
-          const ref =
-            updated?.referenceCode || appointment.referenceCode;
+          const ref = updated?.referenceCode || appointment.referenceCode;
           try {
-            const fresh = await lookupAppointment({ reference: ref });
+            const fresh = await lookupAppointment({ reference: ref, phone: verifiedPhone });
             setFoundAppointment(fresh);
           } catch {
             setFoundAppointment(updated);
@@ -170,7 +112,7 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
             const ref = next?.referenceCode;
             if (!ref) return;
             try {
-              const fresh = await lookupAppointment({ reference: ref });
+              const fresh = await lookupAppointment({ reference: ref, phone: verifiedPhone });
               setFoundAppointment(fresh);
               setFlow("detail");
             } catch {
@@ -194,99 +136,72 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
       </button>
 
       <div className="mt-7">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c37d32]">
-          Appointment lookup
-        </p>
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#f5faf7] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#176b5f]">
+          <FaShieldAlt size={10} />
+          <span>Secure Appointment Lookup</span>
+        </div>
         <h2 className="display-font mt-2 text-2xl font-bold text-[#173b3a] sm:text-3xl">
           Find your appointment
         </h2>
       </div>
 
       <p className="mt-3 max-w-xl text-sm leading-6 text-[#607672]">
-        Search with your YC reference, student index, or the phone number on
-        the booking.
+        To protect student privacy, please provide both your <strong>Appointment Reference Code</strong> and the <strong>Phone Number</strong> registered on the booking.
       </p>
-
-      <div
-        className="mt-7 grid gap-2 rounded-2xl bg-[#f5faf7] p-1.5 sm:grid-cols-3"
-        role="tablist"
-      >
-        {methods.map(({ id, label, icon: Icon }) => {
-          const isActive = searchMethod === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => {
-                setSearchMethod(id);
-                setSearchInput("");
-                setErrorMessage("");
-              }}
-              className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-bold transition sm:text-sm ${
-                isActive
-                  ? "bg-[#176b5f] text-white shadow-[0_6px_16px_rgba(23,107,95,0.18)]"
-                  : "text-[#55706c] hover:bg-white hover:text-[#176b5f]"
-              }`}
-            >
-              <Icon size={12} />
-              {label}
-            </button>
-          );
-        })}
-      </div>
 
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
         <div>
-          <label htmlFor="appointment-search" className="text-sm font-bold text-[#173b3a]">
-            {searchMethod === "reference"
-              ? "Appointment Reference Code"
-              : searchMethod === "studentId"
-                ? "Student Index Number"
-                : "Ghana Phone Number"}
+          <label htmlFor="appointment-reference" className="flex items-center gap-1.5 text-sm font-bold text-[#173b3a]">
+            <FaHashtag size={11} className="text-[#176b5f]" />
+            <span>Appointment Reference Code <span className="text-red-500">*</span></span>
           </label>
           <input
-            id="appointment-search"
+            id="appointment-reference"
             type="text"
-            inputMode={
-              searchMethod === "studentId"
-                ? "numeric"
-                : searchMethod === "phone"
-                  ? "tel"
-                  : "text"
-            }
-            autoCapitalize={searchMethod === "reference" ? "characters" : undefined}
-            autoComplete={searchMethod === "phone" ? "tel" : "off"}
-            value={searchInput}
+            required
+            autoCapitalize="characters"
+            autoComplete="off"
+            value={referenceInput}
             onChange={(e) => {
-              setSearchInput(
-                searchMethod === "reference"
-                  ? e.target.value.toUpperCase()
-                  : e.target.value,
-              );
+              setReferenceInput(e.target.value.toUpperCase());
+              if (errorMessage) setErrorMessage("");
+            }}
+            className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm font-mono font-semibold tracking-wider text-[#173b3a] outline-none transition placeholder:font-sans placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+            placeholder="e.g. YC-4821"
+          />
+          <p className="mt-1.5 text-xs text-[#78908a]">
+            Enter the speakable 4-digit code sent via SMS upon booking.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="patient-phone" className="flex items-center gap-1.5 text-sm font-bold text-[#173b3a]">
+            <FaPhone size={11} className="text-[#176b5f]" />
+            <span>Booking Phone Number <span className="text-red-500">*</span></span>
+          </label>
+          <input
+            id="patient-phone"
+            type="tel"
+            required
+            inputMode="tel"
+            autoComplete="tel"
+            value={phoneInput}
+            onChange={(e) => {
+              setPhoneInput(e.target.value);
               if (errorMessage) setErrorMessage("");
             }}
             className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none transition placeholder:text-[#9aaba5] focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
-            placeholder={
-              searchMethod === "reference"
-                ? "e.g. YC-4821"
-                : searchMethod === "studentId"
-                  ? "e.g. 20612345"
-                  : "e.g. 024 123 4567"
-            }
+            placeholder="e.g. 024 123 4567"
           />
-          {searchMethod === "reference" ? (
-            <p className="mt-2 text-xs text-[#78908a]">
-              Your 4-digit YC code was sent via SMS (e.g. YC-4821).
-            </p>
-          ) : null}
+          <p className="mt-1.5 text-xs text-[#78908a]">
+            The Ghanaian mobile number associated with this clinical record.
+          </p>
         </div>
 
         {errorMessage && (
-          <p className="text-xs text-red-500" role="alert">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700" role="alert">
             {errorMessage}
-          </p>
+          </div>
         )}
 
         <button
@@ -295,7 +210,7 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#176b5f] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#14594f] disabled:cursor-wait disabled:opacity-70"
         >
           <FaSearch size={13} />
-          {isSearching ? "Searching…" : "Find Appointment"}
+          {isSearching ? "Verifying & Finding…" : "Find Appointment"}
         </button>
       </form>
     </section>

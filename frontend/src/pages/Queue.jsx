@@ -10,6 +10,7 @@ import {
 } from "../lib/appointmentView";
 import { arriveAppointment, getQueueStatus, lookupAppointment } from "../services/appointments";
 import { announcePatientCall } from "../lib/clinicSpeech";
+import { getArrivalWindowStatus } from "../lib/accraTime";
 import { ReferenceBlock } from "../components/ui";
 
 const POLL_MS = 15000;
@@ -426,32 +427,42 @@ const Queue = () => {
                 Personal queue numbers are assigned when reception checks you in.
                 You do not have a queue number yet.
               </p>
-              {status === "BOOKED" && (
-              <button
-                type="button"
-                disabled={arriving}
-                onClick={async () => {
-                  setArriving(true);
-                  try {
-                    const updated = await arriveAppointment(view.referenceCode, {
-                      phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
-                    });
-                    setAppointment(updated);
-                    await refreshQueue(view.referenceCode);
-                  } catch (err) {
-                    setPollError(
-                      err.response?.data?.error ||
-                        "Could not record arrival. Please tell reception.",
-                    );
-                  } finally {
-                    setArriving(false);
-                  }
-                }}
-                className="mt-4 rounded-xl bg-[#176b5f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
-              >
-                {arriving ? "Recording…" : "I've arrived"}
-              </button>
-              )}
+              {status === "BOOKED" && (() => {
+                const arrivalStatus = getArrivalWindowStatus(view.appointmentDate, view.appointmentTime);
+                if (!arrivalStatus.canArrive) {
+                  return (
+                    <div className="mt-4 rounded-xl border border-[#dce8df] bg-[#f7f8f7] p-3 text-xs text-[#607672]">
+                      {arrivalStatus.reason}
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    disabled={arriving}
+                    onClick={async () => {
+                      setArriving(true);
+                      try {
+                        const updated = await arriveAppointment(view.referenceCode, {
+                          phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
+                        });
+                        setAppointment(updated);
+                        await refreshQueue(view.referenceCode);
+                      } catch (err) {
+                        setPollError(
+                          err.response?.data?.error ||
+                            "Could not record arrival. Please tell reception.",
+                        );
+                      } finally {
+                        setArriving(false);
+                      }
+                    }}
+                    className="mt-4 rounded-xl bg-[#176b5f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
+                  >
+                    {arriving ? "Recording…" : "I've arrived"}
+                  </button>
+                );
+              })()}
               {nowServing && (
                 <p className="mt-3 text-sm font-semibold text-[#173b3a]">
                   Clinic is now serving {nowServing}

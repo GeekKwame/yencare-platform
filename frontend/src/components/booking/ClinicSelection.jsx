@@ -6,6 +6,7 @@ import {
   FaClock,
 } from "react-icons/fa";
 import { CLINIC_SITES } from "../../data/bookingOptions";
+import { isClinicOpen } from "../../lib/accraTime";
 
 const ClinicSelection = ({
   formData,
@@ -75,6 +76,7 @@ const ClinicSelection = ({
       <div className="mt-7 space-y-4">
         {CLINIC_SITES.map((clinic) => {
           const isSelected = formData.clinicSite === clinic.id;
+          const openNow = isClinicOpen(clinic.id);
 
           return (
             <button
@@ -90,16 +92,27 @@ const ClinicSelection = ({
               <div className="flex items-start justify-between gap-4">
 
                 {/* Clinic Information */}
-                <div className="min-w-0">
-                  <h3
-                    className={`text-base font-bold sm:text-lg ${
-                      isSelected
-                        ? "text-[#176b5f]"
-                        : "text-[#173b3a]"
-                    }`}
-                  >
-                    {clinic.name}
-                  </h3>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3
+                      className={`text-base font-bold sm:text-lg ${
+                        isSelected
+                          ? "text-[#176b5f]"
+                          : "text-[#173b3a]"
+                      }`}
+                    >
+                      {clinic.name}
+                    </h3>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        openNow
+                          ? "border border-[#99D5C8] bg-[#E7F5F1] text-[#087F6C]"
+                          : "border border-amber-200 bg-amber-50 text-amber-800"
+                      }`}
+                    >
+                      {openNow ? "Open Now" : "Closed Now"}
+                    </span>
+                  </div>
 
                   <p className="mt-1 text-xs text-gray-400 sm:text-sm">
                     {clinic.location}
@@ -124,7 +137,7 @@ const ClinicSelection = ({
 
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                        Opening Hours
+                        Operating Hours
                       </p>
 
                       <p className="mt-0.5 text-xs font-semibold text-gray-600 sm:text-sm">

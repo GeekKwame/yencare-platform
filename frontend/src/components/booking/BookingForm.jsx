@@ -85,6 +85,15 @@ const BookingForm = () => {
     persistDraft(step, formData);
   }, [step, formData]);
 
+  useEffect(() => {
+    if (searchParams.get("book") === "1") {
+      setStep(2);
+    } else if (searchParams.get("find") === "1" || searchParams.get("ref")) {
+      setStep(1);
+      setFindReference(normalizeReference(searchParams.get("ref") || ""));
+    }
+  }, [searchParams]);
+
   const updateFormData = (changes) => {
     setFormData((prev) => ({
       ...prev,

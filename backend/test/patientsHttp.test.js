@@ -90,8 +90,8 @@ describe('patients HTTP', () => {
     const byPhone = await fetch(`${url}/api/patients/${encodeURIComponent('0208113344')}`);
     assert.equal(byPhone.status, 200);
     const byPhoneBody = await byPhone.json();
-    assert.equal(byPhoneBody.phone, '+233208113344');
-    assert.equal(byPhoneBody.phoneNumber, '+233208113344');
+    assert.equal(byPhoneBody.phone, '+233 20 **** 344');
+    assert.equal(byPhoneBody.phoneNumber, '+233 20 **** 344');
   });
 
   it('GET returns 404 when the patient does not exist', async () => {

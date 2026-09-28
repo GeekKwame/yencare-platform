@@ -131,3 +131,20 @@ export function maskStudentIndex(raw) {
 }
 
 export const maskGhanaPhone = maskPhone;
+
+/**
+ * Mask Ghana NHIS number for public display (e.g. `12****89`).
+ *
+ * @param {unknown} raw
+ * @returns {string | null}
+ */
+export function maskNhis(raw) {
+  if (raw == null) return null;
+  const str = String(raw).trim();
+  if (!str) return null;
+  if (str.includes('*')) return str;
+  if (str.length >= 6) {
+    return `${str.slice(0, 2)}****${str.slice(-2)}`;
+  }
+  return '****';
+}

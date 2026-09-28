@@ -1,5 +1,9 @@
 const ACCRA = "Africa/Accra";
 
+/**
+ * @param {Date} [date]
+ * @returns {string} YYYY-MM-DD in Africa/Accra
+ */
 export function accraTodayIso(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: ACCRA,
@@ -9,6 +13,10 @@ export function accraTodayIso(date = new Date()) {
   }).format(date);
 }
 
+/**
+ * @param {Date} [date]
+ * @returns {string} HH:mm
+ */
 export function accraNowHm(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: ACCRA,
@@ -22,26 +30,157 @@ export function accraNowHm(date = new Date()) {
   return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
-export function accraWeekday(date = new Date()) {
-  return new Intl.DateTimeFormat("en-GB", {
+/**
+ * @param {Date} [date]
+ * @returns {{ weekday: string, hour: number, minute: number, hm: string }}
+ */
+export function accraParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: ACCRA,
     weekday: "short",
-  }).format(date);
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const weekday = parts.find((part) => part.type === "weekday")?.value || "";
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return {
+    weekday,
+    hour,
+    minute,
+    hm: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+  };
+}
+
+export const CLINIC_CONFIG = Object.freeze({
+  "students-clinic": Object.freeze({
+    id: "students-clinic",
+    name: "KNUST Students' Clinic",
+    operatingDays: Object.freeze([1, 2, 3, 4, 5]), // Monday to Friday
+    openHour: 8,
+    openMinute: 0,
+    closeHour: 16,
+    closeMinute: 0,
+    openingTime: "08:00",
+    closingTime: "16:00",
+    allDay: false,
+    slotDurationMinutes: 30,
+    timezone: ACCRA,
+    label: "Monday to Friday, 08:00–16:00",
+  }),
+  "knust-hospital": Object.freeze({
+    id: "knust-hospital",
+    name: "KNUST Hospital",
+    operatingDays: Object.freeze([0, 1, 2, 3, 4, 5, 6]), // 7 days a week
+    openHour: 0,
+    openMinute: 0,
+    closeHour: 24,
+    closeMinute: 0,
+    openingTime: "00:00",
+    closingTime: "24:00",
+    allDay: true,
+    slotDurationMinutes: 30,
+    timezone: ACCRA,
+    label: "24 hours, every day",
+  }),
+});
+
+export const CLINIC_OPENING_HOURS = Object.freeze({
+  "students-clinic": Object.freeze({
+    allDay: false,
+    openDays: Object.freeze([1, 2, 3, 4, 5]),
+    openHour: 8,
+    closeHour: 16,
+    label: "Monday to Friday, 08:00–16:00",
+  }),
+  "knust-hospital": Object.freeze({
+    allDay: true,
+    openDays: Object.freeze([0, 1, 2, 3, 4, 5, 6]),
+    openHour: 0,
+    closeHour: 24,
+    label: "24 hours, every day",
+  }),
+});
+
+const DEFAULT_CLINIC_SITE = "students-clinic";
+
+const WEEKDAY_NUMBERS = Object.freeze({
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+});
+
+export function clinicOpeningHours(clinicSite = DEFAULT_CLINIC_SITE) {
+  return CLINIC_OPENING_HOURS[clinicSite] || CLINIC_OPENING_HOURS[DEFAULT_CLINIC_SITE];
+}
+
+export function clinicHoursLabel(clinicSite = DEFAULT_CLINIC_SITE) {
+  return clinicOpeningHours(clinicSite).label;
 }
 
 /**
- * Students' Clinic: Mon–Fri 08:00–16:00 Accra. KNUST Hospital is open 24 hours.
+ * Returns whether clinic is currently open.
+ * Students' Clinic: Mon–Fri 08:00–16:00 Accra. KNUST Hospital: 24 hours.
  */
-export function isClinicOpen(clinicSite = "students-clinic", date = new Date()) {
-  if (clinicSite === "knust-hospital") return true;
-  const weekday = accraWeekday(date);
-  if (weekday === "Sat" || weekday === "Sun") return false;
-  const hour = Number(accraNowHm(date).slice(0, 2));
-  return hour >= 8 && hour < 16;
+export function isClinicOpen(clinicSite = DEFAULT_CLINIC_SITE, date = new Date()) {
+  const hours = clinicOpeningHours(clinicSite);
+  if (hours.allDay) return true;
+
+  const { weekday, hour, minute } = accraParts(date);
+  const weekdayNumber = WEEKDAY_NUMBERS[weekday];
+  if (weekdayNumber === undefined || !hours.openDays.includes(weekdayNumber)) {
+    return false;
+  }
+
+  const minutesOfDay = hour * 60 + minute;
+  return minutesOfDay >= hours.openHour * 60 && minutesOfDay < hours.closeHour * 60;
 }
 
 export function isStudentsClinicOpen(date = new Date()) {
   return isClinicOpen("students-clinic", date);
+}
+
+/**
+ * Day of week for a calendar date (0 = Sunday).
+ */
+export function accraWeekday(dateOrIso = new Date()) {
+  if (dateOrIso instanceof Date) {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: ACCRA,
+      weekday: "short",
+    }).format(dateOrIso);
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateOrIso || ""));
+  if (!match) return null;
+  const [, year, month, day] = match.map(Number);
+  const stamp = Date.UTC(year, month - 1, day);
+  if (Number.isNaN(stamp)) return null;
+  return new Date(stamp).getUTCDay();
+}
+
+/**
+ * Check if a future calendar slot is valid for a clinic
+ */
+export function isClinicOpenAt(clinicSite, dateIso, timeHm) {
+  const hours = clinicOpeningHours(clinicSite);
+  if (hours.allDay) return true;
+
+  const weekday = accraWeekday(dateIso);
+  if (weekday === null || !hours.openDays.includes(weekday)) return false;
+
+  const time = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(timeHm || ""));
+  if (!time) return false;
+
+  const slotMinutes = Number(time[1]) * 60 + Number(time[2]);
+  return slotMinutes >= hours.openHour * 60 && slotMinutes < hours.closeHour * 60;
 }
 
 export function isFutureSlot(dateIso, startTime, now = new Date()) {
@@ -52,10 +191,53 @@ export function isFutureSlot(dateIso, startTime, now = new Date()) {
   return String(startTime || "") > accraNowHm(now);
 }
 
+export const EARLY_WINDOW_MINUTES = 60;
+export const LATE_GRACE_MINUTES = 15;
+
+/**
+ * Arrival window: 60 minutes before slot start up to 15 minutes after.
+ */
+export function getArrivalWindowStatus(dateIso, startTime, now = new Date()) {
+  if (!dateIso || !startTime) {
+    return { canArrive: false, reason: "Appointment date or time is missing." };
+  }
+
+  const today = accraTodayIso(now);
+  if (dateIso < today) {
+    return { canArrive: false, reason: `This appointment was scheduled for ${dateIso} and has passed.` };
+  }
+  if (dateIso > today) {
+    return { canArrive: false, reason: `Check-in opens on the day of your visit (${dateIso}).` };
+  }
+
+  const [slotH, slotM] = String(startTime).split(":").map(Number);
+  const slotMinutes = slotH * 60 + slotM;
+  const { hour: nowH, minute: nowM } = accraParts(now);
+  const nowMinutes = nowH * 60 + nowM;
+
+  const offset = nowMinutes - slotMinutes;
+  if (offset < -EARLY_WINDOW_MINUTES) {
+    return {
+      canArrive: false,
+      reason: `Check-in opens ${EARLY_WINDOW_MINUTES} minutes before your appointment time (${startTime}).`,
+    };
+  }
+  if (offset > LATE_GRACE_MINUTES) {
+    return {
+      canArrive: false,
+      reason: "The arrival window has passed. Please see reception to be placed in a later slot.",
+    };
+  }
+
+  return { canArrive: true, reason: "" };
+}
+
+export function isWithinArrivalWindow(dateIso, startTime, now = new Date()) {
+  return getArrivalWindowStatus(dateIso, startTime, now).canArrive;
+}
+
 export function upcomingWeekdays(fromIso, count = 14) {
-  const [year, month, day] = String(fromIso)
-    .split("-")
-    .map(Number);
+  const [year, month, day] = String(fromIso).split("-").map(Number);
   const cursor = new Date(Date.UTC(year, month - 1, day));
   const dates = [];
 
@@ -64,6 +246,19 @@ export function upcomingWeekdays(fromIso, count = 14) {
     if (dow !== 0 && dow !== 6) {
       dates.push(cursor.toISOString().slice(0, 10));
     }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return dates;
+}
+
+export function upcomingCalendarDays(fromIso, count = 14) {
+  const [year, month, day] = String(fromIso).split("-").map(Number);
+  const cursor = new Date(Date.UTC(year, month - 1, day));
+  const dates = [];
+
+  while (dates.length < count) {
+    dates.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 

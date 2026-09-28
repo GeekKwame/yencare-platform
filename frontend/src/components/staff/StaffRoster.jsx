@@ -127,7 +127,7 @@ export default function StaffRoster({
               </div>
               <h3 className="mt-3 text-lg font-bold text-[#173b3a]">{appt.patientName}</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {appt.service} · {appt.time}
+                {appt.service} · {appt.date ? `${appt.date} · ` : ""}{appt.time}
               </p>
               {(appt.studentIndex || appt.phone) && (
                 <p className="mt-1 text-xs text-gray-400">
@@ -146,35 +146,38 @@ export default function StaffRoster({
               )}
 
               {appt.status === "BOOKED" && (
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <span title={actionState.checkInNote || undefined} className="block w-full">
+                <div className="mt-4">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onCheckIn(appt.id);
                       }}
-                      disabled={updatingId === appt.id}
+                      disabled={updatingId === appt.id || !actionState.canCheckIn}
                       title={actionState.checkInNote || undefined}
-                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                     >
                       {updatingId === appt.id ? "Updating…" : "Check In"}
                     </button>
-                  </span>
-                  <span title={actionState.noShowNote || undefined} className="block w-full">
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onNoShow(appt.id);
                       }}
-                      disabled={updatingId === appt.id}
+                      disabled={updatingId === appt.id || !actionState.canNoShow}
                       title={actionState.noShowNote || undefined}
-                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                     >
                       No-Show
                     </button>
-                  </span>
+                  </div>
+                  {(!actionState.canCheckIn || !actionState.canNoShow) && (
+                    <p className="mt-1.5 text-[11px] text-gray-500">
+                      {!actionState.canCheckIn ? actionState.checkInNote : actionState.noShowNote}
+                    </p>
+                  )}
                 </div>
               )}
 

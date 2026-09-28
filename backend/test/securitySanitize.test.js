@@ -235,7 +235,9 @@ describe('HTTP End-to-End NoSQL Operator Sanitization & Privacy Guards', () => {
   it('masks student index (2061****) and phone in public appointment lookup', async () => {
     const { url } = await client();
 
-    const res = await fetch(`${url}/api/appointments/lookup?reference=YC-4821`);
+    const res = await fetch(
+      `${url}/api/appointments/lookup?reference=YC-4821&phone=${encodeURIComponent('0241234567')}`,
+    );
     assert.equal(res.status, 200);
 
     const body = await res.json();
@@ -252,7 +254,9 @@ describe('HTTP End-to-End NoSQL Operator Sanitization & Privacy Guards', () => {
   it('masks student index (2061****) and phone in public reference GET', async () => {
     const { url } = await client();
 
-    const res = await fetch(`${url}/api/appointments/YC-4821`);
+    const res = await fetch(
+      `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+    );
     assert.equal(res.status, 200);
 
     const body = await res.json();

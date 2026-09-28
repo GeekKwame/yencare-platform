@@ -262,7 +262,7 @@ describe('Public Lookup Privacy (Phone Masking)', () => {
     };
 
     const { url } = await client(service);
-    const res = await fetch(`${url}/api/appointments/YC-4821`);
+    const res = await fetch(`${url}/api/appointments/YC-4821?phone=${encodeURIComponent('+233241234567')}`);
     assert.equal(res.status, 200);
 
     const body = await res.json();
@@ -287,7 +287,7 @@ describe('Public Lookup Privacy (Phone Masking)', () => {
     };
 
     const { url } = await client(service);
-    const res = await fetch(`${url}/api/appointments/YC-4821`);
+    const res = await fetch(`${url}/api/appointments/YC-4821?phone=${encodeURIComponent('+233241234567')}`);
     assert.equal(res.status, 200);
 
     const body = await res.json();

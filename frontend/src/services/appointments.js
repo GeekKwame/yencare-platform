@@ -30,19 +30,35 @@ export async function updateAppointmentStatus(id, status) {
 }
 
 /**
- * Public patient lookup: exactly one of reference, studentIndex, or phone.
- * Reference uses GET /appointments/:reference so staging works before /lookup deploys.
- * @param {{ reference?: string, studentIndex?: string, phone?: string }} query
+ * Public patient lookup requires both reference code and phone number.
+ * @param {{ reference?: string, phone?: string, phoneNumber?: string, studentIndex?: string }} query
  */
 export async function lookupAppointment(query) {
+  const phone = query.phone || query.phoneNumber;
   if (query.reference) {
     const response = await api.get(
       `/appointments/${encodeURIComponent(query.reference)}`,
+      { params: phone ? { phone } : undefined },
     );
     return response.data;
   }
 
   const response = await api.get("/appointments/lookup", { params: query });
+  return response.data;
+}
+
+/**
+ * Fetch upcoming appointments from a starting date (default today).
+ * @param {string} [clinicSite]
+ * @param {string} [fromDate] YYYY-MM-DD
+ */
+export async function getUpcomingAppointments(
+  clinicSite = DEFAULT_CLINIC_SITE,
+  fromDate = todayIsoDate(),
+) {
+  const response = await api.get("/appointments", {
+    params: { fromDate, clinicSite, upcoming: true },
+  });
   return response.data;
 }
 

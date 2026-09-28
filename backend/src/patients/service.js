@@ -105,12 +105,27 @@ async function findExisting(store, input) {
     return { conflict: true, patient: null };
   }
 
+  // Prevent phone takeover: if student index is already registered with a different phone
+  if (byIndex) {
+    const storedPhone = byIndex.phoneNumber || byIndex.phone || null;
+    if (storedPhone && input.phoneNumber && storedPhone !== input.phoneNumber) {
+      return { conflict: true, patient: null };
+    }
+  }
+
+  // Prevent index takeover: if phone is already registered with a different student index
+  if (byPhone) {
+    const storedIndex = byPhone.studentIndex || null;
+    if (storedIndex && input.studentIndex && storedIndex !== input.studentIndex) {
+      return { conflict: true, patient: null };
+    }
+  }
+
   return { conflict: false, patient: byIndex || byPhone || null };
 }
 
 /**
- * Keep the on-file phone in sync with the number entered for this visit so
- * confirmation SMS goes to that patient, not a stale test/admin number.
+ * Sync updates for an existing patient without permitting takeover of identity.
  *
  * @param {PatientStore & { update?: Function }} store
  * @param {object} patient
@@ -120,12 +135,23 @@ async function syncExistingPatient(store, patient, input) {
   if (typeof store.update !== 'function') return patient;
 
   const storedPhone = patient.phoneNumber || patient.phone || null;
-  const updates = {};
-  if (input.fullName && input.fullName.trim() && input.fullName.trim() !== patient.fullName) {
-    updates.fullName = input.fullName.trim();
+  const storedIndex = patient.studentIndex || null;
+
+  if (storedIndex && storedPhone && input.phoneNumber && input.phoneNumber !== storedPhone) {
+    throw new ConflictError(
+      'This student index is already registered with a different phone number',
+    );
   }
-  if (input.phoneNumber && input.phoneNumber !== storedPhone) {
+
+  const updates = {};
+  if (input.fullName && input.fullName !== patient.fullName) {
+    updates.fullName = input.fullName;
+  }
+  if (!storedPhone && input.phoneNumber) {
     updates.phoneNumber = input.phoneNumber;
+  }
+  if (!storedIndex && input.studentIndex) {
+    updates.studentIndex = input.studentIndex;
   }
   if (input.nhis && input.nhis !== (patient.nhis ?? null)) {
     updates.nhis = input.nhis;

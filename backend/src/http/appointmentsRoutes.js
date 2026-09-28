@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import { resolveDoctorScope } from '../auth/clinicianResolver.js';
 import { logger } from '../lib/logger.js';
-import { maskPhone, maskStudentIndex } from '../sms/normalizePhone.js';
+import { maskPhone, maskStudentIndex, normalizeGhanaPhone } from '../sms/normalizePhone.js';
 import { normalizeReferenceInput } from '../utils/referenceCode.js';
 import { asyncHandler } from './asyncHandler.js';
 import {
@@ -252,6 +252,8 @@ export function createAppointmentsRouter(
 
       const appointments = await appointmentService.listAppointments({
         date: req.query.date,
+        fromDate: req.query.fromDate,
+        upcoming: req.query.upcoming,
         clinicSite:
           req.query.clinicSite || req.query.clinic,
         ...(scope.isDoctor ? { clinicianId: scope.clinicianId } : {}),
@@ -352,7 +354,8 @@ export function createAppointmentsRouter(
   });
 
   // GET /api/appointments/lookup
-  // Public patient search by YC reference, student index, or Ghana phone.
+  // Public patient search requires both YC reference AND phone number.
+  // Authenticated staff may search flexibly by reference, student index, or phone.
   router.get(
     '/lookup',
     publicLookupLimiter,
@@ -364,15 +367,19 @@ export function createAppointmentsRouter(
         });
       }
 
+      const isStaff = Boolean(req.staff);
       const appointment = await appointmentService.lookupAppointment({
         reference: req.query.reference,
         studentIndex: req.query.studentIndex || req.query.studentId,
         phone: req.query.phone || req.query.phoneNumber,
+        actorIsStaff: isStaff,
       });
 
       if (!appointment) {
         return res.status(404).json({
-          error: 'Appointment not found',
+          error: isStaff
+            ? 'Appointment not found'
+            : 'Appointment not found or phone number does not match',
         });
       }
 
@@ -632,12 +639,63 @@ export function createAppointmentsRouter(
   );
 
   // GET /api/appointments/:reference
+  // Public callers must provide matching phone query param (?phone=...).
+  // Authenticated staff may retrieve by reference code alone.
   router.get(
     '/:reference',
     publicLookupLimiter,
     maybeStaff,
     asyncHandler(async (req, res) => {
+      const isStaff = Boolean(req.staff);
       const ref = req.params.reference;
+
+      if (!isStaff) {
+        const phone = req.query.phone || req.query.phoneNumber;
+        if (!phone) {
+          return res.status(400).json({
+            error: 'Phone number is required with reference code',
+          });
+        }
+
+        let appointment = null;
+        if (appointmentService.lookupAppointment) {
+          appointment = await appointmentService.lookupAppointment({
+            reference: ref,
+            phone,
+            actorIsStaff: false,
+          });
+        } else if (appointmentService.findByReference) {
+          const doc = await appointmentService.findByReference(ref);
+          if (doc) {
+            const stored =
+              doc.patientId?.phone ||
+              doc.patientId?.phoneNumber ||
+              doc.phone ||
+              doc.phoneNumber;
+            if (!stored) {
+              appointment = doc;
+            } else {
+              try {
+                if (normalizeGhanaPhone(stored) === normalizeGhanaPhone(phone)) {
+                  appointment = doc;
+                }
+              } catch {
+                appointment = null;
+              }
+            }
+          }
+        }
+
+        if (!appointment) {
+          return res.status(404).json({
+            error: 'Appointment not found or phone number does not match',
+          });
+        }
+
+        return res.status(200).json(
+          await toLookupJson(appointmentService, appointment, req),
+        );
+      }
 
       const appointment =
         appointmentService.findByReference

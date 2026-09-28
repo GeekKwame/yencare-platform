@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ElapsedTimer from "../components/staff/ElapsedTimer";
 import {
   CLINIC_SITE_LABELS,
@@ -15,15 +15,28 @@ function roomKey(room) {
 }
 
 export default function DoctorWorkstation({ staff }) {
+  const isDoctor = staff?.role === "DOCTOR";
   const [clinicSite, setClinicSite] = useState(staff?.clinicSite || DEFAULT_CLINIC_SITE);
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => accraTodayIso());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [notification, setNotification] = useState("");
+  const prevCountRef = useRef(null);
   const { appointments, loading, error, reload } = useClinicRoster(clinicSite, selectedDate, {
     pollMs: 10000,
   });
+
+  useEffect(() => {
+    if (appointments && Array.isArray(appointments)) {
+      if (prevCountRef.current !== null && appointments.length > prevCountRef.current) {
+        const latest = appointments[appointments.length - 1];
+        setNotification(`New booking received: ${latest?.patientName || "Student"} (${latest?.time || "Today"})`);
+      }
+      prevCountRef.current = appointments.length;
+    }
+  }, [appointments]);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,47 +161,58 @@ export default function DoctorWorkstation({ staff }) {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-            Consultation workstation
+            Consultation workstation · {isDoctor ? (staff?.name || "Doctor") : "Staff"}
           </p>
           <h1 className="mb-1 text-3xl font-bold text-[#173b3a]">Call next patient</h1>
-          <p className="text-sm text-gray-500">
-            {CLINIC_SITE_LABELS[clinicSite] || clinicSite} · bound to {selectedName}
+          <p className="text-sm font-semibold text-[#176b5f]">
+            {selectedDate} · {CLINIC_SITE_LABELS[clinicSite] || clinicSite} · {selectedName}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
-            <span className="font-semibold">Clinic site</span>
-            <select
-              value={clinicSite}
-              onChange={(event) => {
-                setClinicSite(event.target.value);
-                setSelectedRoomId("");
-              }}
-              className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
-            >
-              {Object.entries(CLINIC_SITE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
-            <span className="font-semibold">Active room</span>
-            <select
-              value={selectedRoomId}
-              onChange={(event) => setSelectedRoomId(event.target.value)}
-              className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
-            >
-              {rooms
-                .filter((room) => room.clinicSite === clinicSite)
-                .map((room) => (
-                  <option key={roomKey(room)} value={roomKey(room)}>
-                    {room.name}
-                  </option>
-                ))}
-            </select>
-          </label>
+          {isDoctor ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#dce8df] bg-[#f7f8f7] px-3.5 py-2 text-xs">
+              <span className="font-semibold text-gray-500">Assigned:</span>
+              <span className="font-bold text-[#173b3a]">{CLINIC_SITE_LABELS[clinicSite] || clinicSite}</span>
+              <span className="text-gray-300">|</span>
+              <span className="font-bold text-[#176b5f]">{selectedName}</span>
+            </div>
+          ) : (
+            <>
+              <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+                <span className="font-semibold">Clinic site</span>
+                <select
+                  value={clinicSite}
+                  onChange={(event) => {
+                    setClinicSite(event.target.value);
+                    setSelectedRoomId("");
+                  }}
+                  className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
+                >
+                  {Object.entries(CLINIC_SITE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+                <span className="font-semibold">Active room</span>
+                <select
+                  value={selectedRoomId}
+                  onChange={(event) => setSelectedRoomId(event.target.value)}
+                  className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
+                >
+                  {rooms
+                    .filter((room) => room.clinicSite === clinicSite)
+                    .map((room) => (
+                      <option key={roomKey(room)} value={roomKey(room)}>
+                        {room.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setSelectedDate(accraTodayIso())}
@@ -200,19 +224,21 @@ export default function DoctorWorkstation({ staff }) {
           >
             Today
           </button>
-          <button
-            type="button"
-            onClick={() => setSelectedDate("2026-09-15")}
-            className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
-              selectedDate === "2026-09-15"
-                ? "border-[#176b5f] bg-[#176b5f] text-white"
-                : "border-[#dce8df] bg-white text-[#173b3a]"
-            }`}
-          >
-            Seed day
-          </button>
         </div>
       </div>
+
+      {notification && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-[#99D5C8] bg-[#E7F5F1] px-4 py-3 text-sm text-[#087F6C]">
+          <span>🔔 {notification}</span>
+          <button
+            type="button"
+            onClick={() => setNotification("")}
+            className="text-xs font-semibold underline hover:text-[#066A5A]"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {(message || error) && (
         <div
@@ -240,7 +266,7 @@ export default function DoctorWorkstation({ staff }) {
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="rounded-2xl border border-[#dce8df] bg-white p-5 shadow-[0_8px_20px_rgba(23,59,58,0.05)]">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#66706B]">
-            Now in {selectedName}
+            {isDoctor ? `Now consulting: ${staff?.name || selectedName}` : `Now in ${selectedName}`}
           </h2>
           {loading ? (
             <p className="mt-4 text-sm text-gray-500">Loading room board…</p>
@@ -309,7 +335,7 @@ export default function DoctorWorkstation({ staff }) {
 
         <section className="rounded-2xl border border-[#dce8df] bg-white p-5">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#66706B]">
-            Waiting for {selectedName} ({waiting.length})
+            {isDoctor ? `Waiting for ${staff?.name || selectedName} (${waiting.length})` : `Waiting for ${selectedName} (${waiting.length})`}
           </h2>
           {waiting.length === 0 ? (
             <p className="mt-4 text-sm text-gray-500">Queue is empty for this room.</p>
@@ -324,7 +350,9 @@ export default function DoctorWorkstation({ staff }) {
                     <p className="font-mono text-sm font-bold text-[#173b3a]">
                       {appt.queueToken || "—"}
                     </p>
-                    <p className="text-xs text-gray-500">{appt.patientName}</p>
+                    <p className="text-xs text-gray-500">
+                      {appt.patientName} {appt.roomName ? `· ${appt.roomName}` : ""}
+                    </p>
                   </div>
                   {index === 0 && (
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#176b5f]">

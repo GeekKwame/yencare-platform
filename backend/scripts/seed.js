@@ -4,7 +4,12 @@ import path from 'node:path';
 import { connectDb, disconnectDb } from '../src/db/connection.js';
 import { Patient, Room, Clinician, TimeSlot, Appointment, StaffUser } from '../src/models/index.js';
 import { DEMO_STAFF, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
-import { accraTodayIso } from '../src/lib/accraTime.js';
+import {
+  accraTodayIso,
+  CLINIC_CONFIG,
+  upcomingCalendarDays,
+  upcomingWeekdays,
+} from '../src/lib/accraTime.js';
 import bcrypt from 'bcryptjs';
 
 const backendRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -12,28 +17,6 @@ dotenv.config({ path: path.join(backendRoot, '.env') });
 
 const DEMO_DATE = process.env.DEMO_DATE || accraTodayIso();
 
-function getFutureDates(baseIso, count = 4) {
-  const [year, month, day] = baseIso.split('-').map(Number);
-  const dates = [];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(Date.UTC(year, month - 1, day + i));
-    dates.push(d.toISOString().slice(0, 10));
-  }
-  return dates;
-}
-
-const BOOKABLE_DATES = getFutureDates(DEMO_DATE, 4);
-const OPEN_TIMES = [
-  { startTime: '08:30', endTime: '09:00' },
-  { startTime: '09:00', endTime: '09:30' },
-  { startTime: '09:30', endTime: '10:00' },
-  { startTime: '10:00', endTime: '10:30' },
-  { startTime: '10:30', endTime: '11:00' },
-  { startTime: '11:00', endTime: '11:30' },
-  { startTime: '11:30', endTime: '12:00' },
-  { startTime: '14:00', endTime: '14:30' },
-  { startTime: '14:30', endTime: '15:00' },
-];
 
 const ROOMS = [
   { name: 'Room 1', clinicSite: 'students-clinic', floor: 'Ground Floor', status: 'active', tokenPrefix: 'A' },
@@ -288,12 +271,18 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] appointment ${appointment.referenceCode}`);
   }
 
-    for (const clinician of cliniciansByName.values()) {
+  for (const clinician of cliniciansByName.values()) {
     const room = roomForClinician(clinician, roomsByKey);
     if (!room) continue;
 
-    for (const date of BOOKABLE_DATES) {
-      for (const time of OPEN_TIMES) {
+    const site = clinician.clinicSite || 'students-clinic';
+    const config = CLINIC_CONFIG[site] || CLINIC_CONFIG['students-clinic'];
+    const dates = config.allDay
+      ? upcomingCalendarDays(DEMO_DATE, 5)
+      : upcomingWeekdays(DEMO_DATE, 5);
+
+    for (const date of dates) {
+      for (const time of config.slotTimes) {
         const existing = await TimeSlot.findOne({
           clinicianId: clinician._id,
           date,

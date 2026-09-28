@@ -126,13 +126,13 @@ export default function StaffAppointmentDetail({
         <div className="space-y-3 pt-2">
           {canStaffCheckIn && (
             <>
-              <span title={actionState.checkInNote || undefined} className="block w-full">
+              <div>
                 <button
                   type="button"
-                  disabled={updating}
+                  disabled={updating || !actionState.canCheckIn}
                   onClick={() => onCheckInToQueue(appointment.id)}
                   title={actionState.checkInNote || undefined}
-                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 >
                   {updating
                     ? "Updating…"
@@ -140,26 +140,34 @@ export default function StaffAppointmentDetail({
                       ? `Check in to live queue (${appointment.patientName})`
                       : `Check in student (${appointment.patientName})`}
                 </button>
-              </span>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={onChangeTime}
-                  className="rounded-xl border border-[#dce8df] px-3 py-2.5 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
-                >
-                  Change time
-                </button>
-                <span title={actionState.noShowNote || undefined} className="block w-full">
+                {!actionState.canCheckIn && (
+                  <p className="mt-1 text-center text-xs text-gray-500">{actionState.checkInNote}</p>
+                )}
+              </div>
+              <div className={`grid ${isBooked ? "grid-cols-2" : "grid-cols-1"} gap-2.5`}>
+                {isBooked && (
+                  <button
+                    type="button"
+                    onClick={onChangeTime}
+                    className="rounded-xl border border-[#dce8df] px-3 py-2.5 text-sm font-semibold text-[#173b3a] hover:bg-[#f5faf7]"
+                  >
+                    Change time
+                  </button>
+                )}
+                <div>
                   <button
                     type="button"
                     onClick={onNoShow}
-                    disabled={updating}
+                    disabled={updating || !actionState.canNoShow}
                     title={actionState.noShowNote || undefined}
-                    className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     Mark no-show
                   </button>
-                </span>
+                  {!actionState.canNoShow && (
+                    <p className="mt-1 text-center text-[11px] text-gray-500">{actionState.noShowNote}</p>
+                  )}
+                </div>
               </div>
             </>
           )}

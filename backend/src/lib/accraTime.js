@@ -38,6 +38,87 @@ export function accraParts(date = new Date()) {
   };
 }
 
+export const CLINIC_CONFIG = Object.freeze({
+  'students-clinic': Object.freeze({
+    id: 'students-clinic',
+    name: "KNUST Students' Clinic",
+    operatingDays: Object.freeze([1, 2, 3, 4, 5]), // Monday to Friday
+    openHour: 8,
+    openMinute: 0,
+    closeHour: 16,
+    closeMinute: 0,
+    openingTime: '08:00',
+    closingTime: '16:00',
+    allDay: false,
+    slotDurationMinutes: 30,
+    timezone: ACCRA,
+    label: 'Monday to Friday, 08:00–16:00',
+    slotTimes: Object.freeze([
+      { startTime: '08:00', endTime: '08:30' },
+      { startTime: '08:30', endTime: '09:00' },
+      { startTime: '09:00', endTime: '09:30' },
+      { startTime: '09:30', endTime: '10:00' },
+      { startTime: '10:00', endTime: '10:30' },
+      { startTime: '10:30', endTime: '11:00' },
+      { startTime: '11:00', endTime: '11:30' },
+      { startTime: '11:30', endTime: '12:00' },
+      { startTime: '12:00', endTime: '12:30' },
+      { startTime: '12:30', endTime: '13:00' },
+      { startTime: '13:00', endTime: '13:30' },
+      { startTime: '13:30', endTime: '14:00' },
+      { startTime: '14:00', endTime: '14:30' },
+      { startTime: '14:30', endTime: '15:00' },
+      { startTime: '15:00', endTime: '15:30' },
+      { startTime: '15:30', endTime: '16:00' },
+    ]),
+  }),
+  'knust-hospital': Object.freeze({
+    id: 'knust-hospital',
+    name: 'KNUST Hospital',
+    operatingDays: Object.freeze([0, 1, 2, 3, 4, 5, 6]), // 7 days a week
+    openHour: 0,
+    openMinute: 0,
+    closeHour: 24,
+    closeMinute: 0,
+    openingTime: '00:00',
+    closingTime: '24:00',
+    allDay: true,
+    slotDurationMinutes: 30,
+    timezone: ACCRA,
+    label: '24 hours, every day',
+    slotTimes: Object.freeze([
+      { startTime: '08:00', endTime: '08:30' },
+      { startTime: '08:30', endTime: '09:00' },
+      { startTime: '09:00', endTime: '09:30' },
+      { startTime: '09:30', endTime: '10:00' },
+      { startTime: '10:00', endTime: '10:30' },
+      { startTime: '10:30', endTime: '11:00' },
+      { startTime: '11:00', endTime: '11:30' },
+      { startTime: '11:30', endTime: '12:00' },
+      { startTime: '12:00', endTime: '12:30' },
+      { startTime: '12:30', endTime: '13:00' },
+      { startTime: '13:00', endTime: '13:30' },
+      { startTime: '13:30', endTime: '14:00' },
+      { startTime: '14:00', endTime: '14:30' },
+      { startTime: '14:30', endTime: '15:00' },
+      { startTime: '15:00', endTime: '15:30' },
+      { startTime: '15:30', endTime: '16:00' },
+      { startTime: '16:00', endTime: '16:30' },
+      { startTime: '16:30', endTime: '17:00' },
+      { startTime: '17:00', endTime: '17:30' },
+      { startTime: '17:30', endTime: '18:00' },
+      { startTime: '18:00', endTime: '18:30' },
+      { startTime: '18:30', endTime: '19:00' },
+      { startTime: '19:00', endTime: '19:30' },
+      { startTime: '19:30', endTime: '20:00' },
+      { startTime: '20:00', endTime: '20:30' },
+      { startTime: '20:30', endTime: '21:00' },
+      { startTime: '21:00', endTime: '21:30' },
+      { startTime: '21:30', endTime: '22:00' },
+    ]),
+  }),
+});
+
 /**
  * Single source of truth for clinic opening hours, in Accra time.
  * `openDays` uses JS day numbers (0 = Sunday).
@@ -168,6 +249,21 @@ export function upcomingWeekdays(fromIso, count = 14) {
     if (dow !== 0 && dow !== 6) {
       dates.push(cursor.toISOString().slice(0, 10));
     }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return dates;
+}
+
+export function upcomingCalendarDays(fromIso, count = 14) {
+  const [year, month, day] = String(fromIso)
+    .split('-')
+    .map(Number);
+  const cursor = new Date(Date.UTC(year, month - 1, day));
+  const dates = [];
+
+  while (dates.length < count) {
+    dates.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 

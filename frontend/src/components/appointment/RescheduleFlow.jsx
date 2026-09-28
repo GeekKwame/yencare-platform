@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import { formatDateLabel, formatTimeLabel } from "../../data/bookingOptions";
-import { isFutureSlot } from "../../lib/accraTime";
+import { accraTodayIso, isFutureSlot } from "../../lib/accraTime";
 import { entityId, mapAppointment } from "../../lib/appointmentView";
 import { listTimeSlots } from "../../services/catalog";
 import { rescheduleAppointment, requestRescheduleOtp } from "../../services/appointments";
@@ -63,12 +63,23 @@ const RescheduleFlow = ({ appointment, onBack, onSuccess }) => {
   }, [view.clinicianId]);
 
   const dates = useMemo(() => {
-    const unique = [...new Set(slots.map((slot) => slot.date))].sort();
+    const today = accraTodayIso();
+    const unique = [...new Set(slots.map((slot) => slot.date))]
+      .filter((iso) => iso >= today && slots.some((s) => s.date === iso && !s.isBooked && isFutureSlot(s.date, s.startTime)))
+      .sort();
     return unique;
   }, [slots]);
 
   const times = useMemo(
-    () => slots.filter((slot) => slot.date === selectedDate),
+    () =>
+      slots
+        .filter(
+          (slot) =>
+            slot.date === selectedDate &&
+            !slot.isBooked &&
+            isFutureSlot(slot.date, slot.startTime),
+        )
+        .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
     [slots, selectedDate],
   );
 

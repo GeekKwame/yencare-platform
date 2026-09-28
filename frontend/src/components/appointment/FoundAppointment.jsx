@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { accraTodayIso } from "../../lib/accraTime";
+import { accraTodayIso, getArrivalWindowStatus } from "../../lib/accraTime";
 import { mapAppointment } from "../../lib/appointmentView";
 import { arriveAppointment, cancelAppointment, requestCancelOtp } from "../../services/appointments";
 import { Button, ReferenceBlock, StatusBadge } from "../ui";
@@ -242,25 +242,34 @@ export default function FoundAppointment({
       </div>
 
       <div className="mt-7 flex flex-col gap-3">
-        {isBooked && (
-          <div className="border border-warning-border bg-warning-soft p-3.5 text-sm text-warning">
-            <strong className="block text-primary">Not arrived at clinic yet</strong>
-            <p className="mt-1 text-xs leading-5">
-              When you get to the clinic, tap I&apos;ve arrived. Reception will verify your ID and add you to the live queue.
-            </p>
-            {arriveError && (
-              <p className="mt-2 text-xs text-error" role="alert">
-                {arriveError}
+        {isBooked && (() => {
+          const arrivalStatus = getArrivalWindowStatus(view.appointmentDate, view.appointmentTime || view.time);
+          return (
+            <div className="border border-warning-border bg-warning-soft p-3.5 text-sm text-warning">
+              <strong className="block text-primary">Not arrived at clinic yet</strong>
+              <p className="mt-1 text-xs leading-5">
+                When you get to the clinic within your arrival window, tap I&apos;ve arrived. Reception will verify your ID and add you to the live queue.
               </p>
-            )}
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-warning-border/60 pt-3">
-              <span className="text-xs font-medium text-primary">Already at the clinic?</span>
-              <Button variant="accent" size="sm" loading={arriving} loadingText="Recording…" onClick={handleArrive}>
-                I&apos;ve arrived
-              </Button>
+              {arriveError && (
+                <p className="mt-2 text-xs text-error" role="alert">
+                  {arriveError}
+                </p>
+              )}
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-warning-border/60 pt-3">
+                {arrivalStatus.canArrive ? (
+                  <>
+                    <span className="text-xs font-medium text-primary">Already at the clinic?</span>
+                    <Button variant="accent" size="sm" loading={arriving} loadingText="Recording…" onClick={handleArrive}>
+                      I&apos;ve arrived
+                    </Button>
+                  </>
+                ) : (
+                  <span className="text-xs font-medium text-primary">{arrivalStatus.reason}</span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {view.status === "CHECKED_IN" && (
           <div className="border border-accent-border bg-accent-soft p-3.5 text-sm text-accent-hover">

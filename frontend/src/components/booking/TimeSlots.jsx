@@ -126,7 +126,11 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
   const times = useMemo(
     () =>
       slots
-        .filter((slot) => slot.date === formData.appointmentDate)
+        .filter(
+          (slot) =>
+            slot.date === formData.appointmentDate &&
+            isFutureSlot(slot.date, slot.startTime),
+        )
         .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
     [slots, formData.appointmentDate, tick],
   );
@@ -254,8 +258,7 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {times.map((slot) => {
-                  const past = !isFutureSlot(slot.date, slot.startTime);
-                  const taken = slot.isBooked || past;
+                  const taken = slot.isBooked;
                   const selected = formData.timeSlotId === slot.id;
                   return (
                     <button
@@ -274,14 +277,14 @@ const TimeSlots = ({ formData, updateFormData, onNext, onBack }) => {
                         taken
                           ? "cursor-not-allowed border-[#e5e7e6] bg-[#f0f2f1] text-[#8a948f] line-through opacity-70"
                           : selected
-                            ? "border-[#176b5f] bg-[#176b5f] text-white"
+                            ? "border-[#176b5f] bg-[#176b5f] text-white shadow-sm"
                             : "border-gray-200 text-[#173b3a] hover:border-[#9fc8bb]"
                       }`}
                     >
                       <span className="block">{formatTimeLabel(slot.startTime)}</span>
                       {taken && (
                         <span className="mt-0.5 block text-[10px] font-normal no-underline">
-                          {slot.isBooked ? "Taken" : "Passed"}
+                          Taken
                         </span>
                       )}
                     </button>

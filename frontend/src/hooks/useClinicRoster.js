@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { mapAppointmentToCard } from "../data/mockAppointments";
-import { getTodaysAppointments } from "../services/appointments";
+import { getTodaysAppointments, getUpcomingAppointments } from "../services/appointments";
+import { accraTodayIso } from "../lib/accraTime";
 
 export function useClinicRoster(clinicSite, selectedDate, { pollMs = 0 } = {}) {
   const [appointments, setAppointments] = useState([]);
@@ -10,7 +11,12 @@ export function useClinicRoster(clinicSite, selectedDate, { pollMs = 0 } = {}) {
 
   const reload = useCallback(async () => {
     try {
-      const data = await getTodaysAppointments(clinicSite, selectedDate);
+      let data;
+      if (selectedDate === "upcoming") {
+        data = await getUpcomingAppointments(clinicSite, accraTodayIso());
+      } else {
+        data = await getTodaysAppointments(clinicSite, selectedDate);
+      }
       const list = Array.isArray(data) ? data.map(mapAppointmentToCard) : [];
       setAppointments(list);
       setUsingLive(true);

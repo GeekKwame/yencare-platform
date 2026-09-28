@@ -160,10 +160,15 @@ export function createApp({
     }
   });
 
+  const staffHttp = {
+    authenticate: staffAuth?.authenticate,
+    authenticateOptional: staffAuth?.authenticateOptional,
+  };
+
   app.use(
     '/api/patients',
     maybeRateLimit({ name: 'patients', windowMs: 60_000, max: 30 }),
-    createPatientsRouter(patientService),
+    createPatientsRouter(patientService, staffHttp),
   );
 
   if (staffAuth) {
@@ -173,11 +178,6 @@ export function createApp({
       createAuthRouter(staffAuth),
     );
   }
-
-  const staffHttp = {
-    authenticate: staffAuth?.authenticate,
-    authenticateOptional: staffAuth?.authenticateOptional,
-  };
 
   if (appointmentService) {
     const { publicLookup, queueStatus, arrivalCheckin } = buildAppointmentLimiters();

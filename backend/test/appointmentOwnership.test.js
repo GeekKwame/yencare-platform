@@ -15,6 +15,7 @@ import {
   OTP_REQUIRED_MESSAGE,
   OWNERSHIP_CHECK_FAILED_MESSAGE,
   PHONE_REQUIRED_MESSAGE,
+  RESCHEDULE_OTP_REQUIRED_MESSAGE,
 } from '../src/services/appointmentOps.js';
 
 const TEST_SECRET = 'test-staff-jwt-secret';
@@ -399,7 +400,7 @@ describe('forged staff tokens on cancel / reschedule', () => {
         assert.throws(() => jwt.verify(token, TEST_SECRET));
       });
 
-      it('reschedule without a phone is refused with the phone-required 403', async () => {
+      it('reschedule without an OTP is refused with the OTP-required 403', async () => {
         const { url, seen } = await client();
 
         const res = await patch(url, 'reschedule', {
@@ -408,7 +409,7 @@ describe('forged staff tokens on cancel / reschedule', () => {
         });
 
         assert.equal(res.status, 403);
-        assert.equal((await res.json()).error, PHONE_REQUIRED_MESSAGE);
+        assert.equal((await res.json()).error, RESCHEDULE_OTP_REQUIRED_MESSAGE);
         assert.equal(seen.length, 1, 'request must reach the reschedule service');
         assertTreatedAsPatient(seen[0].options);
       });
@@ -434,11 +435,12 @@ describe('forged staff tokens on cancel / reschedule', () => {
     assert.equal(cancelRes.status, 403);
     assert.equal((await cancelRes.json()).error, OTP_REQUIRED_MESSAGE);
 
-    // A genuine patient (correct phone) must not be able to write a staff actor into the audit trail.
+    // Reschedule without verified staff token is treated as patient and requires OTP
     const rescheduleRes = await patch(url, 'reschedule', {
       body: { ...spoof, newSlotId: '68bf2c0e9c1a2b0099999999', phone: '0241234567' },
     });
-    assert.equal(rescheduleRes.status, 200);
+    assert.equal(rescheduleRes.status, 403);
+    assert.equal((await rescheduleRes.json()).error, RESCHEDULE_OTP_REQUIRED_MESSAGE);
 
     assert.equal(seen.length, 2);
     for (const { options } of seen) assertTreatedAsPatient(options);

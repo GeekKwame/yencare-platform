@@ -318,8 +318,8 @@ export const RESCHEDULE_OTP_REQUIRED_MESSAGE =
   'A valid OTP verification code (otpCode) is required to reschedule this appointment unless initiated by staff.';
 
 /**
- * Proof of OTP verification or ownership for reschedule.
- * Staff skip the check; patients provide otpCode or registered phone.
+ * Proof of OTP verification for reschedule.
+ * Staff skip the check; unauthenticated patients must provide a valid 4-digit OTP code.
  */
 export async function assertAppointmentRescheduleOtp(
   appointment,
@@ -328,27 +328,20 @@ export async function assertAppointmentRescheduleOtp(
   if (actorIsStaff) return;
 
   const code = String(otpCode ?? '').trim();
-  if (code) {
-    const verification = await verifyOtp({
-      appointmentId: appointment?._id,
-      referenceCode: appointment?.referenceCode,
-      action: 'RESCHEDULE',
-      code,
-    });
-
-    if (!verification.ok) {
-      throw new ForbiddenError(verification.message);
-    }
-    return;
-  }
-
-  // If a masked phone was sent (e.g. from public lookup), require OTP verification code
-  if (phone && String(phone).includes('*')) {
+  if (!code) {
     throw new ForbiddenError(RESCHEDULE_OTP_REQUIRED_MESSAGE);
   }
 
-  // Fall back to phone ownership check if unmasked phone was supplied
-  assertAppointmentOwnership(appointment, { actorIsStaff, phone });
+  const verification = await verifyOtp({
+    appointmentId: appointment?._id,
+    referenceCode: appointment?.referenceCode,
+    action: 'RESCHEDULE',
+    code,
+  });
+
+  if (!verification.ok) {
+    throw new ForbiddenError(verification.message);
+  }
 }
 
 /**
@@ -538,13 +531,18 @@ export function resolveRosterDate(date, now = new Date()) {
 }
 
 /**
- * @param {{ date?: string, clinicSite?: string, clinic?: string }} filters
+ * @param {{ date?: string, clinicSite?: string, clinic?: string, fromDate?: string, upcoming?: boolean | string }} filters
  */
 export async function listAppointments(filters = {}) {
   const clinicSite = filters.clinicSite || filters.clinic;
-  const query = {
-    appointmentDate: resolveRosterDate(filters.date),
-  };
+  const query = {};
+
+  if (filters.upcoming === true || filters.upcoming === 'true' || filters.fromDate) {
+    const fromDate = filters.fromDate ? resolveRosterDate(filters.fromDate) : accraTodayIso();
+    query.appointmentDate = { $gte: fromDate };
+  } else {
+    query.appointmentDate = resolveRosterDate(filters.date);
+  }
 
   if (clinicSite != null && clinicSite !== '') {
     if (!CLINIC_SITES.includes(clinicSite)) {
@@ -604,78 +602,164 @@ function populatedAppointment(query) {
 }
 
 /**
- * Public patient lookup used by Find Appointment (P09).
- * Search with exactly one of reference, student index, or Ghana phone.
+ * Public patient lookup requires BOTH Appointment Reference Code AND Patient Phone Number.
+ * Staff callers (actorIsStaff: true) may look up by reference, student index, or phone.
  *
- * @param {{ reference?: string, studentIndex?: string, phone?: string }} query
+ * @param {{ reference?: string, studentIndex?: string, phone?: string, actorIsStaff?: boolean }} query
  */
 export async function lookupAppointment({
   reference,
   studentIndex,
   phone,
+  actorIsStaff = false,
 } = {}) {
-  const refRaw = String(reference || '').trim();
-  const indexRaw = String(studentIndex || '').trim();
-  const phoneRaw = String(phone || '').trim();
-  const provided = [refRaw, indexRaw, phoneRaw].filter(Boolean);
+  // Staff desk lookup path: can search by any identifier
+  if (actorIsStaff) {
+    const refRaw = String(reference || '').trim();
+    const indexRaw = String(studentIndex || '').trim();
+    const phoneRaw = String(phone || '').trim();
+    const provided = [refRaw, indexRaw, phoneRaw].filter(Boolean);
 
-  if (provided.length === 0) {
-    throw new ValidationError(
-      'Provide a reference code, student index, or phone number',
-    );
-  }
-
-  if (provided.length > 1) {
-    throw new ValidationError(
-      'Search with one of reference, student index, or phone number',
-    );
-  }
-
-  if (refRaw) {
-    const ref = normalizeReferenceCode(refRaw);
-    if (!REFERENCE_CODE_PATTERN.test(ref)) {
+    if (provided.length === 0) {
       throw new ValidationError(
-        'Please enter a valid reference code (e.g. YC-4821)',
+        'Provide a reference code, student index, or phone number',
       );
     }
 
-    const appointment = await Appointment.findByReference(ref);
+    if (refRaw) {
+      const ref = normalizeReferenceCode(refRaw);
+      if (!REFERENCE_CODE_PATTERN.test(ref)) {
+        throw new ValidationError(
+          'Please enter a valid reference code (e.g. YC-4821)',
+        );
+      }
+      const appointment = await Appointment.findByReference(ref);
+      if (!appointment) {
+        throw new NotFoundError('Appointment not found');
+      }
+      return appointment;
+    }
+
+    let patient = null;
+    if (indexRaw) {
+      const index = indexRaw.replace(/\s+/g, '');
+      if (!STUDENT_INDEX_PATTERN.test(index)) {
+        throw new ValidationError(
+          'Please enter a valid student index number (e.g. 20612345)',
+        );
+      }
+      patient = await Patient.findOne({ studentIndex: index });
+    } else {
+      let e164;
+      try {
+        e164 = normalizeGhanaPhone(phoneRaw);
+      } catch {
+        throw new ValidationError(
+          'Please enter a valid Ghana phone number (e.g. 024 123 4567)',
+        );
+      }
+      patient = await Patient.findOne({ phone: e164 });
+    }
+
+    if (!patient) {
+      throw new NotFoundError('Appointment not found');
+    }
+
+    const appointment = await findActiveAppointmentForPatient(patient);
     if (!appointment) {
       throw new NotFoundError('Appointment not found');
     }
+
     return appointment;
   }
 
-  let patient = null;
+  // PUBLIC PATIENT LOOKUP: REQUIRES BOTH REFERENCE CODE AND PATIENT PHONE NUMBER
+  const refRaw = String(reference || '').trim();
+  const phoneRaw = String(phone || '').trim();
 
-  if (indexRaw) {
-    const index = indexRaw.replace(/\s+/g, '');
-    if (!STUDENT_INDEX_PATTERN.test(index)) {
-      throw new ValidationError(
-        'Please enter a valid student index number (e.g. 20612345)',
-      );
-    }
-    patient = await Patient.findOne({ studentIndex: index });
-  } else {
-    let e164;
-    try {
-      e164 = normalizeGhanaPhone(phoneRaw);
-    } catch {
-      throw new ValidationError(
-        'Please enter a valid Ghana phone number (e.g. 024 123 4567)',
-      );
-    }
-    patient = await Patient.findOne({ phone: e164 });
+  if (!refRaw && !phoneRaw) {
+    throw new ValidationError(
+      'Provide both reference code and phone number',
+    );
   }
 
-  if (!patient) {
-    throw new NotFoundError('Appointment not found');
+  if (!refRaw) {
+    throw new ValidationError(
+      'Reference code is required with phone number',
+    );
   }
 
-  const appointment = await findActiveAppointmentForPatient(patient);
+  if (!phoneRaw) {
+    throw new ValidationError(
+      'Phone number is required with reference code',
+    );
+  }
 
+  const ref = normalizeReferenceCode(refRaw);
+  if (!REFERENCE_CODE_PATTERN.test(ref)) {
+    throw new ValidationError(
+      'Please enter a valid reference code (e.g. YC-4821)',
+    );
+  }
+
+  let normalizedInputPhone;
+  try {
+    normalizedInputPhone = normalizeGhanaPhone(phoneRaw);
+  } catch {
+    throw new ValidationError(
+      'Please enter a valid Ghana phone number (e.g. 024 123 4567)',
+    );
+  }
+
+  const appointment = await Appointment.findByReference(ref);
+  // Return identical generic error on not found to prevent reference code enumeration
   if (!appointment) {
-    throw new NotFoundError('Appointment not found');
+    throw new NotFoundError(
+      'Appointment not found or phone number does not match',
+    );
+  }
+
+  // Populate patientId if needed to inspect registered phone
+  if (appointment.patientId && typeof appointment.patientId !== 'object') {
+    try {
+      await appointment.populate('patientId');
+    } catch {
+      // ignore
+    }
+  }
+
+  let storedRawPhone =
+    (appointment.patientId &&
+      typeof appointment.patientId === 'object' &&
+      (appointment.patientId.phone || appointment.patientId.phoneNumber)) ||
+    appointment.phone ||
+    appointment.phoneNumber;
+
+  if (!storedRawPhone && appointment.patientId) {
+    try {
+      const patientDoc = await Patient.findById(appointment.patientId);
+      if (patientDoc) {
+        storedRawPhone = patientDoc.phone || patientDoc.phoneNumber;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  let normalizedStoredPhone = null;
+  if (storedRawPhone) {
+    try {
+      normalizedStoredPhone = normalizeGhanaPhone(storedRawPhone);
+    } catch {
+      normalizedStoredPhone = null;
+    }
+  }
+
+  if (!normalizedStoredPhone || normalizedStoredPhone !== normalizedInputPhone) {
+    // Return identical generic error to prevent enumeration/leaking whether reference exists
+    throw new NotFoundError(
+      'Appointment not found or phone number does not match',
+    );
   }
 
   return appointment;
