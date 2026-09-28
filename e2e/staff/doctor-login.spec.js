@@ -5,7 +5,7 @@ test.describe("Doctor login Test", () => {
   test('doctor can log in and access Room Board', async ({ page }) => {
     await loginStaff(page, DOCTOR);
 
-    await expect(page.getByText('Dr. Kwame Boateng')).toBeVisible();
+    await expect(page.getByText('Dr. Kwame Boateng', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Doctor · Room 1')).toBeVisible();
 
     const roomBoardButton = page.getByRole('button', { name: 'Room Board' });
