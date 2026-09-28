@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
+import jwt from 'jsonwebtoken';
+import { createStaffAuthService, DEMO_STAFF_PASSWORD } from '../src/auth/staffAuth.js';
 import { createApp } from '../src/http/app.js';
 import { createMemoryStore } from '../src/patients/memoryStore.js';
-import { createPatientService } from '../src/patients/service.js';
+import { createPatientService, PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE } from '../src/patients/service.js';
 
 function startApp() {
   const app = createApp({
@@ -137,5 +139,89 @@ describe('patients HTTP', () => {
     assert.equal(typeof body.db, 'string');
     assert.equal(typeof body.latencyMs, 'number');
     assert.equal(res.status, body.ok ? 200 : 503);
+  });
+});
+
+describe('patients HTTP: who may change an existing record', () => {
+  const started = [];
+  const TEST_SECRET = 'patients-test-staff-jwt-secret';
+
+  after(async () => {
+    await Promise.all(
+      started.map(
+        ({ server }) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  async function client() {
+    const app = createApp({
+      patientService: createPatientService(createMemoryStore()),
+      staffAuth: createStaffAuthService({ jwtSecret: TEST_SECRET, demoPassword: DEMO_STAFF_PASSWORD }),
+    });
+    const instance = await new Promise((resolve) => {
+      const server = app.listen(0, '127.0.0.1', () => {
+        resolve({ server, url: `http://127.0.0.1:${server.address().port}` });
+      });
+    });
+    started.push(instance);
+    return instance.url;
+  }
+
+  async function login(url, identifier) {
+    const res = await fetch(`${url}/api/auth/staff-login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ identifier, password: DEMO_STAFF_PASSWORD }),
+    });
+    assert.equal(res.status, 200);
+    return (await res.json()).token;
+  }
+
+  function register(url, body, token) {
+    return fetch(`${url}/api/patients`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  const original = { fullName: 'Efua Darko', studentIndex: '20620111', phoneNumber: '024 700 1122' };
+  const takeover = { fullName: 'Someone Else', studentIndex: '20620111', phoneNumber: '027 922 5566' };
+
+  it('refuses a new phone for a known index without a verified reception token', async () => {
+    const url = await client();
+    assert.equal((await register(url, original)).status, 201);
+
+    const forged = jwt.sign({ sub: 'x', staffId: 'stf_01', role: 'RECEPTIONIST' }, 'attacker-chosen-secret');
+    const doctor = await login(url, 'kwame.boateng@yencare.gh');
+
+    for (const token of [null, doctor, forged]) {
+      const res = await register(url, takeover, token);
+      assert.equal(res.status, 409);
+      assert.equal((await res.json()).error, PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE);
+    }
+
+    const stored = await (await fetch(`${url}/api/patients/20620111`)).json();
+    assert.equal(stored.phoneNumber, '+233247001122');
+    assert.equal(stored.fullName, 'Efua Darko');
+  });
+
+  it('lets a verified receptionist update the phone', async () => {
+    const url = await client();
+    assert.equal((await register(url, original)).status, 201);
+
+    const res = await register(url, takeover, await login(url, 'abena.osei@yencare.gh'));
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.phoneNumber, '+233279225566');
+    assert.equal(body.fullName, 'Someone Else');
   });
 });

@@ -10,11 +10,18 @@ import { classifyIdentifier, parseRegisterInput } from './validate.js';
  * }} PatientStore
  */
 
+export const PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE =
+  'This student index is registered with a different phone number. Please see reception to update it.';
+
+const PATIENT_EDITOR_ROLES = Object.freeze(['RECEPTIONIST', 'ADMIN']);
+
 /**
  * Patient registration / verification — prototype P02 (register) + P09 (lookup).
  *
  * POST is find-or-create: return the existing record when the index or phone
- * matches, otherwise insert. GET is lookup-only.
+ * matches, otherwise insert. Only verified reception/admin may change an
+ * existing record's phone, name or NHIS; a public caller gets the record back
+ * unchanged, or a 409 if they give a different phone. GET is lookup-only.
  *
  * @param {PatientStore} store
  */
@@ -22,9 +29,10 @@ export function createPatientService(store) {
   return {
     /**
      * @param {unknown} body
+     * @param {{ staff?: { role?: string } | null }} [context] verified `req.staff`, or null
      * @returns {Promise<{ patient: object, created: boolean }>}
      */
-    async registerOrLookup(body) {
+    async registerOrLookup(body, { staff = null } = {}) {
       const input = parseRegisterInput(body);
       const existing = await findExisting(store, input);
       if (existing.conflict) {
@@ -33,10 +41,18 @@ export function createPatientService(store) {
         );
       }
       if (existing.patient) {
-        return {
-          patient: await syncExistingPatient(store, existing.patient, input),
-          created: false,
-        };
+        if (PATIENT_EDITOR_ROLES.includes(staff?.role)) {
+          return {
+            patient: await syncExistingPatient(store, existing.patient, input),
+            created: false,
+          };
+        }
+
+        const storedPhone = existing.patient.phoneNumber || existing.patient.phone || null;
+        if (input.phoneNumber && input.phoneNumber !== storedPhone) {
+          throw new ConflictError(PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE);
+        }
+        return { patient: existing.patient, created: false };
       }
 
       if (!input.fullName) {

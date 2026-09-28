@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ConflictError, NotFoundError, ValidationError } from '../src/patients/errors.js';
 import { createMemoryStore } from '../src/patients/memoryStore.js';
-import { createPatientService } from '../src/patients/service.js';
+import { createPatientService, PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE } from '../src/patients/service.js';
+
+const RECEPTIONIST = { staffId: 'stf_01', role: 'RECEPTIONIST' };
 
 function service() {
   return createPatientService(createMemoryStore());
@@ -42,40 +44,97 @@ describe('patientService.registerOrLookup', () => {
     assert.equal(second.patient.fullName, 'Efua Darko');
   });
 
-  it('updates the stored phone when the same student books with a new number', async () => {
+  it('lets reception update the stored phone when the same student has a new number', async () => {
     const patients = service();
     const first = await patients.registerOrLookup({
       fullName: 'Efua Darko',
       studentIndex: '20620111',
       phoneNumber: '024 700 1122',
     });
-    const second = await patients.registerOrLookup({
-      fullName: 'Efua Darko',
-      studentIndex: '20620111',
-      phoneNumber: '027 922 5566',
-    });
+    const second = await patients.registerOrLookup(
+      {
+        fullName: 'Efua Darko',
+        studentIndex: '20620111',
+        phoneNumber: '027 922 5566',
+      },
+      { staff: RECEPTIONIST },
+    );
 
     assert.equal(second.created, false);
     assert.equal(second.patient.id, first.patient.id);
     assert.equal(second.patient.phoneNumber, '+233279225566');
   });
 
-  it('updates the stored fullName when the same student books with an updated name', async () => {
+  it('lets reception update the stored fullName', async () => {
     const patients = service();
     const first = await patients.registerOrLookup({
       fullName: 'Efua Darko',
       studentIndex: '20620111',
       phoneNumber: '024 700 1122',
     });
-    const second = await patients.registerOrLookup({
-      fullName: 'Sterling Darko',
-      studentIndex: '20620111',
-      phoneNumber: '024 700 1122',
-    });
+    const second = await patients.registerOrLookup(
+      {
+        fullName: 'Sterling Darko',
+        studentIndex: '20620111',
+        phoneNumber: '024 700 1122',
+      },
+      { staff: RECEPTIONIST },
+    );
 
     assert.equal(second.created, false);
     assert.equal(second.patient.id, first.patient.id);
     assert.equal(second.patient.fullName, 'Sterling Darko');
+  });
+
+  it('refuses a public caller who gives a known index with a different phone, and changes nothing', async () => {
+    const patients = service();
+    const first = await patients.registerOrLookup({
+      fullName: 'Efua Darko',
+      studentIndex: '20620111',
+      phoneNumber: '024 700 1122',
+    });
+
+    for (const staff of [null, { role: 'DOCTOR' }]) {
+      await assert.rejects(
+        () =>
+          patients.registerOrLookup(
+            { fullName: 'Someone Else', studentIndex: '20620111', phoneNumber: '027 922 5566' },
+            { staff },
+          ),
+        (err) => {
+          assert.ok(err instanceof ConflictError);
+          assert.equal(err.status, 409);
+          assert.equal(err.message, PHONE_CHANGE_NEEDS_RECEPTION_MESSAGE);
+          return true;
+        },
+      );
+    }
+
+    const after = await patients.lookup('20620111');
+    assert.equal(after.id, first.patient.id);
+    assert.equal(after.phoneNumber, '+233247001122');
+    assert.equal(after.fullName, 'Efua Darko');
+  });
+
+  it('returns a public caller the existing record unchanged when the phone matches', async () => {
+    const patients = service();
+    await patients.registerOrLookup({
+      fullName: 'Efua Darko',
+      studentIndex: '20620111',
+      phoneNumber: '024 700 1122',
+      nhis: '12345678',
+    });
+
+    const again = await patients.registerOrLookup({
+      fullName: 'Sterling Darko',
+      studentIndex: '20620111',
+      phoneNumber: '0247001122',
+      nhis: '99999999',
+    });
+
+    assert.equal(again.created, false);
+    assert.equal(again.patient.fullName, 'Efua Darko');
+    assert.equal(again.patient.nhis, '12345678');
   });
 
   it('returns the existing record when the phone already exists', async () => {
