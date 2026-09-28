@@ -165,7 +165,7 @@ export default function DoctorWorkstation({ staff }) {
           </p>
           <h1 className="mb-1 text-3xl font-bold text-[#173b3a]">Call next patient</h1>
           <p className="text-sm font-semibold text-[#176b5f]">
-            {selectedDate} · {CLINIC_SITE_LABELS[clinicSite] || clinicSite} · {selectedName}
+            {selectedDate} · {CLINIC_SITE_LABELS[clinicSite] || clinicSite} · bound to {selectedName}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">

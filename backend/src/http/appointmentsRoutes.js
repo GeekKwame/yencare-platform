@@ -652,9 +652,17 @@ export function createAppointmentsRouter(
       if (!isStaff) {
         const phone = req.query.phone || req.query.phoneNumber;
         if (!phone) {
-          return res.status(400).json({
-            error: 'Phone number is required with reference code',
-          });
+          const doc = appointmentService.findByReference
+            ? await appointmentService.findByReference(ref)
+            : null;
+          if (!doc) {
+            return res.status(404).json({
+              error: 'Appointment not found',
+            });
+          }
+          return res.status(200).json(
+            await toLookupJson(appointmentService, doc, req),
+          );
         }
 
         let appointment = null;

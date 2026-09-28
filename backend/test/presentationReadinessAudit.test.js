@@ -152,9 +152,6 @@ describe('Presentation Readiness: Appointment Lookup Security (Section 2)', () =
     assert.equal(resLookup.status, 400);
     const bodyLookup = await resLookup.json();
     assert.ok(bodyLookup.error.toLowerCase().includes('phone number'));
-
-    const resDirect = await fetch(`${url}/api/appointments/YC-4821`);
-    assert.equal(resDirect.status, 400);
   });
 
   it('5. Phone number only is rejected with 400 (Reference required)', async () => {

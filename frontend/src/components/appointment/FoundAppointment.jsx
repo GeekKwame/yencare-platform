@@ -256,16 +256,12 @@ export default function FoundAppointment({
                 </p>
               )}
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-warning-border/60 pt-3">
-                {arrivalStatus.canArrive ? (
-                  <>
-                    <span className="text-xs font-medium text-primary">Already at the clinic?</span>
-                    <Button variant="accent" size="sm" loading={arriving} loadingText="Recording…" onClick={handleArrive}>
-                      I&apos;ve arrived
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-xs font-medium text-primary">{arrivalStatus.reason}</span>
-                )}
+                <span className="text-xs font-medium text-primary">
+                  {arrivalStatus.canArrive ? "Already at the clinic?" : arrivalStatus.reason}
+                </span>
+                <Button variant="accent" size="sm" loading={arriving} loadingText="Recording…" onClick={handleArrive}>
+                  I&apos;ve arrived
+                </Button>
               </div>
             </div>
           );

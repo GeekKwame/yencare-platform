@@ -154,7 +154,7 @@ export default function StaffRoster({
                         event.stopPropagation();
                         onCheckIn(appt.id);
                       }}
-                      disabled={updatingId === appt.id || !actionState.canCheckIn}
+                      disabled={updatingId === appt.id}
                       title={actionState.checkInNote || undefined}
                       className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                     >
@@ -166,7 +166,7 @@ export default function StaffRoster({
                         event.stopPropagation();
                         onNoShow(appt.id);
                       }}
-                      disabled={updatingId === appt.id || !actionState.canNoShow}
+                      disabled={updatingId === appt.id}
                       title={actionState.noShowNote || undefined}
                       className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                     >

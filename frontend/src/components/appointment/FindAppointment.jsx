@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaArrowLeft,
   FaHashtag,
@@ -23,6 +23,36 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [appointment, setFoundAppointment] = useState(null);
   const [flow, setFlow] = useState("detail");
+
+  useEffect(() => {
+    const ref = normalizeReference(initialReference);
+    if (!ref || !REFERENCE_PATTERN.test(ref)) return undefined;
+    let cancelled = false;
+
+    async function loadRef() {
+      setIsSearching(true);
+      try {
+        const found = await lookupAppointment({ reference: ref });
+        if (!cancelled && found) {
+          setFoundAppointment(found);
+          setFlow("detail");
+        }
+      } catch {
+        if (!cancelled) {
+          setErrorMessage(
+            "Appointment not found. Please verify both details and try again.",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsSearching(false);
+      }
+    }
+
+    void loadRef();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialReference]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

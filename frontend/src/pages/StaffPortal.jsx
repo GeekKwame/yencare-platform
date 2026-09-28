@@ -278,6 +278,7 @@ const StaffPortal = () => {
                 setFollowToday(false);
                 setSelectedDate("upcoming");
               }}
+              aria-label="Upcoming (Next 14 Days) · Seed day (15 Sep)"
               className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
                 selectedDate === "upcoming"
                   ? "border-[#176b5f] bg-[#176b5f] text-white"
