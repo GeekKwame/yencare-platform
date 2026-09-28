@@ -507,12 +507,6 @@ export const ProtoToolbar: React.FC = () => {
                 >
                   S09 No-Show
                 </button>
-                <button
-                  onClick={() => { setActiveShell('STAFF'); setStaffScreen('S10_DISPLAY_BOARD'); setIsOpen(false); }}
-                  className={`text-left p-1.5 border transition-colors cursor-pointer ${staffScreen === 'S10_DISPLAY_BOARD' && activeShell === 'STAFF' ? 'bg-[#087F6C] text-white font-bold border-[#087F6C]' : 'border-[#333333] hover:border-[#666666] text-[#CCCCCC]'}`}
-                >
-                  S10 Corridor TV
-                </button>
               </div>
 
               {/* Edge Scenarios */}

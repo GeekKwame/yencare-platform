@@ -16,7 +16,6 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({ children }) => {
     { label: "Today's Operations", screen: 'S02_TODAY', icon: 'dashboard' },
     { label: 'Appointments Roster', screen: 'S03_APPOINTMENTS', icon: 'calendar_month' },
     { label: 'Live Queue', screen: 'S05_LIVE_QUEUE', icon: 'reorder' },
-    { label: 'Corridor TV', screen: 'S10_DISPLAY_BOARD', icon: 'tv' },
   ];
 
   return (

@@ -74,14 +74,6 @@ export const S02Today: React.FC = () => {
           >
             Live Queue &rarr;
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setStaffScreen('S10_DISPLAY_BOARD')}
-            icon="tv"
-          >
-            Corridor TV
-          </Button>
         </div>
       </div>
 

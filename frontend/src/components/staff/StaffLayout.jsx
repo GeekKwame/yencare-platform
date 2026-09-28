@@ -37,7 +37,6 @@ export default function StaffLayout({
     ...(staff?.role === "DOCTOR" || staff?.role === "ADMIN"
       ? [{ id: "room", label: "Room Board", icon: "stethoscope" }]
       : []),
-    { id: "display", label: "Corridor TV", icon: "tv", href: "/staff/display" },
   ];
 
   function go(id) {

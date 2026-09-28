@@ -59,14 +59,6 @@ export const S05LiveQueue: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setStaffScreen('S10_DISPLAY_BOARD')}
-            icon="tv"
-          >
-            Corridor TV
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
             onClick={() => setStaffScreen('S03_APPOINTMENTS')}
             icon="calendar_month"
           >

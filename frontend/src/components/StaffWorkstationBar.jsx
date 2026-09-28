@@ -71,14 +71,6 @@ export default function StaffWorkstationBar({
           >
             Patient web
           </Link>
-          {staff?.role === "ADMIN" && (
-            <Link
-              to="/staff/display"
-              className="rounded-xl border border-[#dce8df] px-3 py-2 text-xs font-semibold text-[#66706B] hover:text-[#173b3a]"
-            >
-              Corridor display
-            </Link>
-          )}
           <button
             type="button"
             onClick={onSignOut}

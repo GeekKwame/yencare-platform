@@ -5,7 +5,6 @@ import Queue from './pages/Queue'
 import ClinicActivity from './pages/ClinicActivity'
 import StaffPortal from './pages/StaffPortal'
 import StaffLogin from './pages/StaffLogin'
-import CorridorDisplay from './pages/CorridorDisplay'
 import RequireStaffAuth from './components/RequireStaffAuth'
 import ConnectivityBanner from './components/ConnectivityBanner'
 import PwaInstallPrompt from './components/PwaInstallPrompt'
@@ -30,14 +29,6 @@ const App = () => {
         <Route path="/queue" element={<Queue />} />
         <Route path="/clinic-activity" element={<ClinicActivity />} />
         <Route path="/staff/login" element={<StaffLogin />} />
-        <Route
-          path="/staff/display"
-          element={
-            <RequireStaffAuth>
-              <CorridorDisplay />
-            </RequireStaffAuth>
-          }
-        />
         <Route
           path="/staff"
           element={
