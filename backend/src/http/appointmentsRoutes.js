@@ -554,7 +554,7 @@ export function createAppointmentsRouter(
 
   // PATCH /api/appointments/:id/reschedule
   //
-  // Same ownership rule as cancel: staff token, or valid otpCode / phone.
+  // Same ownership rule as cancel: staff token, or a valid otpCode.
   router.patch(
     '/:id/reschedule',
     publicLookupLimiter,

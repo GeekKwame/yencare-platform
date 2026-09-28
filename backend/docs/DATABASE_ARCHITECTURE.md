@@ -215,10 +215,10 @@ Implemented in `src/http/` + `src/patients/`. This is the Gate 2 registration/ve
 
 | Method | Path | Result |
 |---|---|---|
-| `POST /api/patients` | Find-or-create by `studentIndex` and/or Ghana `phoneNumber` | **200** existing, **201** created |
-| `GET /api/patients/:identifier` | Lookup by 8-digit index or Ghana phone | **200** or **404** |
+| `POST /api/patients` | Find-or-create by `studentIndex` and/or Ghana `phoneNumber` | Public: **200** `{ id }` whether found or created, rate-limited to 10 per 15 minutes per IP (`PATIENT_REGISTER_RATE_MAX`). Receptionist/admin: **200** existing, **201** created, full record |
+| `GET /api/patients/:identifier` | Lookup by 8-digit index or Ghana phone — receptionist/admin only | **200**, **401**/**403**, or **404** |
 
-Mongo / `Appointment.populate()` use **`phone`** and **`nhisNumber`**. HTTP JSON repeats aliases (`phoneNumber`, `nhis`) with the same values so SMS never reads `undefined`. Catalog: `GET /api/rooms`, `GET /api/clinicians`, `GET /api/time-slots`. Full contract: [`README.md`](../README.md#patient-registration--verification).
+Mongo / `Appointment.populate()` use **`phone`** and **`nhisNumber`**. The full HTTP record repeats aliases (`phoneNumber`, `nhis`) with the same values so SMS never reads `undefined`. Catalog: `GET /api/rooms`, `GET /api/clinicians`, `GET /api/time-slots`. Full contract: [`README.md`](../README.md#patient-registration--verification).
 
 ---
 

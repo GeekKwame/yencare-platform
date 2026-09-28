@@ -20,7 +20,7 @@ The YɛnCare backend exposes a high-performance RESTful JSON API supporting outp
 - Request payload size is capped at **32 KB** (`express.json({ limit: '32kb' })`).
 
 ### Authentication & Centralized RBAC
-- **Public Endpoints**: Patient registration (`POST /api/patients`), booking (`POST /api/appointments`), self-arrival (`POST /api/appointments/:ref/arrive`), queue status, and public display boards do not require staff tokens.
+- **Public Endpoints**: Patient registration (`POST /api/patients`, which returns only `{ id }` to public callers), booking (`POST /api/appointments`), self-arrival (`POST /api/appointments/:ref/arrive`), queue status, and public display boards do not require staff tokens.
 - **Staff Endpoints**: Protected via JWT Bearer authentication:
   ```http
   Authorization: Bearer <STAFF_JWT_TOKEN>
@@ -35,6 +35,7 @@ The YɛnCare backend exposes a high-performance RESTful JSON API supporting outp
   - Reference lookups: 30 requests/minute per IP
   - Queue status polling: 120 requests/minute per IP (30 req/min per specific reference code)
   - Arrival check-in: 5 attempts per 15 minutes per IP/reference (brute-force defense)
+  - Public patient registration (`POST /api/patients`): 10 requests per 15 minutes per IP (`PATIENT_REGISTER_RATE_MAX`); requests with a verified receptionist/admin token skip this limit and do not count toward it
 - Unverified tokens on cancel and reschedule are rejected; actor identity in audit trails is server-derived only.
 
 ---
@@ -124,6 +125,29 @@ Finds an existing student record by Ghana phone number or 8-digit KNUST student 
 }
 ```
 
+#### Public callers (no staff token)
+- A phone is required. When the index or phone matches an existing patient, the phone must be the one on record; the record is never changed.
+- Response `200 OK` whether the patient was found or created:
+  ```json
+  { "id": "68bf2c0e9c1a2b0012345678" }
+  ```
+- Any failed match (no phone, a phone that is not the one on record, or an index and phone that belong to different patients) returns `409` with the same body, so the response never confirms whether an index or phone is registered:
+  ```json
+  { "error": "We couldn't confirm these details. Please check them, or see reception for help." }
+  ```
+- Rate-limited to 10 requests per 15 minutes per IP (`429` with `Retry-After`).
+
+#### Reception / admin (`RECEPTIONIST` or `ADMIN` token)
+- May look a patient up by index or phone alone, and may update an existing patient's phone, name or NHIS.
+- Response `201 Created` for a new patient, `200 OK` for an existing one, with the full record (`id`, `fullName`, `studentIndex`, `phone`, `phoneNumber`, `nhisNumber`, `nhis`, `createdAt`, `updatedAt`).
+- A conflict returns `409` with `This student index and phone number belong to different patients`.
+
+### 4.2 Patient Lookup
+```http
+GET /api/patients/:identifier
+```
+*Requires Staff Authentication (`RECEPTIONIST`, `ADMIN`).* Looks a patient up by 8-digit student index or Ghana phone and returns the full record. `401` without a valid token, `403` for other roles, `404` when no patient matches.
+
 ---
 
 ## 5. Clinic Catalog Endpoints
@@ -156,14 +180,16 @@ GET /api/appointments?date=YYYY-MM-DD&clinicSite=students-clinic
 ```http
 PATCH /api/appointments/:id/cancel
 ```
-- **Patients**: Requires verified 6-digit OTP code (`otpCode`) sent via `/request-cancel-otp` and phone match.
+- **Patients**: Requires a valid 4-digit OTP code (`otpCode`) sent to the phone on record via `POST /api/appointments/:id/request-cancel-otp`. A phone number in the body is not enough.
 - **Staff**: Allows instant cancellation without OTP if signed in with a valid staff token.
 
 ### 6.4 Reschedule Appointment
 ```http
 PATCH /api/appointments/:id/reschedule
 ```
-Moves an appointment to a new available time slot. Requires ownership phone or valid staff token.
+Moves an appointment to a new available time slot.
+- **Patients**: Requires a valid 4-digit OTP code (`otpCode`) sent to the phone on record via `POST /api/appointments/:id/request-reschedule-otp`. A cancel code cannot be used to reschedule, and a phone number in the body is not enough.
+- **Staff**: Receptionist, doctor or admin with a verified token may reschedule without an OTP.
 
 ---
 
