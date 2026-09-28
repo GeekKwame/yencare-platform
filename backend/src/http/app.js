@@ -166,6 +166,11 @@ export function createApp({
     createPatientsRouter(patientService, {
       authenticate: staffAuth?.authenticate,
       authenticateOptional: staffAuth?.authenticateOptional,
+      publicRegisterLimiter: maybeRateLimit({
+        name: 'patient-register-public',
+        windowMs: 15 * 60_000,
+        max: envInt('PATIENT_REGISTER_RATE_MAX', 10),
+      }),
     }),
   );
 

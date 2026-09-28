@@ -46,7 +46,7 @@ describe('patients HTTP', () => {
     return instance;
   }
 
-  it('POST /api/patients creates then returns 200 on lookup-or-register', async () => {
+  it('POST /api/patients answers a public caller 200 with only the id, whether created or found', async () => {
     const { url } = await client();
     const created = await fetch(`${url}/api/patients`, {
       method: 'POST',
@@ -58,14 +58,10 @@ describe('patients HTTP', () => {
         nhis: '12345678',
       }),
     });
-    assert.equal(created.status, 201);
+    assert.equal(created.status, 200);
     const createdBody = await created.json();
-    assert.equal(createdBody.fullName, 'Efua Darko');
-    assert.equal(createdBody.studentIndex, '20620111');
-    assert.equal(createdBody.phone, '+233247001122');
-    assert.equal(createdBody.phoneNumber, '+233247001122');
-    assert.equal(createdBody.nhisNumber, '****678');
-    assert.equal(createdBody.nhis, '****678');
+    assert.deepEqual(Object.keys(createdBody), ['id']);
+    assert.ok(createdBody.id);
 
     const found = await fetch(`${url}/api/patients`, {
       method: 'POST',
@@ -73,9 +69,7 @@ describe('patients HTTP', () => {
       body: JSON.stringify({ studentIndex: '20620111', phoneNumber: '0247001122' }),
     });
     assert.equal(found.status, 200);
-    const foundBody = await found.json();
-    assert.equal(foundBody.id, createdBody.id);
-    assert.equal(foundBody.nhisNumber, '****678');
+    assert.deepEqual(await found.json(), { id: createdBody.id });
   });
 
   it('GET /api/patients/:identifier returns 200 for index or phone', async () => {
@@ -202,7 +196,7 @@ describe('patients HTTP: who may change an existing record', () => {
 
   it('refuses a new phone for a known index without a verified reception token', async () => {
     const url = await client();
-    assert.equal((await register(url, original)).status, 201);
+    assert.equal((await register(url, original)).status, 200);
 
     const forged = jwt.sign({ sub: 'x', staffId: 'stf_01', role: 'RECEPTIONIST' }, 'attacker-chosen-secret');
     const doctor = await login(url, 'kwame.boateng@yencare.gh');
@@ -224,7 +218,7 @@ describe('patients HTTP: who may change an existing record', () => {
 
   it('refuses GET by index or phone without a verified reception token, and allows reception', async () => {
     const url = await client();
-    assert.equal((await register(url, { ...original, nhis: '12345678' })).status, 201);
+    assert.equal((await register(url, { ...original, nhis: '12345678' })).status, 200);
 
     const forged = jwt.sign({ sub: 'x', staffId: 'stf_01', role: 'RECEPTIONIST' }, 'attacker-chosen-secret');
     const doctor = await login(url, 'kwame.boateng@yencare.gh');
@@ -252,7 +246,7 @@ describe('patients HTTP: who may change an existing record', () => {
 
   it('gives a public caller the generic message and no data for an index alone or a wrong phone, known or not', async () => {
     const url = await client();
-    assert.equal((await register(url, original)).status, 201);
+    assert.equal((await register(url, original)).status, 200);
 
     const probes = [
       { studentIndex: '20620111' },
@@ -272,30 +266,46 @@ describe('patients HTTP: who may change an existing record', () => {
     }
   });
 
-  it('returns a public caller with the matching phone the record with NHIS masked, and reception the full record', async () => {
+  it('answers a public caller 200 with only the id for a new or matching record, and reception 201/200 with the full record', async () => {
     const url = await client();
-    assert.equal((await register(url, { ...original, nhis: '12345678' })).status, 201);
+    const reception = await login(url, 'abena.osei@yencare.gh');
+    const forged = jwt.sign({ sub: 'x', staffId: 'stf_01', role: 'RECEPTIONIST' }, 'attacker-chosen-secret');
 
-    const publicRes = await register(url, original);
-    assert.equal(publicRes.status, 200);
-    const publicBody = await publicRes.json();
-    assert.equal(publicBody.nhisNumber, '****678');
-    assert.equal(publicBody.nhis, '****678');
+    const createdRes = await register(url, { ...original, nhis: '12345678' });
+    assert.equal(createdRes.status, 200);
+    const createdBody = await createdRes.json();
+    assert.deepEqual(Object.keys(createdBody), ['id']);
 
-    const deskRes = await register(url, original, await login(url, 'abena.osei@yencare.gh'));
-    assert.equal(deskRes.status, 200);
-    const deskBody = await deskRes.json();
-    assert.equal(deskBody.id, publicBody.id);
+    for (const token of [null, forged]) {
+      const foundRes = await register(url, original, token);
+      assert.equal(foundRes.status, 200);
+      assert.deepEqual(await foundRes.json(), { id: createdBody.id });
+    }
+
+    const deskFound = await register(url, original, reception);
+    assert.equal(deskFound.status, 200);
+    const deskBody = await deskFound.json();
+    assert.equal(deskBody.id, createdBody.id);
+    assert.equal(deskBody.fullName, 'Efua Darko');
+    assert.equal(deskBody.studentIndex, '20620111');
+    assert.equal(deskBody.phoneNumber, '+233247001122');
     assert.equal(deskBody.nhisNumber, '12345678');
-    assert.equal(deskBody.nhis, '12345678');
+
+    const deskCreated = await register(
+      url,
+      { fullName: 'Yaw Sarpong', studentIndex: '20620222', phoneNumber: '020 811 3344' },
+      reception,
+    );
+    assert.equal(deskCreated.status, 201);
+    assert.equal((await deskCreated.json()).fullName, 'Yaw Sarpong');
   });
 
   it('gives a public caller the same message for a phone mismatch and a crossed index/phone, and reception the specific one', async () => {
     const url = await client();
-    assert.equal((await register(url, original)).status, 201);
+    assert.equal((await register(url, original)).status, 200);
     assert.equal(
       (await register(url, { fullName: 'Yaw Sarpong', studentIndex: '20620222', phoneNumber: '020 811 3344' })).status,
-      201,
+      200,
     );
     const crossed = { fullName: 'Abena Kusi', studentIndex: '20620111', phoneNumber: '020 811 3344' };
 
@@ -313,7 +323,7 @@ describe('patients HTTP: who may change an existing record', () => {
 
   it('lets a verified receptionist update the phone', async () => {
     const url = await client();
-    assert.equal((await register(url, original)).status, 201);
+    assert.equal((await register(url, original)).status, 200);
 
     const res = await register(url, takeover, await login(url, 'abena.osei@yencare.gh'));
 
