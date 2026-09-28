@@ -6,6 +6,7 @@ import { createStaffAuthService, DEMO_STAFF_PASSWORD } from '../src/auth/staffAu
 import { createApp } from '../src/http/app.js';
 import { createMemoryStore } from '../src/patients/memoryStore.js';
 import { createPatientService } from '../src/patients/service.js';
+import { clearAllOtps, storeOtp } from '../src/services/otpService.js';
 import {
   assertAppointmentCancelOtp,
   assertAppointmentOwnership,
@@ -13,6 +14,7 @@ import {
   assertNotInLiveQueue,
   LIVE_QUEUE_LOCKED_MESSAGE,
   OTP_REQUIRED_MESSAGE,
+  RESCHEDULE_OTP_REQUIRED_MESSAGE,
   OWNERSHIP_CHECK_FAILED_MESSAGE,
   PHONE_REQUIRED_MESSAGE,
 } from '../src/services/appointmentOps.js';
@@ -254,25 +256,42 @@ describe('cancel / reschedule HTTP ownership wiring', () => {
     assert.equal(allowed.status, 200);
   });
 
-  it('reschedule enforces the same ownership rule', async () => {
-    const { url } = await client(guardedService(bookedByAkosua));
-
-    const denied = await fetch(`${url}/api/appointments/YC-4821/reschedule`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ newSlotId: '68bf2c0e9c1a2b0099999999' }),
+  it('reschedule requires the OTP: the booking phone alone is refused, a valid OTP is accepted', async () => {
+    clearAllOtps();
+    const { url } = await client({
+      rescheduleAppointment: async (id, options) => {
+        await assertAppointmentRescheduleOtp(bookedByAkosua, options);
+        assertNotInLiveQueue(bookedByAkosua, options);
+        return {
+          appointment: { referenceCode: 'YC-4821', status: 'BOOKED' },
+          oldSlotId: '68bf2c0e9c1a2b0088888888',
+          newSlotId: options.newSlotId,
+        };
+      },
     });
-    assert.equal(denied.status, 403);
+    const reschedule = (body) =>
+      fetch(`${url}/api/appointments/YC-4821/reschedule`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ newSlotId: '68bf2c0e9c1a2b0099999999', ...body }),
+      });
 
-    const allowed = await fetch(`${url}/api/appointments/YC-4821/reschedule`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        newSlotId: '68bf2c0e9c1a2b0099999999',
-        phone: '+233241234567',
-      }),
+    for (const body of [{}, { phone: '+233241234567' }]) {
+      const denied = await reschedule(body);
+      assert.equal(denied.status, 403);
+      assert.equal((await denied.json()).error, RESCHEDULE_OTP_REQUIRED_MESSAGE);
+    }
+
+    await storeOtp({
+      appointmentId: bookedByAkosua._id,
+      referenceCode: bookedByAkosua.referenceCode,
+      action: 'RESCHEDULE',
+      phone: bookedByAkosua.patientId.phone,
+      code: '6152',
     });
+    const allowed = await reschedule({ phone: '+233241234567', otpCode: '6152' });
     assert.equal(allowed.status, 200);
+    clearAllOtps();
   });
 
   it('a WAITING patient is blocked but reception is not', async () => {
@@ -399,7 +418,7 @@ describe('forged staff tokens on cancel / reschedule', () => {
         assert.throws(() => jwt.verify(token, TEST_SECRET));
       });
 
-      it('reschedule without a phone is refused with the phone-required 403', async () => {
+      it('reschedule without an OTP is refused with the OTP-required 403', async () => {
         const { url, seen } = await client();
 
         const res = await patch(url, 'reschedule', {
@@ -408,7 +427,7 @@ describe('forged staff tokens on cancel / reschedule', () => {
         });
 
         assert.equal(res.status, 403);
-        assert.equal((await res.json()).error, PHONE_REQUIRED_MESSAGE);
+        assert.equal((await res.json()).error, RESCHEDULE_OTP_REQUIRED_MESSAGE);
         assert.equal(seen.length, 1, 'request must reach the reschedule service');
         assertTreatedAsPatient(seen[0].options);
       });
@@ -434,9 +453,16 @@ describe('forged staff tokens on cancel / reschedule', () => {
     assert.equal(cancelRes.status, 403);
     assert.equal((await cancelRes.json()).error, OTP_REQUIRED_MESSAGE);
 
-    // A genuine patient (correct phone) must not be able to write a staff actor into the audit trail.
+    // A genuine patient (valid OTP) must not be able to write a staff actor into the audit trail.
+    await storeOtp({
+      appointmentId: bookedByAkosua._id,
+      referenceCode: bookedByAkosua.referenceCode,
+      action: 'RESCHEDULE',
+      phone: bookedByAkosua.patientId.phone,
+      code: '4826',
+    });
     const rescheduleRes = await patch(url, 'reschedule', {
-      body: { ...spoof, newSlotId: '68bf2c0e9c1a2b0099999999', phone: '0241234567' },
+      body: { ...spoof, newSlotId: '68bf2c0e9c1a2b0099999999', otpCode: '4826' },
     });
     assert.equal(rescheduleRes.status, 200);
 
@@ -464,5 +490,127 @@ describe('forged staff tokens on cancel / reschedule', () => {
       assert.equal(options.actorType, 'STAFF');
       assert.equal(options.actorId, 'stf_01');
     }
+  });
+});
+
+describe('reschedule requires the OTP sent to the registered phone', () => {
+  const started = [];
+
+  after(async () => {
+    clearAllOtps();
+    await Promise.all(
+      started.map(
+        ({ server }) =>
+          new Promise((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      ),
+    );
+  });
+
+  async function client() {
+    const seen = [];
+    const instance = await startApp({
+      rescheduleAppointment: async (id, options) => {
+        seen.push(options);
+        await assertAppointmentRescheduleOtp(bookedByAkosua, options);
+        return {
+          appointment: { referenceCode: 'YC-4821', status: 'BOOKED' },
+          oldSlotId: '68bf2c0e9c1a2b0088888888',
+          newSlotId: options.newSlotId,
+        };
+      },
+    });
+    started.push(instance);
+    return { ...instance, seen };
+  }
+
+  function reschedule(url, { token, body } = {}) {
+    return fetch(`${url}/api/appointments/YC-4821/reschedule`, {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ newSlotId: '68bf2c0e9c1a2b0099999999', ...body }),
+    });
+  }
+
+  function issue(code, action = 'RESCHEDULE') {
+    return storeOtp({
+      appointmentId: bookedByAkosua._id,
+      referenceCode: bookedByAkosua.referenceCode,
+      action,
+      phone: bookedByAkosua.patientId.phone,
+      code,
+    });
+  }
+
+  it('refuses the correct booking phone with no OTP', async () => {
+    clearAllOtps();
+    const { url } = await client();
+
+    for (const phone of ['0241234567', '+233241234567']) {
+      const res = await reschedule(url, { body: { phone } });
+      assert.equal(res.status, 403, phone);
+      assert.equal((await res.json()).error, RESCHEDULE_OTP_REQUIRED_MESSAGE);
+    }
+  });
+
+  it('refuses the correct booking phone with a wrong OTP', async () => {
+    clearAllOtps();
+    await issue('4826');
+    const { url } = await client();
+
+    const res = await reschedule(url, { body: { phone: '0241234567', otpCode: '1111' } });
+
+    assert.equal(res.status, 403);
+    assert.match((await res.json()).error, /Incorrect verification code/);
+  });
+
+  it('refuses a cancel OTP used for a reschedule', async () => {
+    clearAllOtps();
+    await issue('5173', 'CANCEL');
+    const { url } = await client();
+
+    const res = await reschedule(url, { body: { otpCode: '5173' } });
+
+    assert.equal(res.status, 403);
+    assert.match((await res.json()).error, /No active verification code/);
+  });
+
+  it('accepts the correct OTP once, and not again', async () => {
+    clearAllOtps();
+    await issue('4826');
+    const { url } = await client();
+
+    const first = await reschedule(url, { body: { otpCode: '4826' } });
+    assert.equal(first.status, 200);
+
+    const replay = await reschedule(url, { body: { otpCode: '4826' } });
+    assert.equal(replay.status, 403);
+  });
+
+  it('lets verified staff reschedule without an OTP', async () => {
+    clearAllOtps();
+    const { url, seen } = await client();
+    const login = await fetch(`${url}/api/auth/staff-login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ identifier: 'abena.osei@yencare.gh', password: DEMO_STAFF_PASSWORD }),
+    });
+    const { token } = await login.json();
+
+    const res = await reschedule(url, { token });
+
+    assert.equal(res.status, 200);
+    assert.equal(seen[0].actorIsStaff, true);
+  });
+
+  it('the service check alone ignores a matching phone without an OTP', async () => {
+    await assert.rejects(
+      () => assertAppointmentRescheduleOtp(bookedByAkosua, { phone: '0241234567' }),
+      { status: 403, message: RESCHEDULE_OTP_REQUIRED_MESSAGE },
+    );
   });
 });

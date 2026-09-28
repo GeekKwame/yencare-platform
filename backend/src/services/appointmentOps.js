@@ -12,14 +12,12 @@ import { Appointment } from '../models/Appointment.js';
 import { Patient } from '../models/Patient.js';
 import { TimeSlot } from '../models/TimeSlot.js';
 import { QueueCounter } from '../models/QueueCounter.js';
-import { AuditLog, recordAuditLog } from '../models/AuditLog.js';
+import { recordAuditLog } from '../models/AuditLog.js';
 import { normalizeGhanaPhone, maskPhone } from '../sms/normalizePhone.js';
 import {
   generateOtpCode,
   storeOtp,
   verifyOtp,
-  DEFAULT_OTP_EXPIRY_MS,
-  getLatestOtpForTesting,
 } from './otpService.js';
 
 import {
@@ -318,37 +316,35 @@ export const RESCHEDULE_OTP_REQUIRED_MESSAGE =
   'A valid OTP verification code (otpCode) is required to reschedule this appointment unless initiated by staff.';
 
 /**
- * Proof of OTP verification or ownership for reschedule.
- * Staff skip the check; patients provide otpCode or registered phone.
+ * Proof of OTP verification for patient-initiated reschedule, same as cancel.
+ * Staff skip the check; everyone else must provide a valid otpCode sent to the
+ * registered phone. Knowing the booking phone number is not enough.
+ *
+ * @param {object | null} appointment
+ * @param {{ actorIsStaff?: boolean, otpCode?: unknown }} [context]
+ * @throws {ForbiddenError}
  */
 export async function assertAppointmentRescheduleOtp(
   appointment,
-  { actorIsStaff = false, otpCode = null, phone = null } = {},
+  { actorIsStaff = false, otpCode = null } = {},
 ) {
   if (actorIsStaff) return;
 
   const code = String(otpCode ?? '').trim();
-  if (code) {
-    const verification = await verifyOtp({
-      appointmentId: appointment?._id,
-      referenceCode: appointment?.referenceCode,
-      action: 'RESCHEDULE',
-      code,
-    });
-
-    if (!verification.ok) {
-      throw new ForbiddenError(verification.message);
-    }
-    return;
-  }
-
-  // If a masked phone was sent (e.g. from public lookup), require OTP verification code
-  if (phone && String(phone).includes('*')) {
+  if (!code) {
     throw new ForbiddenError(RESCHEDULE_OTP_REQUIRED_MESSAGE);
   }
 
-  // Fall back to phone ownership check if unmasked phone was supplied
-  assertAppointmentOwnership(appointment, { actorIsStaff, phone });
+  const verification = await verifyOtp({
+    appointmentId: appointment?._id,
+    referenceCode: appointment?.referenceCode,
+    action: 'RESCHEDULE',
+    code,
+  });
+
+  if (!verification.ok) {
+    throw new ForbiddenError(verification.message);
+  }
 }
 
 /**
@@ -1212,7 +1208,7 @@ export async function cancelAppointment(
  *   performedBy?: string|null,
  *   staffChangeReason?: string,
  *   actorIsStaff?: boolean,
- *   phone?: string|null,
+ *   otpCode?: string|null,
  * }} options
  */
 export async function rescheduleAppointment(
@@ -1227,7 +1223,6 @@ export async function rescheduleAppointment(
     actorType = null,
     actorId = null,
     actingUserId = null,
-    phone = null,
     otpCode = null,
   } = {},
 ) {
@@ -1261,7 +1256,7 @@ export async function rescheduleAppointment(
         .session(session);
 
       // Before the 404, so an invalid code and an unknown reference look identical.
-      await assertAppointmentRescheduleOtp(appointment, { actorIsStaff, otpCode, phone });
+      await assertAppointmentRescheduleOtp(appointment, { actorIsStaff, otpCode });
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');

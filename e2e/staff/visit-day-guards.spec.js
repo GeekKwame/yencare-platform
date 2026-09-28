@@ -8,7 +8,9 @@ import {
   createAppointmentFixture,
   createFreeSlotFixture,
   dbSkipReason,
+  FIXTURE_TAG,
   getAppointment,
+  getDb,
   getQueueCounter,
   getSlot,
   patientPhone,
@@ -77,10 +79,36 @@ async function openRosterForDate(page, date) {
   await page.getByRole('button', { name: /^Roster \(/ }).click();
 }
 
+const issuedOtpIds = [];
+
+async function issueRescheduleOtp(appointment, code = '4826') {
+  const db = await getDb();
+  const now = new Date();
+  const { insertedId } = await db.collection('appointment_otps').insertOne({
+    appointmentId: appointment._id,
+    referenceCode: appointment.referenceCode,
+    action: 'RESCHEDULE',
+    phone: await patientPhone(),
+    code,
+    expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+    attempts: 0,
+    consumed: false,
+    [FIXTURE_TAG]: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+  issuedOtpIds.push(insertedId);
+  return code;
+}
+
 test.describe('visit-day check-in and no-show guards', () => {
   test.skip(Boolean(dbSkipReason), dbSkipReason ?? '');
 
   test.afterEach(async () => {
+    if (issuedOtpIds.length > 0) {
+      const db = await getDb();
+      await db.collection('appointment_otps').deleteMany({ _id: { $in: issuedOtpIds.splice(0) } });
+    }
     await cleanupCreatedFixtures();
   });
 
@@ -205,8 +233,9 @@ test.describe('visit-day check-in and no-show guards', () => {
       time: '00:05',
     });
 
+    const otpCode = await issueRescheduleOtp(appointment);
     const response = await request.patch(`${API}/appointments/YC-9507/reschedule`, {
-      data: { newSlotId: String(startedSlot._id), phone: await patientPhone() },
+      data: { newSlotId: String(startedSlot._id), otpCode, phone: await patientPhone() },
     });
 
     expect(response.status()).toBe(400);
@@ -226,6 +255,34 @@ test.describe('visit-day check-in and no-show guards', () => {
     const untouched = await getSlot(startedSlot._id);
     expect(untouched.isBooked).toBe(false);
     expect(untouched.appointmentId).toBeNull();
+  });
+
+  test('7b · rescheduling with only the booking phone, and no OTP, is refused', async ({ request }) => {
+    test.skip(
+      !(await supportsTransactions()),
+      'rescheduleAppointment runs in a Mongo transaction; point E2E_MONGODB_URI at a replica set to cover this guard',
+    );
+
+    const appointment = await createAppointmentFixture({
+      referenceCode: 'YC-9570',
+      date: accraDateFromToday(1),
+      time: '13:53',
+    });
+    const openSlot = await createFreeSlotFixture({ date: accraDateFromToday(1), time: '14:47' });
+
+    const response = await request.patch(`${API}/appointments/YC-9570/reschedule`, {
+      data: { newSlotId: String(openSlot._id), phone: await patientPhone() },
+    });
+
+    expect(response.status()).toBe(403);
+    expect((await response.json()).error).toBe(
+      'A valid OTP verification code (otpCode) is required to reschedule this appointment unless initiated by staff.',
+    );
+
+    const after = await getAppointment('YC-9570');
+    expect(after.appointmentTime).toBe(appointment.time);
+    expect(String(after.timeSlotId)).toBe(String(appointment.timeSlotId));
+    expect((await getSlot(openSlot._id)).isBooked).toBe(false);
   });
 
   test('8 · reception cannot no-show a future-dated booking', async ({ page }) => {
