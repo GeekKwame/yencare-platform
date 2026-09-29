@@ -6,6 +6,7 @@ import StaffWalkIn from "../components/staff/StaffWalkIn";
 import StaffAppointmentDetail from "../components/staff/StaffAppointmentDetail";
 import StaffChangeAppointment from "../components/staff/StaffChangeAppointment";
 import StaffNoShowConfirm from "../components/staff/StaffNoShowConfirm";
+import StudentVerificationModal from "../components/staff/StudentVerificationModal";
 import { matchesDeskQuery } from "../components/staff/staffUtils";
 import StaffLayout from "../components/staff/StaffLayout";
 import { useStaffAuth } from "../context/StaffAuthContext";
@@ -18,7 +19,7 @@ import {
 import { useClinicRoster } from "../hooks/useClinicRoster";
 import { accraTodayIso } from "../lib/accraTime";
 import DoctorWorkstation from "./DoctorWorkstation";
-import { updateAppointmentStatus } from "../services/appointments";
+import { updateAppointmentStatus, verifyStudentStatus } from "../services/appointments";
 import { listRooms } from "../services/catalog";
 import { advanceQueue, callNextPatient, markQueueNoShow } from "../services/queue";
 
@@ -38,6 +39,7 @@ const StaffPortal = () => {
   const [busyRoomId, setBusyRoomId] = useState("");
   const [message, setMessage] = useState("");
   const [rooms, setRooms] = useState([]);
+  const [verificationTarget, setVerificationTarget] = useState(null);
 
   const { appointments, setAppointments, loading, error, usingLive, reload } =
     useClinicRoster(clinicSite, selectedDate, { pollMs: 15000 });
@@ -100,6 +102,38 @@ const StaffPortal = () => {
       const fail = err.response?.data?.error || `Could not ${successLabel.toLowerCase()}.`;
       setMessage(fail);
       toast.error(fail);
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function handleVerifyStudent(id, payload) {
+    setUpdatingId(id);
+    setMessage("");
+    try {
+      const updated = await verifyStudentStatus(id, payload);
+      const card = mapAppointmentToCard(updated);
+      setAppointments((prev) =>
+        prev.map((appt) => (appt.id === id ? { ...appt, ...card } : appt)),
+      );
+      const actionDesc =
+        payload.action === "FAIL"
+          ? "Student verification failure recorded."
+          : payload.enqueue
+            ? "Student verified and admitted to live queue."
+            : "Student verified successfully.";
+      setMessage(actionDesc);
+      toast.success(actionDesc);
+      await reload();
+      return true;
+    } catch (err) {
+      const fail =
+        err.response?.data?.error ||
+        err.message ||
+        "Could not verify student status.";
+      setMessage(fail);
+      toast.error(fail);
+      throw err;
     } finally {
       setUpdatingId(null);
     }
@@ -350,6 +384,7 @@ const StaffPortal = () => {
             onOpenQueue={openLiveQueue}
             onOpenWalkIn={() => setView("walkin")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
+            onOpenVerification={(appt) => setVerificationTarget(appt)}
             updatingId={updatingId}
           />
         )}
@@ -367,6 +402,7 @@ const StaffPortal = () => {
             onRetry={reload}
             onCheckIn={(id) => applyStatus(id, "CHECKED_IN", "Checked in")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
+            onOpenVerification={(appt) => setVerificationTarget(appt)}
             onNoShow={(id) => {
               setSelectedId(id);
               setView("noshow");
@@ -386,6 +422,7 @@ const StaffPortal = () => {
             updating={updatingId === selectedAppointment?.id}
             onBack={() => setView("roster")}
             onCheckInToQueue={(id) => applyStatus(id, "WAITING", "Checked into queue")}
+            onOpenVerification={(appt) => setVerificationTarget(appt)}
             onChangeTime={() => setView("change")}
             onNoShow={() => setView("noshow")}
             onOpenQueue={openLiveQueue}
@@ -452,6 +489,13 @@ const StaffPortal = () => {
             }}
           />
         )}
+
+      <StudentVerificationModal
+        isOpen={Boolean(verificationTarget)}
+        appointment={verificationTarget}
+        onClose={() => setVerificationTarget(null)}
+        onVerify={handleVerifyStudent}
+      />
     </StaffLayout>
   );
 };

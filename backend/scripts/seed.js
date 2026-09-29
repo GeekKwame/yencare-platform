@@ -245,6 +245,7 @@ export async function seed({ dryRun = false } = {}) {
           endTime: row.endTime,
         });
 
+    const isAlreadyAdmitted = ['WAITING', 'CALLED', 'COMPLETED'].includes(row.status);
     const appointment = await upsertAppointment({
       referenceCode: row.referenceCode,
       patientId: row.patient._id,
@@ -255,6 +256,10 @@ export async function seed({ dryRun = false } = {}) {
       visitType: row.visitType,
       bookingType: row.bookingType ?? 'BOOKED',
       status: row.status,
+      verificationStatus: isAlreadyAdmitted ? 'VERIFIED' : 'PENDING',
+      verifiedAt: isAlreadyAdmitted ? new Date() : null,
+      verifiedBy: isAlreadyAdmitted ? 'Abena Osei' : null,
+      verificationMethod: isAlreadyAdmitted ? 'STUDENT_ID_CARD' : null,
       appointmentDate: DEMO_DATE,
       appointmentTime: row.startTime,
       queueToken: row.queueToken,

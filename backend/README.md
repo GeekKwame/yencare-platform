@@ -23,6 +23,7 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `POST` | `/api/appointments/:reference/arrive` | Patient "I've arrived" (reference only); returns a minimal status object, no personal details |
 | `GET` | `/api/appointments/:reference/queue-status` | Real-time position, estimated wait, room token and schedule; no personal details |
 | `PATCH` | `/api/appointments/:id/status` | Desk status change — **receptionist/admin JWT** |
+| `POST` | `/api/appointments/:id/verify-student` | Physical Student ID verification at clinic arrival — **receptionist/admin JWT** |
 | `PATCH` | `/api/appointments/:id/cancel` | Cancel — **staff JWT, or a valid `otpCode` in the body** |
 | `PATCH` | `/api/appointments/:id/reschedule` | Move to `newSlotId` — **staff JWT, or a valid `otpCode` in the body** |
 | `POST` | `/api/queue/call-next` | Call next patient — **doctor/admin JWT** |
@@ -61,6 +62,24 @@ Staff workstation routes require `Authorization: Bearer <token>` from `POST /api
 | **409** | Public `POST` — the details could not be matched: no phone, a phone that is not the one on record, or an index and phone that belong to different patients. Always `We couldn't confirm these details. Please check them, or see reception for help.` so the response never confirms whether an index or phone is registered. Staff `POST` — `This student index and phone number belong to different patients` |
 | **429** | Public `POST` over the registration rate limit |
 | **500** | Unexpected server error |
+
+### Student Status Verification at Clinic Arrival
+
+To prevent patient impersonation (e.g. an impostor quoting someone else's reference code `YC-XXXX` or name), clinic arrivals require physical KNUST Student ID Card inspection by desk staff before consultation queue admission:
+
+1. **Server-Enforced Queue Gate**: Moving an appointment to `WAITING` status (`PATCH /api/appointments/:id/status`) requires `verificationStatus: 'VERIFIED'`. If pending or failed, the backend rejects with 400 (`ValidationError: Student status must be verified before checking in to the queue`). Non-student visits at KNUST Hospital without a student index are automatically treated as `EXEMPT`.
+2. **Desk Verification**: `POST /api/appointments/:id/verify-student` (guarded with `RECEPTIONIST` / `ADMIN` JWT).
+   - Parameters:
+     - `studentIndex` (string, required for `VERIFY`): Must be 8 digits matching the patient record.
+     - `method` (`'STUDENT_ID_CARD'` | `'STAFF_OVERRIDE'`): Defaults to `'STUDENT_ID_CARD'`.
+     - `action` (`'VERIFY'` | `'FAIL'`): Allows reception to record discrepancies / failures.
+     - `reason` (string): Explains discrepancies when `action: 'FAIL'`.
+     - `enqueue` (boolean): When `true`, verifies and admits directly to the live waiting queue in a single atomic step.
+3. **Audit Trail**: Every verification action writes an immutable audit record to MongoDB (`AuditLog` collection) capturing timestamp, receptionist staff ID, actor name, action, and verification method.
+4. **Staff UI**:
+   - `StaffRoster` displays verification badges (`ID Verified`, `ID Pending`, `ID Failed`). Arrived students display a prominent "Verify Student ID" action.
+   - `StudentVerificationModal` provides an ergonomic card challenge modal with photo inspection confirmation, 8-digit numeric validation, one-click "Verify & Admit to Queue", and discrepancy flagging.
+
 
 ### Field mapping
 

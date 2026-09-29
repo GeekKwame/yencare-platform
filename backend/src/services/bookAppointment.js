@@ -346,6 +346,14 @@ export async function createAppointment(data, { staff = null, now = new Date() }
     }
   }
 
+  if (isWalkIn && !payload.verificationStatus) {
+    payload.verificationStatus = 'VERIFIED';
+    payload.verifiedAt = now;
+    payload.verifiedBy = staff?.name || staff?.staffId || 'Reception Staff';
+    payload.verifiedByStaffId = staff?._id || null;
+    payload.verificationMethod = 'STUDENT_ID_CARD';
+  }
+
   let appointment;
   try {
     appointment = await Appointment.create(payload);

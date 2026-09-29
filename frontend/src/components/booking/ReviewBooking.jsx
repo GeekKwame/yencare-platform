@@ -106,8 +106,7 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointme
           </h2>
 
           <p className="mt-2 text-sm text-gray-500">
-            Your appointment has been booked. Present your reference code at the clinic reception.
-            You do not have a queue number yet — reception check-in assigns your live queue token.
+            Your appointment has been booked. Present your reference code and <strong>physical KNUST Student ID Card</strong> at the clinic reception. Reception verifies your student card before admitting you to the live queue.
           </p>
 
           <ReferenceBlock code={bookingRef} />
@@ -306,10 +305,15 @@ const ReviewBooking = ({ formData, onBack, onReset, onSlotTaken, onViewAppointme
         Booking success does not depend on SMS delivery.
       </div>
 
-      <div className="mt-4 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-xs leading-relaxed text-[#76551f] sm:text-sm">
-        <strong>Important:</strong> Please arrive{" "}
-        <strong>{arriveBy ? `by ${arriveBy}` : "15 minutes prior"}</strong> to your scheduled time at{" "}
-        {clinicLabel || "the clinic"}. If you cannot make it, please cancel or reschedule via the portal so your slot can be released.
+      <div className="mt-4 rounded-xl border border-[#ead7ad] bg-[#fffaf0] p-4 text-xs leading-relaxed text-[#76551f] sm:text-sm space-y-1.5">
+        <div>
+          <strong>Important:</strong> Please arrive{" "}
+          <strong>{arriveBy ? `by ${arriveBy}` : "15 minutes prior"}</strong> to your scheduled time at{" "}
+          {clinicLabel || "the clinic"}. If you cannot make it, please cancel or reschedule via the portal so your slot can be released.
+        </div>
+        <div>
+          <strong>Student ID Required:</strong> Please bring your <strong>physical KNUST Student ID Card</strong>. Clinic reception will inspect your card and verify your student index before admitting you to the consultation queue.
+        </div>
       </div>
 
       {confirmError && (

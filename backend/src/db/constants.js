@@ -27,6 +27,18 @@ export const ROOM_STATUSES = Object.freeze(['active', 'maintenance', 'inactive']
 
 export const STAFF_ROLES = Object.freeze(['RECEPTIONIST', 'DOCTOR', 'ADMIN']);
 
+export const VERIFICATION_STATUSES = Object.freeze([
+  'PENDING',
+  'VERIFIED',
+  'FAILED',
+  'EXEMPT',
+]);
+
+export const VERIFICATION_METHODS = Object.freeze([
+  'STUDENT_ID_CARD',
+  'STAFF_OVERRIDE',
+]);
+
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;

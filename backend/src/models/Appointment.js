@@ -6,6 +6,8 @@ import {
   DATE_PATTERN,
   REFERENCE_CODE_PATTERN,
   TIME_PATTERN,
+  VERIFICATION_METHODS,
+  VERIFICATION_STATUSES,
   VISIT_TYPES,
   isAllowedStatusTransition,
 } from '../db/constants.js';
@@ -95,6 +97,25 @@ const appointmentSchema = new mongoose.Schema(
     staffChangedTime: { type: String, trim: true },
     reminderSentAt: { type: Date, default: null },
     notes: { type: String, trim: true },
+    verificationStatus: {
+      type: String,
+      enum: VERIFICATION_STATUSES,
+      default: 'PENDING',
+      index: true,
+    },
+    verifiedAt: { type: Date, default: null },
+    verifiedBy: { type: String, trim: true, default: null },
+    verifiedByStaffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'StaffUser',
+      default: null,
+    },
+    verificationMethod: {
+      type: String,
+      enum: VERIFICATION_METHODS,
+      default: null,
+    },
+    verificationFailureReason: { type: String, trim: true, default: null },
   },
   { timestamps: true, collection: 'appointments' },
 );
