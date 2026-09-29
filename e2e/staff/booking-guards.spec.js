@@ -36,10 +36,6 @@ function uniqueDigits(testInfo, testDigit, n = 0) {
   return `${testInfo.repeatEachIndex % 10}${testDigit}${n}`;
 }
 
-function lettersFor(digits) {
-  return [...digits].map((d) => 'abcdefghij'[Number(d)]).join('');
-}
-
 async function students() {
   const db = await getDb();
   const [clinician, room] = await Promise.all([
@@ -66,7 +62,7 @@ async function insertPatient({ digits, studentIndex = null }) {
   await db.collection('patients').insertOne({
     _id,
     fullName: `Booking Guard ${digits}`,
-    phone: `fixture-no-sms-${lettersFor(digits)}`,
+    phone: `+2332099${digits.padStart(5, '0')}`,
     ...(studentIndex ? { studentIndex } : {}),
     [FIXTURE_TAG]: true,
     createdAt: now,

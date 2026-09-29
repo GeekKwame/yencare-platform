@@ -194,39 +194,66 @@ export function isFutureSlot(dateIso, startTime, now = new Date()) {
 export const EARLY_WINDOW_MINUTES = 60;
 export const LATE_GRACE_MINUTES = 15;
 
+export function clockMinutes(hhmm) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || "").trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+export function accraMinutesNow(now = new Date()) {
+  const { hour, minute } = accraParts(now);
+  return hour * 60 + minute;
+}
+
+export function formatClock(totalMinutes) {
+  const minutesOfDay = ((totalMinutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(minutesOfDay / 60);
+  const minutes = minutesOfDay % 60;
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${((hours + 11) % 12) + 1}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
+export function formatVisitDate(dateIso) {
+  const [year, month, day] = String(dateIso || "").split("-").map(Number);
+  if (!year || !month || !day) return String(dateIso || "");
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 /**
  * Arrival window: 60 minutes before slot start up to 15 minutes after.
  */
 export function getArrivalWindowStatus(dateIso, startTime, now = new Date()) {
-  if (!dateIso || !startTime) {
-    return { canArrive: false, reason: "Appointment date or time is missing." };
+  const start = clockMinutes(startTime);
+  if (!dateIso || start === null) {
+    return { canArrive: false, reason: "Your appointment time is missing. Please tell reception you are here." };
   }
 
+  const opensAt = formatClock(start - EARLY_WINDOW_MINUTES);
   const today = accraTodayIso(now);
   if (dateIso < today) {
-    return { canArrive: false, reason: `This appointment was scheduled for ${dateIso} and has passed.` };
+    return {
+      canArrive: false,
+      reason: "This appointment date has passed. Please book a new appointment or speak to reception.",
+    };
   }
   if (dateIso > today) {
-    return { canArrive: false, reason: `Check-in opens on the day of your visit (${dateIso}).` };
+    return { canArrive: false, reason: `Check-in opens on ${formatVisitDate(dateIso)} at ${opensAt}.` };
   }
 
-  const [slotH, slotM] = String(startTime).split(":").map(Number);
-  const slotMinutes = slotH * 60 + slotM;
-  const { hour: nowH, minute: nowM } = accraParts(now);
-  const nowMinutes = nowH * 60 + nowM;
-
-  const offset = nowMinutes - slotMinutes;
+  const offset = accraMinutesNow(now) - start;
   if (offset < -EARLY_WINDOW_MINUTES) {
-    return {
-      canArrive: false,
-      reason: `Check-in opens ${EARLY_WINDOW_MINUTES} minutes before your appointment time (${startTime}).`,
-    };
+    return { canArrive: false, reason: `Check-in opens at ${opensAt}.` };
   }
   if (offset > LATE_GRACE_MINUTES) {
-    return {
-      canArrive: false,
-      reason: "The arrival window has passed. Please see reception to be placed in a later slot.",
-    };
+    return { canArrive: false, reason: "You're past your time, please see reception." };
   }
 
   return { canArrive: true, reason: "" };

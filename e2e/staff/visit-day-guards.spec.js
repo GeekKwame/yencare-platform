@@ -65,6 +65,20 @@ function addMinutesHm(hhmm, minutes) {
 }
 
 
+function clock12(hhmm) {
+  const [hour, minute] = hhmm.split(':').map(Number);
+  return `${((hour + 11) % 12) + 1}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
+}
+
+function visitDayPattern(date) {
+  return new RegExp(`\\w{3} ${Number(date.slice(8))} \\w{3,4}`);
+}
+
+async function deskApi(request) {
+  const token = await staffToken(request, RECEPTIONIST);
+  return { Authorization: `Bearer ${token}` };
+}
+
 function rosterCard(page, reference) {
   return page.locator('[id^="staff-appt-"]').filter({ hasText: reference });
 }
@@ -122,47 +136,68 @@ test.describe('visit-day check-in and no-show guards', () => {
     await closeDb();
   });
 
-  test('1 · reception cannot check in a future-dated booking', async ({ page }) => {
+  test('1 · reception check-in is disabled with the reason for a future-dated booking, and the API refuses it', async ({ page, request }) => {
     const date = accraDateFromToday(1);
-    await createAppointmentFixture({ referenceCode: 'YC-9501', date, time: '13:07' });
+    const fixture = await createAppointmentFixture({ referenceCode: 'YC-9501', date, time: '13:07' });
 
     await loginStaff(page, RECEPTIONIST);
     await openRosterForDate(page, date);
-    await rosterCard(page, 'YC-9501')
-      .getByRole('button', { name: 'Check In', exact: true })
-      .click();
+    const checkIn = rosterCard(page, 'YC-9501').getByRole('button', { name: 'Check In', exact: true });
+    await expect(checkIn).toBeDisabled();
+    const reason = new RegExp(`Check-in opens on ${visitDayPattern(date).source}\\.`);
+    await expect(rosterCard(page, 'YC-9501').getByText(reason)).toBeVisible();
+    await expect(checkIn).toHaveAccessibleDescription(reason);
 
-    await expect(
-      feedback(page, `This appointment is for ${date}. Check-in opens on the day of the visit.`),
-    ).toBeVisible();
+    const response = await request.patch(`${API}/appointments/${fixture._id}/status`, {
+      headers: await deskApi(request),
+      data: { status: 'CHECKED_IN' },
+    });
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toBe(
+      `This appointment is for ${date}. Check-in opens on the day of the visit.`,
+    );
     expect((await getAppointment('YC-9501')).status).toBe('BOOKED');
   });
 
-  test('2 · patient cannot self-arrive on a future-dated booking', async ({ page }) => {
+  test('2 · patient "I\'ve arrived" is hidden with the opening time for a future-dated booking, and the API refuses it', async ({ page, request }) => {
     const date = accraDateFromToday(1);
-    await createAppointmentFixture({ referenceCode: 'YC-9502', date, time: '13:19' });
+    const fixture = await createAppointmentFixture({ referenceCode: 'YC-9502', date, time: '13:19' });
 
     await openBookingAsPatient(page, 'YC-9502');
-    await page.getByRole('button', { name: "I've arrived" }).click();
+    await expect(page.getByText('YC-9502').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: "I've arrived" })).toHaveCount(0);
+    await expect(
+      page.getByText(
+        new RegExp(
+          `Check-in opens on ${visitDayPattern(date).source} at ${clock12(addMinutesHm(fixture.time, -60))}\\.`,
+        ),
+      ),
+    ).toBeVisible();
 
-    await expect(page.getByRole('alert')).toContainText(
-      'Check-in opens on the day of the visit.',
-    );
+    const response = await request.post(`${API}/appointments/YC-9502/arrive`);
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toContain('Check-in opens on the day of the visit.');
     expect((await getAppointment('YC-9502')).status).toBe('BOOKED');
   });
 
-  test('3 · patient cannot arrive more than 60 minutes early', async ({ page }) => {
+  test('3 · patient "I\'ve arrived" is hidden with the opening time when more than 60 minutes early, and the API refuses it', async ({ page, request }) => {
     const date = accraDateFromToday(0);
-    await createAppointmentFixture({
+    const fixture = await createAppointmentFixture({
       referenceCode: 'YC-9503',
       date,
       time: todayTimeOrSkip(OFFSETS.earlyArrival),
     });
 
     await openBookingAsPatient(page, 'YC-9503');
-    await page.getByRole('button', { name: "I've arrived" }).click();
+    await expect(page.getByText('YC-9503').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: "I've arrived" })).toHaveCount(0);
+    await expect(
+      page.getByText(`Check-in opens at ${clock12(addMinutesHm(fixture.time, -60))}.`),
+    ).toBeVisible();
 
-    await expect(page.getByRole('alert')).toContainText(
+    const response = await request.post(`${API}/appointments/YC-9503/arrive`);
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toBe(
       'Check-in opens 60 minutes before your appointment time.',
     );
     expect((await getAppointment('YC-9503')).status).toBe('BOOKED');
@@ -183,7 +218,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     expect((await getAppointment('YC-9504')).status).toBe('CHECKED_IN');
   });
 
-  test('5 · patient more than 15 minutes late is sent to reception', async ({ page }) => {
+  test('5 · patient more than 15 minutes late sees "see reception" instead of "I\'ve arrived", and the API refuses it', async ({ page, request }) => {
     const date = accraDateFromToday(0);
     await createAppointmentFixture({
       referenceCode: 'YC-9505',
@@ -192,9 +227,13 @@ test.describe('visit-day check-in and no-show guards', () => {
     });
 
     await openBookingAsPatient(page, 'YC-9505');
-    await page.getByRole('button', { name: "I've arrived" }).click();
+    await expect(page.getByText('YC-9505').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: "I've arrived" })).toHaveCount(0);
+    await expect(page.getByText("You're past your time, please see reception.")).toBeVisible();
 
-    await expect(page.getByRole('alert')).toContainText(
+    const response = await request.post(`${API}/appointments/YC-9505/arrive`);
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toContain(
       'You are past your appointment time. Please see reception',
     );
     expect((await getAppointment('YC-9505')).status).toBe('BOOKED');
@@ -291,20 +330,30 @@ test.describe('visit-day check-in and no-show guards', () => {
     expect((await getSlot(openSlot._id)).isBooked).toBe(false);
   });
 
-  test('8 · reception cannot no-show a future-dated booking', async ({ page }) => {
+  test('8 · reception no-show is disabled with the reason for a future-dated booking, and the API refuses it', async ({ page, request }) => {
     const date = accraDateFromToday(1);
-    await createAppointmentFixture({ referenceCode: 'YC-9508', date, time: '13:31' });
+    const fixture = await createAppointmentFixture({ referenceCode: 'YC-9508', date, time: '13:31' });
 
     await loginStaff(page, RECEPTIONIST);
     await openRosterForDate(page, date);
-    await rosterCard(page, 'YC-9508').getByRole('button', { name: 'No-Show' }).click();
-    await page.getByRole('button', { name: 'Yes, mark as no-show' }).click();
+    const noShow = rosterCard(page, 'YC-9508').getByRole('button', { name: 'No-Show' });
+    await expect(noShow).toBeDisabled();
+    const reason = new RegExp(
+      `No-show is available from ${clock12(addMinutesHm(fixture.time, LATE_GRACE_MINUTES))} on ${visitDayPattern(date).source}\\.`,
+    );
+    await expect(rosterCard(page, 'YC-9508').getByText(reason)).toBeVisible();
+    await expect(noShow).toHaveAccessibleDescription(reason);
 
-    await expect(
-      feedback(page, 'It cannot be marked as a no-show before the day of the visit.'),
-    ).toBeVisible();
-    await expect(page.getByText('Marked as no-show')).toBeHidden();
+    const response = await request.post(`${API}/queue/no-show`, {
+      headers: await deskApi(request),
+      data: { appointmentId: String(fixture._id) },
+    });
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toContain(
+      'It cannot be marked as a no-show before the day of the visit.',
+    );
     expect((await getAppointment('YC-9508')).status).toBe('BOOKED');
+    expect((await getSlot(fixture.timeSlotId)).isBooked).toBe(true);
   });
 
   test('9 · no-show on the called patient frees the slot and clears the room marker', async ({ request }) => {
@@ -362,7 +411,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     expect(slot.appointmentId).toBeNull();
   });
 
-  test('11 · reception cannot no-show a booked patient still inside the grace period', async ({ page }) => {
+  test('11 · reception no-show is disabled with the reason while the patient is still inside the grace period, and the API refuses it', async ({ page, request }) => {
     const date = accraDateFromToday(0);
     const fixture = await createAppointmentFixture({
       referenceCode: 'YC-9511',
@@ -373,20 +422,118 @@ test.describe('visit-day check-in and no-show guards', () => {
 
     await loginStaff(page, RECEPTIONIST);
     await openRosterForDate(page, date);
-    await rosterCard(page, 'YC-9511').getByRole('button', { name: 'No-Show' }).click();
+    const noShow = rosterCard(page, 'YC-9511').getByRole('button', { name: 'No-Show' });
+    await expect(noShow).toBeDisabled();
+    const reason = `The patient can still arrive until ${clock12(graceEnds)}. No-show is available after that.`;
+    await expect(rosterCard(page, 'YC-9511').getByText(reason)).toBeVisible();
+    await expect(noShow).toHaveAccessibleDescription(reason);
 
-    const refusal = page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/queue/no-show') && response.request().method() === 'POST',
+    const response = await request.post(`${API}/queue/no-show`, {
+      headers: await deskApi(request),
+      data: { appointmentId: String(fixture._id) },
+    });
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toBe(
+      `The patient can still arrive until ${graceEnds}. Mark as no-show after that.`,
     );
-    await page.getByRole('button', { name: 'Yes, mark as no-show' }).click();
-    expect((await refusal).status()).toBe(400);
-
-    await expect(
-      feedback(page, `The patient can still arrive until ${graceEnds}. Mark as no-show after that.`),
-    ).toBeVisible();
-    await expect(page.getByText('Marked as no-show')).toBeHidden();
     expect((await getAppointment('YC-9511')).status).toBe('BOOKED');
+    expect((await getSlot(fixture.timeSlotId)).isBooked).toBe(true);
+  });
+
+  test('13 · "Check In to Queue" is disabled with the reason for a future-dated arrival on Roster and Today, and the API refuses it', async ({ page, request }) => {
+    const date = accraDateFromToday(1);
+    const fixture = await createAppointmentFixture({
+      referenceCode: 'YC-9513',
+      date,
+      time: '11:23',
+      status: 'CHECKED_IN',
+    });
+    const reason = new RegExp(`Check-in opens on ${visitDayPattern(date).source}\\.`);
+
+    await loginStaff(page, RECEPTIONIST);
+    await page.getByLabel('Visit date').fill(date);
+    const today = page.locator('section').filter({ hasText: /Waiting at reception/ });
+    const todayRow = today.locator('div.rounded-xl').filter({ hasText: 'YC-9513' });
+    const todayButton = todayRow.getByRole('button', { name: /Check In to Queue/i });
+    await expect(todayButton).toBeDisabled();
+    await expect(todayRow.getByText(reason)).toBeVisible();
+    await expect(todayButton).toHaveAccessibleDescription(reason);
+
+    await page.getByRole('button', { name: /^Roster \(/ }).click();
+    const rosterButton = rosterCard(page, 'YC-9513').getByRole('button', { name: 'Check In to Queue' });
+    await expect(rosterButton).toBeDisabled();
+    await expect(rosterCard(page, 'YC-9513').getByText(reason)).toBeVisible();
+    await expect(rosterButton).toHaveAccessibleDescription(reason);
+
+    const response = await request.patch(`${API}/appointments/${fixture._id}/status`, {
+      headers: await deskApi(request),
+      data: { status: 'WAITING' },
+    });
+    expect(response.status()).toBe(400);
+    expect((await response.json()).error).toBe(
+      `This appointment is for ${date}. Check-in opens on the day of the visit.`,
+    );
+    const after = await getAppointment('YC-9513');
+    expect(after.status).toBe('CHECKED_IN');
+    expect(after.queueToken ?? null).toBeNull();
+  });
+
+  test('15 · a slow response for the previous date never replaces the roster for the newly chosen date', async ({ page }) => {
+    const today = accraDateFromToday(0);
+    const tomorrow = accraDateFromToday(1);
+    await createAppointmentFixture({ referenceCode: 'YC-9515', date: tomorrow, time: '10:53' });
+
+    let releaseToday;
+    const todayHeld = new Promise((resolve) => {
+      releaseToday = resolve;
+    });
+    let heldOnce = false;
+    await page.route(/\/api\/appointments\?/, async (route) => {
+      const url = new URL(route.request().url());
+      if (!heldOnce && url.searchParams.get('date') === today) {
+        heldOnce = true;
+        await todayHeld;
+      }
+      await route.continue();
+    });
+
+    await loginStaff(page, RECEPTIONIST);
+    const tomorrowLoaded = page.waitForResponse(
+      (response) => response.url().includes('/api/appointments?') && response.url().includes(`date=${tomorrow}`),
+    );
+    await openRosterForDate(page, tomorrow);
+    await tomorrowLoaded;
+    await expect(rosterCard(page, 'YC-9515')).toBeVisible();
+
+    const staleLoaded = page.waitForResponse(
+      (response) => response.url().includes('/api/appointments?') && response.url().includes(`date=${today}`),
+    );
+    releaseToday();
+    await staleLoaded;
+    await page.waitForTimeout(500);
+
+    await expect(rosterCard(page, 'YC-9515')).toBeVisible();
+    await expect(page.getByText(`${tomorrow} ·`).first()).toBeVisible();
+    await expect(page.getByText(`${today} ·`)).toHaveCount(0);
+  });
+
+  test('14 · "I\'ve arrived" is hidden outside the arrival window on the booking page and Clinic Activity', async ({ page }) => {
+    const date = accraDateFromToday(1);
+    const fixture = await createAppointmentFixture({ referenceCode: 'YC-9514', date, time: '10:41' });
+    const reason = new RegExp(
+      `Check-in opens on ${visitDayPattern(date).source} at ${clock12(addMinutesHm(fixture.time, -60))}\\.`,
+    );
+
+    await openBookingAsPatient(page, 'YC-9514');
+    await expect(page.getByText('YC-9514').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: "I've arrived" })).toHaveCount(0);
+    await expect(page.getByText(reason)).toBeVisible();
+
+    await page.goto('/clinic-activity?ref=YC-9514');
+    await expect(page.getByText('YC-9514').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: "I've arrived" })).toHaveCount(0);
+    await expect(page.getByText(reason)).toBeVisible();
+    expect((await getAppointment('YC-9514')).status).toBe('BOOKED');
   });
 
   test('12 · reception can no-show a booked patient once the grace period has passed', async ({ page }) => {

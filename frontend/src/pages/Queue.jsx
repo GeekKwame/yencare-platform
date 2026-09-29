@@ -11,7 +11,7 @@ import {
 } from "../lib/appointmentView";
 import { arriveAppointment, getQueueStatus, lookupAppointment } from "../services/appointments";
 import { announcePatientCall } from "../lib/clinicSpeech";
-import { getArrivalWindowStatus } from "../lib/accraTime";
+import { arrivalState } from "../lib/visitRules";
 import { ReferenceBlock } from "../components/ui";
 
 const POLL_MS = 15000;
@@ -419,7 +419,7 @@ const Queue = () => {
                 You do not have a queue number yet.
               </p>
               {status === "BOOKED" && (() => {
-                const arrivalStatus = getArrivalWindowStatus(view.appointmentDate, view.appointmentTime);
+                const arrivalStatus = arrivalState(view);
                 if (!arrivalStatus.canArrive) {
                   return (
                     <div className="mt-4 rounded-xl border border-[#dce8df] bg-[#f7f8f7] p-3 text-xs text-[#607672]">

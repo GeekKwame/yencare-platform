@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { accraTodayIso, getArrivalWindowStatus } from "../../lib/accraTime";
+import { accraTodayIso } from "../../lib/accraTime";
+import { arrivalState } from "../../lib/visitRules";
 import { mapAppointment } from "../../lib/appointmentView";
 import { arriveAppointment, cancelAppointment, requestCancelOtp } from "../../services/appointments";
 import { Button, ReferenceBlock, StatusBadge } from "../ui";
@@ -31,6 +32,12 @@ export default function FoundAppointment({
   const [arriving, setArriving] = useState(false);
   const [arriveError, setArriveError] = useState("");
   const navigate = useNavigate();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const rows = [
     { label: "Patient", value: view.fullName },
@@ -244,7 +251,7 @@ export default function FoundAppointment({
 
       <div className="mt-7 flex flex-col gap-3">
         {isBooked && (() => {
-          const arrivalStatus = getArrivalWindowStatus(view.appointmentDate, view.appointmentTime || view.time);
+          const arrivalStatus = arrivalState(view, now);
           return (
             <div className="border border-warning-border bg-warning-soft p-3.5 text-sm text-warning">
               <strong className="block text-primary">Not arrived at clinic yet</strong>
@@ -257,12 +264,18 @@ export default function FoundAppointment({
                 </p>
               )}
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-warning-border/60 pt-3">
-                <span className="text-xs font-medium text-primary">
-                  {arrivalStatus.canArrive ? "Already at the clinic?" : arrivalStatus.reason}
-                </span>
-                <Button variant="accent" size="sm" loading={arriving} loadingText="Recording…" onClick={handleArrive}>
-                  I&apos;ve arrived
-                </Button>
+                {arrivalStatus.canArrive ? (
+                  <>
+                    <span className="text-xs font-medium text-primary">Already at the clinic?</span>
+                    <Button variant="accent" size="sm" loading={arriving} loadingText="Recording…" onClick={handleArrive}>
+                      I&apos;ve arrived
+                    </Button>
+                  </>
+                ) : (
+                  <span className="text-xs font-medium text-primary">
+                    {arrivalStatus.reason}
+                  </span>
+                )}
               </div>
             </div>
           );

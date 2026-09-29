@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ROSTER_FILTERS, sortRoster } from "./staffUtils";
-import { getStaffActionState } from "./staffUtils";
+import { staffActionState } from "../../lib/visitRules";
 import { StatusBadge } from "../ui";
 
 export default function StaffRoster({
@@ -103,7 +103,7 @@ export default function StaffRoster({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((appt) => (
             (() => {
-              const actionState = getStaffActionState(appt);
+              const actionState = staffActionState(appt);
               return (
             <div
               key={appt.id}
@@ -146,53 +146,68 @@ export default function StaffRoster({
               )}
 
               {appt.status === "BOOKED" && (
-                <div className="mt-4">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div>
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onCheckIn(appt.id);
                       }}
-                      disabled={updatingId === appt.id}
-                      title={actionState.checkInNote || undefined}
-                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                      disabled={updatingId === appt.id || !actionState.canCheckIn}
+                      aria-describedby={actionState.checkInNote ? `${appt.id}-checkin-reason` : undefined}
+                      className="w-full rounded-xl bg-[#176b5f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
                     >
                       {updatingId === appt.id ? "Updating…" : "Check In"}
                     </button>
+                    {actionState.checkInNote && (
+                      <p id={`${appt.id}-checkin-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
+                        {actionState.checkInNote}
+                      </p>
+                    )}
+                  </div>
+                  <div>
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         onNoShow(appt.id);
                       }}
-                      disabled={updatingId === appt.id}
-                      title={actionState.noShowNote || undefined}
-                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+                      disabled={updatingId === appt.id || !actionState.canNoShow}
+                      aria-describedby={actionState.noShowNote ? `${appt.id}-noshow-reason` : undefined}
+                      className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-500"
                     >
                       No-Show
                     </button>
+                    {actionState.noShowNote && (
+                      <p id={`${appt.id}-noshow-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
+                        {actionState.noShowNote}
+                      </p>
+                    )}
                   </div>
-                  {(!actionState.canCheckIn || !actionState.canNoShow) && (
-                    <p className="mt-1.5 text-[11px] text-gray-500">
-                      {!actionState.canCheckIn ? actionState.checkInNote : actionState.noShowNote}
-                    </p>
-                  )}
                 </div>
               )}
 
               {appt.status === "CHECKED_IN" && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onCheckInToQueue(appt.id);
-                  }}
-                  disabled={updatingId === appt.id}
-                  className="mt-4 w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
-                >
-                  {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
-                </button>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onCheckInToQueue(appt.id);
+                    }}
+                    disabled={updatingId === appt.id || !actionState.canQueue}
+                    aria-describedby={actionState.queueNote ? `${appt.id}-queue-reason` : undefined}
+                    className="w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
+                  >
+                    {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
+                  </button>
+                  {actionState.queueNote && (
+                    <p id={`${appt.id}-queue-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
+                      {actionState.queueNote}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
               );

@@ -1,3 +1,4 @@
+import { staffActionState } from "../../lib/visitRules";
 import { rosterMetrics, sortRoster, statusBadgeClass } from "./staffUtils";
 
 export default function StaffToday({
@@ -106,7 +107,9 @@ export default function StaffToday({
             Waiting at reception ({arrivedPatients.length})
           </h2>
           <div className="mt-3 space-y-2">
-            {arrivedPatients.map((appt) => (
+            {arrivedPatients.map((appt) => {
+              const actionState = staffActionState(appt);
+              return (
               <div
                 key={appt.id}
                 className="flex flex-col gap-3 rounded-xl border border-[#99D5C8] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
@@ -117,16 +120,25 @@ export default function StaffToday({
                     {appt.reference} · {appt.time}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onCheckInToQueue(appt.id)}
-                  disabled={updatingId === appt.id}
-                  className="shrink-0 rounded-xl bg-[#176b5f] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#14594f] disabled:opacity-60"
-                >
-                  {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
-                </button>
+                <div className="shrink-0 sm:max-w-[16rem] sm:text-right">
+                  <button
+                    type="button"
+                    onClick={() => onCheckInToQueue(appt.id)}
+                    disabled={updatingId === appt.id || !actionState.canQueue}
+                    aria-describedby={actionState.queueNote ? `${appt.id}-today-queue-reason` : undefined}
+                    className="rounded-xl bg-[#176b5f] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
+                  >
+                    {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
+                  </button>
+                  {actionState.queueNote && (
+                    <p id={`${appt.id}-today-queue-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
+                      {actionState.queueNote}
+                    </p>
+                  )}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}

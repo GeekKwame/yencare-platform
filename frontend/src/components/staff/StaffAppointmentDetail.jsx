@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatAppointmentTime } from "../../data/mockAppointments";
-import { getStaffActionState } from "./staffUtils";
+import { staffActionState } from "../../lib/visitRules";
 
 function Row({ label, value, muted }) {
   return (
@@ -47,7 +47,9 @@ export default function StaffAppointmentDetail({
   const isBooked = appointment.status === "BOOKED";
   const isArrived = appointment.status === "CHECKED_IN";
   const canStaffCheckIn = isBooked || isArrived;
-  const actionState = getStaffActionState(appointment);
+  const actionState = staffActionState(appointment);
+  const primaryAllowed = isArrived ? actionState.canQueue : actionState.canCheckIn;
+  const primaryNote = isArrived ? actionState.queueNote : actionState.checkInNote;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -129,9 +131,9 @@ export default function StaffAppointmentDetail({
               <div>
                 <button
                   type="button"
-                  disabled={updating || !actionState.canCheckIn}
+                  disabled={updating || !primaryAllowed}
                   onClick={() => onCheckInToQueue(appointment.id)}
-                  title={actionState.checkInNote || undefined}
+                  aria-describedby={primaryNote ? "detail-checkin-reason" : undefined}
                   className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 >
                   {updating
@@ -140,12 +142,12 @@ export default function StaffAppointmentDetail({
                       ? `Check in to live queue (${appointment.patientName})`
                       : `Check in student (${appointment.patientName})`}
                 </button>
-                {!actionState.canCheckIn && (
-                  <p className="mt-1 text-center text-xs text-gray-500">{actionState.checkInNote}</p>
+                {primaryNote && (
+                  <p id="detail-checkin-reason" className="mt-1 text-center text-xs text-gray-600">{primaryNote}</p>
                 )}
               </div>
               <div className={`grid ${isBooked ? "grid-cols-2" : "grid-cols-1"} gap-2.5`}>
-                {isBooked && (
+                {actionState.canChangeTime && (
                   <button
                     type="button"
                     onClick={onChangeTime}
@@ -159,13 +161,13 @@ export default function StaffAppointmentDetail({
                     type="button"
                     onClick={onNoShow}
                     disabled={updating || !actionState.canNoShow}
-                    title={actionState.noShowNote || undefined}
+                    aria-describedby={actionState.noShowNote ? "detail-noshow-reason" : undefined}
                     className="w-full rounded-xl border border-[#f1c0c0] bg-[#FFF5F5] px-3 py-2.5 text-sm font-semibold text-[#9B2C2C] hover:bg-[#fde8e8] disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     Mark no-show
                   </button>
-                  {!actionState.canNoShow && (
-                    <p className="mt-1 text-center text-[11px] text-gray-500">{actionState.noShowNote}</p>
+                  {actionState.noShowNote && (
+                    <p id="detail-noshow-reason" className="mt-1 text-center text-[11px] text-gray-600">{actionState.noShowNote}</p>
                   )}
                 </div>
               </div>
