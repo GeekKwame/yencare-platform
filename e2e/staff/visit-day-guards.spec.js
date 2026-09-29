@@ -74,6 +74,12 @@ function feedback(page, text) {
   return page.getByText(text).first();
 }
 
+async function openBookingAsPatient(page, reference) {
+  await page.goto(`/appointments?ref=${reference}`);
+  await page.getByLabel(/Booking Phone Number/i).fill(await patientPhone());
+  await page.getByRole('button', { name: /Find Appointment/i }).click();
+}
+
 async function openRosterForDate(page, date) {
   await page.getByLabel('Visit date').fill(date);
   await page.getByRole('button', { name: /^Roster \(/ }).click();
@@ -136,7 +142,7 @@ test.describe('visit-day check-in and no-show guards', () => {
     const date = accraDateFromToday(1);
     await createAppointmentFixture({ referenceCode: 'YC-9502', date, time: '13:19' });
 
-    await page.goto('/appointments?ref=YC-9502');
+    await openBookingAsPatient(page, 'YC-9502');
     await page.getByRole('button', { name: "I've arrived" }).click();
 
     await expect(page.getByRole('alert')).toContainText(
@@ -153,7 +159,7 @@ test.describe('visit-day check-in and no-show guards', () => {
       time: todayTimeOrSkip(OFFSETS.earlyArrival),
     });
 
-    await page.goto('/appointments?ref=YC-9503');
+    await openBookingAsPatient(page, 'YC-9503');
     await page.getByRole('button', { name: "I've arrived" }).click();
 
     await expect(page.getByRole('alert')).toContainText(
@@ -170,7 +176,7 @@ test.describe('visit-day check-in and no-show guards', () => {
       time: todayTimeOrSkip(OFFSETS.inWindow),
     });
 
-    await page.goto('/appointments?ref=YC-9504');
+    await openBookingAsPatient(page, 'YC-9504');
     await page.getByRole('button', { name: "I've arrived" }).click();
 
     await expect(page).toHaveURL(/\/queue\?ref=YC-9504/);
@@ -185,7 +191,7 @@ test.describe('visit-day check-in and no-show guards', () => {
       time: todayTimeOrSkip(OFFSETS.lateArrival),
     });
 
-    await page.goto('/appointments?ref=YC-9505');
+    await openBookingAsPatient(page, 'YC-9505');
     await page.getByRole('button', { name: "I've arrived" }).click();
 
     await expect(page.getByRole('alert')).toContainText(

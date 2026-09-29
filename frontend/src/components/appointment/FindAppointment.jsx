@@ -13,11 +13,11 @@ import AppointmentCancelled from "./AppointmentCancelled";
 import FoundAppointment from "./FoundAppointment";
 import RescheduleFlow from "./RescheduleFlow";
 
-const FindAppointment = ({ setAppointment, initialReference = "" }) => {
+const FindAppointment = ({ setAppointment, initialReference = "", initialPhone = "" }) => {
   const [referenceInput, setReferenceInput] = useState(() =>
     initialReference ? normalizeReference(initialReference) : "",
   );
-  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState(initialPhone);
   const [verifiedPhone, setVerifiedPhone] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -26,21 +26,23 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
 
   useEffect(() => {
     const ref = normalizeReference(initialReference);
-    if (!ref || !REFERENCE_PATTERN.test(ref)) return undefined;
+    const phone = String(initialPhone || "").trim();
+    if (!ref || !REFERENCE_PATTERN.test(ref) || !phone) return undefined;
     let cancelled = false;
 
     async function loadRef() {
       setIsSearching(true);
       try {
-        const found = await lookupAppointment({ reference: ref });
+        const found = await lookupAppointment({ reference: ref, phone });
         if (!cancelled && found) {
+          setVerifiedPhone(phone);
           setFoundAppointment(found);
           setFlow("detail");
         }
       } catch {
         if (!cancelled) {
           setErrorMessage(
-            "Appointment not found. Please verify both details and try again.",
+            "Appointment not found or phone number does not match. Please verify both details and try again.",
           );
         }
       } finally {
@@ -52,7 +54,7 @@ const FindAppointment = ({ setAppointment, initialReference = "" }) => {
     return () => {
       cancelled = true;
     };
-  }, [initialReference]);
+  }, [initialReference, initialPhone]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

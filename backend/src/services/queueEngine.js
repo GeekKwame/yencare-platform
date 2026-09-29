@@ -539,6 +539,9 @@ export async function getQueueStatus(referenceCode) {
   return {
     referenceCode: appointment.referenceCode,
     status: appointment.status,
+    appointmentDate: appointment.appointmentDate || null,
+    appointmentTime: appointment.appointmentTime || null,
+    clinicSite: appointment.clinicSite || appointment.roomId?.clinicSite || null,
     queueToken: appointment.queueToken || null,
     position,
     patientsAhead,

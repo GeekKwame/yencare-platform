@@ -1,3 +1,4 @@
+import { redactLogValue } from './redact.js';
 import { isTestRun } from './runtime.js';
 
 /**
@@ -64,7 +65,7 @@ function serializeContext(context) {
   const out = {};
   for (const [key, value] of Object.entries(context)) {
     if (value === undefined) continue;
-    out[key] = serializeValue(value);
+    out[key] = serializeValue(redactLogValue(key, value));
   }
   return out;
 }

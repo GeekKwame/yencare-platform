@@ -157,7 +157,8 @@ describe('appointments HTTP', () => {
     const { url } = await client(mockService);
 
     const res = await fetch(
-      `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+      `${url}/api/appointments/YC-4821`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
 
     assert.equal(res.status, 200);
@@ -176,7 +177,8 @@ describe('appointments HTTP', () => {
     const { url } = await client(mockService);
 
     const res = await fetch(
-      `${url}/api/appointments/YC-9999?phone=${encodeURIComponent('0241234567')}`,
+      `${url}/api/appointments/YC-9999`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
 
     assert.equal(res.status, 404);
@@ -204,6 +206,7 @@ describe('appointments HTTP', () => {
     const { url } = await client(mockService);
     const res = await fetch(
       `${url}/api/appointments/lookup?reference=YC-4821`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
 
     assert.equal(res.status, 200);
@@ -246,11 +249,12 @@ describe('appointments HTTP', () => {
 
     const { url } = await client(mockService);
     const res = await fetch(
-      `${url}/api/appointments/lookup?phone=0241234567`,
+      `${url}/api/appointments/lookup?reference=YC-4821`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
 
     assert.equal(res.status, 404);
-    assert.equal((await res.json()).error, 'Appointment not found');
+    assert.equal((await res.json()).error, 'Appointment not found or phone number does not match');
   });
 
   it('GET /api/appointments/lookup returns 400 when no search field is provided', async () => {

@@ -110,6 +110,29 @@ export function mapAppointment(appointment) {
   };
 }
 
+export function mapQueueStatus(status) {
+  return {
+    id: "",
+    referenceCode: status?.referenceCode || "—",
+    status: status?.status || "",
+    fullName: "",
+    studentIndex: "—",
+    phoneNumber: "—",
+    clinician: status?.clinician?.name || "—",
+    clinicianId: status?.clinician?.id || "",
+    room: status?.room?.name || "—",
+    appointmentDate: status?.appointmentDate || "",
+    appointmentTime: status?.appointmentTime || "",
+    dateLabel: formatDateLabel(status?.appointmentDate),
+    timeLabel: formatTimeLabel(status?.appointmentTime),
+    clinic: clinicSiteLabel(status?.clinicSite || status?.room?.clinicSite),
+    clinicSite: status?.clinicSite || status?.room?.clinicSite || "",
+    visitType: "",
+    queueToken: status?.queueToken || null,
+    isHistorical: ["CANCELLED", "COMPLETED", "NO_SHOW"].includes(status?.status),
+  };
+}
+
 export const QUEUE_STEPS = [
   { key: "BOOKED", label: "Booked" },
   { key: "CHECKED_IN", label: "Checked In" },

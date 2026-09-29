@@ -15,6 +15,30 @@ const ALL_STAFF_ROLES = ['RECEPTIONIST', 'DOCTOR', 'ADMIN'];
 
 const passthrough = (_req, _res, next) => next();
 
+export const BOOKING_PHONE_HEADER = 'x-booking-phone';
+export const LOOKUP_PHONE_REQUIRED_MESSAGE = 'Enter the phone number used for this booking.';
+export const LOOKUP_NOT_MATCHED_MESSAGE = 'Appointment not found or phone number does not match';
+
+function publicArrivalJson(doc) {
+  const json = toJson(doc);
+  if (!json) return null;
+  return {
+    id: json.id || (json._id ? String(json._id) : undefined),
+    referenceCode: json.referenceCode,
+    status: json.status,
+    appointmentDate: json.appointmentDate,
+    appointmentTime: json.appointmentTime,
+    clinicSite: json.clinicSite,
+    queueToken: json.queueToken ?? null,
+    checkInTime: json.checkInTime ?? null,
+  };
+}
+
+function bookingPhoneFrom(req) {
+  const value = req.get?.(BOOKING_PHONE_HEADER);
+  return value && String(value).trim() ? String(value).trim() : null;
+}
+
 /**
  * Resolve the acting user (staff or patient) for cancel / reschedule.
  *
@@ -368,18 +392,30 @@ export function createAppointmentsRouter(
       }
 
       const isStaff = Boolean(req.staff);
-      const appointment = await appointmentService.lookupAppointment({
-        reference: req.query.reference,
-        studentIndex: req.query.studentIndex || req.query.studentId,
-        phone: req.query.phone || req.query.phoneNumber,
-        actorIsStaff: isStaff,
-      });
+      const phone = isStaff
+        ? bookingPhoneFrom(req) || req.query.phone || req.query.phoneNumber
+        : bookingPhoneFrom(req);
+
+      if (!isStaff && req.query.reference && !phone) {
+        return res.status(400).json({ error: LOOKUP_PHONE_REQUIRED_MESSAGE });
+      }
+
+      let appointment = null;
+      try {
+        appointment = await appointmentService.lookupAppointment({
+          reference: req.query.reference,
+          studentIndex: req.query.studentIndex || req.query.studentId,
+          phone: phone || undefined,
+          actorIsStaff: isStaff,
+        });
+      } catch (err) {
+        if (isStaff || err?.status !== 404) throw err;
+        appointment = null;
+      }
 
       if (!appointment) {
         return res.status(404).json({
-          error: isStaff
-            ? 'Appointment not found'
-            : 'Appointment not found or phone number does not match',
+          error: isStaff ? 'Appointment not found' : LOOKUP_NOT_MATCHED_MESSAGE,
         });
       }
 
@@ -408,7 +444,7 @@ export function createAppointmentsRouter(
       { phone: req.body?.phone || req.body?.phoneNumber },
     );
 
-    res.status(200).json(toJson(appointment));
+    res.status(200).json(publicArrivalJson(appointment));
   });
 
   router.post('/arrive', arrivalLimiter, recordArrival);
@@ -639,7 +675,8 @@ export function createAppointmentsRouter(
   );
 
   // GET /api/appointments/:reference
-  // Public callers must provide matching phone query param (?phone=...).
+  // Public callers must send the booking phone in the X-Booking-Phone header;
+  // a phone in the query string is ignored so it never lands in URL logs.
   // Authenticated staff may retrieve by reference code alone.
   router.get(
     '/:reference',
@@ -650,54 +687,41 @@ export function createAppointmentsRouter(
       const ref = req.params.reference;
 
       if (!isStaff) {
-        const phone = req.query.phone || req.query.phoneNumber;
+        const phone = bookingPhoneFrom(req);
         if (!phone) {
-          const doc = appointmentService.findByReference
-            ? await appointmentService.findByReference(ref)
-            : null;
-          if (!doc) {
-            return res.status(404).json({
-              error: 'Appointment not found',
-            });
-          }
-          return res.status(200).json(
-            await toLookupJson(appointmentService, doc, req),
-          );
+          return res.status(400).json({ error: LOOKUP_PHONE_REQUIRED_MESSAGE });
         }
 
         let appointment = null;
         if (appointmentService.lookupAppointment) {
-          appointment = await appointmentService.lookupAppointment({
-            reference: ref,
-            phone,
-            actorIsStaff: false,
-          });
+          try {
+            appointment = await appointmentService.lookupAppointment({
+              reference: ref,
+              phone,
+              actorIsStaff: false,
+            });
+          } catch (err) {
+            if (err?.status !== 404) throw err;
+            appointment = null;
+          }
         } else if (appointmentService.findByReference) {
           const doc = await appointmentService.findByReference(ref);
-          if (doc) {
-            const stored =
-              doc.patientId?.phone ||
-              doc.patientId?.phoneNumber ||
-              doc.phone ||
-              doc.phoneNumber;
-            if (!stored) {
+          const stored =
+            doc?.patientId?.phone ||
+            doc?.patientId?.phoneNumber ||
+            doc?.phone ||
+            doc?.phoneNumber;
+          try {
+            if (stored && normalizeGhanaPhone(stored) === normalizeGhanaPhone(phone)) {
               appointment = doc;
-            } else {
-              try {
-                if (normalizeGhanaPhone(stored) === normalizeGhanaPhone(phone)) {
-                  appointment = doc;
-                }
-              } catch {
-                appointment = null;
-              }
             }
+          } catch {
+            appointment = null;
           }
         }
 
         if (!appointment) {
-          return res.status(404).json({
-            error: 'Appointment not found or phone number does not match',
-          });
+          return res.status(404).json({ error: LOOKUP_NOT_MATCHED_MESSAGE });
         }
 
         return res.status(200).json(

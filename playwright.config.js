@@ -53,6 +53,7 @@ export default defineConfig({
       env: {
         ...(e2eMongoUri ? { MONGODB_URI: e2eMongoUri } : {}),
         ...(e2eMongoUri ? { RATE_LIMIT_DISABLED: 'true' } : {}),
+        ...(e2eMongoUri ? { SMS_PROVIDER: 'mock' } : {}),
       },
     },
     {

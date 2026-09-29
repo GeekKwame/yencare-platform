@@ -20,7 +20,7 @@ The YɛnCare backend exposes a high-performance RESTful JSON API supporting outp
 - Request payload size is capped at **32 KB** (`express.json({ limit: '32kb' })`).
 
 ### Authentication & Centralized RBAC
-- **Public Endpoints**: Patient registration (`POST /api/patients`, which returns only `{ id }` to public callers), booking (`POST /api/appointments`), self-arrival (`POST /api/appointments/:ref/arrive`), queue status, and public display boards do not require staff tokens.
+- **Public Endpoints**: Patient registration (`POST /api/patients`, which returns only `{ id }` to public callers), booking (`POST /api/appointments`), appointment lookup with reference + booking phone (§6.5), self-arrival (`POST /api/appointments/:ref/arrive`), queue status, and public display boards do not require staff tokens.
 - **Staff Endpoints**: Protected via JWT Bearer authentication:
   ```http
   Authorization: Bearer <STAFF_JWT_TOKEN>
@@ -191,6 +191,19 @@ Moves an appointment to a new available time slot.
 - **Patients**: Requires a valid 4-digit OTP code (`otpCode`) sent to the phone on record via `POST /api/appointments/:id/request-reschedule-otp`. A cancel code cannot be used to reschedule, and a phone number in the body is not enough.
 - **Staff**: Receptionist, doctor or admin with a verified token may reschedule without an OTP.
 
+### 6.5 Appointment Lookup
+```http
+GET /api/appointments/:reference
+GET /api/appointments/lookup?reference=YC-4821
+X-Booking-Phone: 024 123 4567
+```
+- **Public callers** must send both the reference and the phone number used for the booking. The phone goes in the **`X-Booking-Phone`** request header, never in the URL; a `?phone=` query parameter is ignored for public callers.
+- `200 OK`: the appointment, with the patient's phone and student index masked.
+- `400 Bad Request` when the phone header is missing, whatever the reference: `{ "error": "Enter the phone number used for this booking." }`
+- `404 Not Found` for an unknown reference **and** for a wrong phone, with the same body, so a reference cannot be confirmed by guessing: `{ "error": "Appointment not found or phone number does not match" }`
+- **Staff** (`RECEPTIONIST`, `DOCTOR`, `ADMIN` token) may look up by reference alone; `/lookup` also accepts `studentIndex` or `phone`.
+- Logged request paths mask phone numbers, student indexes, NHIS numbers, OTP codes, tokens and passwords; booking references stay readable.
+
 ---
 
 ## 7. Virtual Queue Coordination
@@ -203,12 +216,25 @@ Marks the student as arrived. Enforces visit-day guards:
 - Only permitted on the day of the appointment.
 - Permitted within 60 minutes before slot start up to 15 minutes after slot start.
 - Rate-limited to 5 attempts per 15 minutes per IP/reference.
+- Needs only the reference, so the `200 OK` response is minimal and carries no personal details:
+  ```json
+  {
+    "id": "68bf2c0e9c1a2b0012345678",
+    "referenceCode": "YC-4821",
+    "status": "CHECKED_IN",
+    "appointmentDate": "2026-09-30",
+    "appointmentTime": "10:00",
+    "clinicSite": "students-clinic",
+    "queueToken": null,
+    "checkInTime": "2026-09-30T09:12:00.000Z"
+  }
+  ```
 
 ### 7.2 Real-time Queue Status
 ```http
 GET /api/appointments/:reference/queue-status
 ```
-Returns estimated wait time, live position in queue, assigned room, and active consultation token.
+Works with the reference alone and returns no personal details (no name, phone, student index, NHIS number or notes). Fields: `referenceCode`, `status`, `appointmentDate`, `appointmentTime`, `clinicSite`, `queueToken`, `position`, `patientsAhead`, `estimatedWaitMinutes`, `roomToken`, `nowServingToken`, `room` (`id`, `name`, `clinicSite`), `clinician` (`id`, `name`, `title`). An unknown reference returns `404`. Used by the patient Queue page, Clinic Activity and the home page booking card.
 
 ### 7.3 Doctor Consultation Controls
 - `POST /api/queue/call-next`: Calls next waiting patient into doctor's consultation room. *(Doctors & Admin only)*

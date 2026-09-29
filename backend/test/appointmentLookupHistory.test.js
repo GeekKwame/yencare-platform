@@ -78,12 +78,12 @@ describe('reference lookup flags superseded appointments', () => {
     [
       'GET /api/appointments/:reference',
       (url) =>
-        `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+        `${url}/api/appointments/YC-4821`,
     ],
     [
       'GET /api/appointments/lookup',
       (url) =>
-        `${url}/api/appointments/lookup?reference=YC-4821&phone=${encodeURIComponent('0241234567')}`,
+        `${url}/api/appointments/lookup?reference=YC-4821`,
     ],
   ];
 
@@ -91,7 +91,7 @@ describe('reference lookup flags superseded appointments', () => {
     it(`${label} marks a cancelled reference historical and returns the active one`, async () => {
       const { url } = await client(serviceFor(cancelled, activeReplacement));
 
-      const res = await fetch(buildUrl(url));
+      const res = await fetch(buildUrl(url), { headers: { 'x-booking-phone': '0241234567' } });
       assert.equal(res.status, 200);
       const body = await res.json();
 
@@ -111,7 +111,7 @@ describe('reference lookup flags superseded appointments', () => {
     it(`${label} returns supersededBy null when the patient has no active booking`, async () => {
       const { url } = await client(serviceFor(cancelled, null));
 
-      const res = await fetch(buildUrl(url));
+      const res = await fetch(buildUrl(url), { headers: { 'x-booking-phone': '0241234567' } });
       const body = await res.json();
 
       assert.equal(body.isHistorical, true);
@@ -121,7 +121,7 @@ describe('reference lookup flags superseded appointments', () => {
     it(`${label} leaves an active reference unflagged`, async () => {
       const { url } = await client(serviceFor({ ...activeReplacement }, activeReplacement));
 
-      const res = await fetch(buildUrl(url));
+      const res = await fetch(buildUrl(url), { headers: { 'x-booking-phone': '0241234567' } });
       const body = await res.json();
 
       assert.equal(body.status, 'BOOKED');
@@ -135,7 +135,8 @@ describe('reference lookup flags superseded appointments', () => {
       const { url } = await client(serviceFor({ ...cancelled, status }, activeReplacement));
 
       const res = await fetch(
-        `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+        `${url}/api/appointments/YC-4821`,
+        { headers: { 'x-booking-phone': '0241234567' } },
       );
       const body = await res.json();
 
@@ -155,7 +156,8 @@ describe('reference lookup flags superseded appointments', () => {
     });
 
     const res = await fetch(
-      `${url}/api/appointments/YC-7734?phone=${encodeURIComponent('0241234567')}`,
+      `${url}/api/appointments/YC-7734`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
     await res.json();
 
@@ -171,7 +173,8 @@ describe('reference lookup flags superseded appointments', () => {
     });
 
     const res = await fetch(
-      `${url}/api/appointments/YC-4821?phone=${encodeURIComponent('0241234567')}`,
+      `${url}/api/appointments/YC-4821`,
+      { headers: { 'x-booking-phone': '0241234567' } },
     );
     assert.equal(res.status, 200);
     const body = await res.json();

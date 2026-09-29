@@ -14,7 +14,7 @@ import AfterHours from "./AfterHours";
 import { getClinicActivity } from "../../services/queue";
 import { Button } from "../ui";
 
-const WelcomeForm = ({ onStartBooking, initialReference = "", initialFind = false }) => {
+const WelcomeForm = ({ onStartBooking, initialReference = "", initialPhone = "", initialFind = false }) => {
   const [clock, setClock] = useState(() => accraClockLabel());
   const [findAppointment, setFindAppointment] = useState(
     () => Boolean(initialReference) || Boolean(initialFind),
@@ -66,6 +66,7 @@ const WelcomeForm = ({ onStartBooking, initialReference = "", initialFind = fals
       <FindAppointment
         setAppointment={setFindAppointment}
         initialReference={initialReference}
+        initialPhone={initialPhone}
       />
     );
   }

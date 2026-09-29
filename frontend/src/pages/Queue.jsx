@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { isValidGhanaPhone } from "../data/bookingOptions";
 import {
   mapAppointment,
+  mapQueueStatus,
   normalizeReference,
   QUEUE_STEPS,
   REFERENCE_PATTERN,
@@ -33,8 +34,8 @@ function ordinal(n) {
 const Queue = () => {
   const [params, setParams] = useSearchParams();
   const initialRef = normalizeReference(params.get("ref") || "");
-  const [mode, setMode] = useState(initialRef ? "reference" : "reference");
-  const [searchValue, setSearchValue] = useState(initialRef);
+  const [referenceValue, setReferenceValue] = useState(initialRef);
+  const [phoneValue, setPhoneValue] = useState("");
   const [error, setError] = useState("");
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [appointment, setAppointment] = useState(null);
@@ -42,7 +43,7 @@ const Queue = () => {
   const [pollError, setPollError] = useState("");
   const [arriving, setArriving] = useState(false);
 
-  const reference = appointment?.referenceCode || "";
+  const reference = appointment?.referenceCode || queue?.referenceCode || "";
 
   const refreshQueue = useCallback(async (ref, { silent } = {}) => {
     if (!ref) return;
@@ -66,20 +67,16 @@ const Queue = () => {
     e?.preventDefault();
     setError("");
 
-    let query;
-    if (mode === "reference") {
-      const referenceCode = normalizeReference(searchValue);
-      if (!REFERENCE_PATTERN.test(referenceCode)) {
-        setError("Enter a valid reference code (e.g. YC-4821).");
-        return;
-      }
-      query = { reference: referenceCode };
-    } else if (!isValidGhanaPhone(searchValue)) {
-      setError("Enter a valid Ghana phone number (e.g. 024 123 4567).");
+    const referenceCode = normalizeReference(referenceValue);
+    if (!REFERENCE_PATTERN.test(referenceCode)) {
+      setError("Enter a valid reference code (e.g. YC-4821).");
       return;
-    } else {
-      query = { phone: searchValue.trim() };
     }
+    if (!isValidGhanaPhone(phoneValue)) {
+      setError("Enter the Ghana phone number used for this booking (e.g. 024 123 4567).");
+      return;
+    }
+    const query = { reference: referenceCode, phone: phoneValue.trim() };
 
     setIsLookingUp(true);
     try {
@@ -92,8 +89,8 @@ const Queue = () => {
       setAppointment(null);
       setQueue(null);
       setError(
-        err.response?.status === 404
-          ? "Appointment not found. Please check your details and try again."
+        err.response?.status === 404 || err.response?.status === 400
+          ? "Appointment not found or phone number does not match. Please check both details and try again."
           : err.response?.data?.error || "Unable to connect to the server.",
       );
     } finally {
@@ -108,13 +105,12 @@ const Queue = () => {
     (async () => {
       setIsLookingUp(true);
       try {
-        const found = await lookupAppointment({ reference: initialRef });
+        const status = await getQueueStatus(initialRef);
         if (cancelled) return;
-        setAppointment(found);
-        await refreshQueue(initialRef);
+        setQueue(status);
       } catch {
         if (!cancelled) {
-          setError("Appointment not found. Search again with your YC code or phone.");
+          setError("We couldn't open that booking. Enter your reference and booking phone number.");
         }
       } finally {
         if (!cancelled) setIsLookingUp(false);
@@ -124,7 +120,7 @@ const Queue = () => {
     return () => {
       cancelled = true;
     };
-  }, [initialRef, refreshQueue]);
+  }, [initialRef]);
 
   useEffect(() => {
     if (!reference) return undefined;
@@ -134,7 +130,7 @@ const Queue = () => {
     return () => window.clearInterval(id);
   }, [reference, refreshQueue]);
 
-  const view = appointment ? mapAppointment(appointment) : null;
+  const view = appointment ? mapAppointment(appointment) : queue ? mapQueueStatus(queue) : null;
   const status = queue?.status || view?.status || "";
   const statusIdx = QUEUE_STEPS.findIndex((step) => step.key === status);
   const token = queue?.queueToken || view?.queueToken;
@@ -145,7 +141,7 @@ const Queue = () => {
   const waitMins = queue?.estimatedWaitMinutes ?? null;
   const position = queue?.position;
 
-  const liveSummary = appointment
+  const liveSummary = view
     ? [
         status === "CALLED"
           ? "It is your turn."
@@ -166,7 +162,7 @@ const Queue = () => {
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-3xl flex-col px-5 pb-16 pt-28 sm:px-8">
-      {!appointment ? (
+      {!view ? (
         <section className="rounded-3xl border border-[#dce8df] bg-white p-6 shadow-[0_20px_50px_rgba(23,59,58,0.09)] sm:p-8">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dcebe1] text-xl text-[#176b5f]">
             <FaUsers />
@@ -178,48 +174,38 @@ const Queue = () => {
             Know your place in line.
           </h1>
           <p className="mt-3 text-sm leading-6 text-[#607672]">
-            Enter your YC reference or the phone number on your booking to see
+            Enter your YC reference and the phone number on your booking to see
             your token, wait time, and who is being served.
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-[#f5faf7] p-1.5">
-            {[
-              { id: "reference", label: "YC Reference" },
-              { id: "phone", label: "Phone Number" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setMode(tab.id);
-                  setError("");
-                }}
-                className={`rounded-xl px-3 py-3 text-sm font-bold ${
-                  mode === tab.id
-                    ? "bg-[#176b5f] text-white"
-                    : "text-[#55706c] hover:bg-white"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleLookup} className="mt-6">
-            <label htmlFor="queue-search" className="text-sm font-bold text-[#173b3a]">
-              {mode === "reference" ? "Appointment Reference Code" : "Ghana Phone Number"}
-            </label>
-            <input
-              id="queue-search"
-              value={searchValue}
-              onChange={(e) =>
-                setSearchValue(
-                  mode === "reference" ? e.target.value.toUpperCase() : e.target.value,
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
-              placeholder={mode === "reference" ? "e.g. YC-4821" : "e.g. 024 123 4567"}
-            />
+          <form onSubmit={handleLookup} className="mt-6 space-y-4">
+            <div>
+              <label htmlFor="queue-reference" className="text-sm font-bold text-[#173b3a]">
+                Appointment Reference Code
+              </label>
+              <input
+                id="queue-reference"
+                value={referenceValue}
+                onChange={(e) => setReferenceValue(e.target.value.toUpperCase())}
+                autoComplete="off"
+                className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+                placeholder="e.g. YC-4821"
+              />
+            </div>
+            <div>
+              <label htmlFor="queue-phone" className="text-sm font-bold text-[#173b3a]">
+                Booking Phone Number
+              </label>
+              <input
+                id="queue-phone"
+                type="tel"
+                value={phoneValue}
+                onChange={(e) => setPhoneValue(e.target.value)}
+                autoComplete="tel-national"
+                className="mt-2 w-full rounded-xl border border-[#cbdcd3] bg-[#fbfdfc] px-4 py-3 text-sm text-[#173b3a] outline-none focus:border-[#176b5f] focus:ring-4 focus:ring-[#176b5f]/10"
+                placeholder="e.g. 024 123 4567"
+              />
+            </div>
             {error && (
               <p className="mt-2 text-xs text-red-500" role="alert">
                 {error}
@@ -243,6 +229,7 @@ const Queue = () => {
               onClick={() => {
                 setAppointment(null);
                 setQueue(null);
+                setPhoneValue("");
                 setParams({});
               }}
               className="text-sm font-semibold text-[#607672] hover:text-[#173b3a]"
@@ -312,7 +299,9 @@ const Queue = () => {
               <p className="mt-2 font-mono text-5xl font-bold text-[#173b3a]">
                 {token || view.referenceCode}
               </p>
-              <h2 className="mt-3 text-lg font-bold text-[#173b3a]">{view.fullName}</h2>
+              {view.fullName ? (
+                <h2 className="mt-3 text-lg font-bold text-[#173b3a]">{view.fullName}</h2>
+              ) : null}
               <p className="mt-1 text-sm font-semibold text-[#176b5f]">
                 Please proceed to {roomLabel}
               </p>
@@ -337,7 +326,9 @@ const Queue = () => {
               <p className="mt-2 font-mono text-5xl font-bold text-[#173b3a]">
                 {token || "Pending"}
               </p>
-              <h2 className="mt-3 text-lg font-bold text-[#173b3a]">{view.fullName}</h2>
+              {view.fullName ? (
+                <h2 className="mt-3 text-lg font-bold text-[#173b3a]">{view.fullName}</h2>
+              ) : null}
               <div className="mt-4 flex items-center justify-center gap-6 border-t border-[#fcd34d]/40 pt-4">
                 <div>
                   <p className="font-mono text-2xl font-bold text-[#b7791f]">
@@ -443,10 +434,7 @@ const Queue = () => {
                     onClick={async () => {
                       setArriving(true);
                       try {
-                        const updated = await arriveAppointment(view.referenceCode, {
-                          phone: view.phoneNumber !== "—" ? view.phoneNumber : undefined,
-                        });
-                        setAppointment(updated);
+                        await arriveAppointment(view.referenceCode);
                         await refreshQueue(view.referenceCode);
                       } catch (err) {
                         setPollError(
