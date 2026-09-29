@@ -16,7 +16,7 @@ export const NO_SHOW_GRACE_MINUTES = LATE_GRACE_MINUTES;
 export function arrivalState(appointment, now = new Date()) {
   return getArrivalWindowStatus(
     appointment?.appointmentDate || appointment?.date || "",
-    appointment?.appointmentTime || "",
+    appointment?.appointmentTime || appointment?.time || "",
     now,
   );
 }
@@ -52,7 +52,7 @@ function noShowState(date, start, status, today, now) {
 
 export function staffActionState(appointment, now = new Date()) {
   const date = appointment?.appointmentDate || appointment?.date || "";
-  const start = clockMinutes(appointment?.appointmentTime);
+  const start = clockMinutes(appointment?.appointmentTime || appointment?.time);
   const status = appointment?.status || "";
   const today = accraTodayIso(now);
   const dayNote = visitDayNote(date, today);

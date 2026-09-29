@@ -195,11 +195,14 @@ export const EARLY_WINDOW_MINUTES = 60;
 export const LATE_GRACE_MINUTES = 15;
 
 export function clockMinutes(hhmm) {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || "").trim());
+  const match = /^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i.exec(String(hhmm || "").trim());
   if (!match) return null;
-  const hours = Number(match[1]);
+  let hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
+  const meridiem = match[3]?.toUpperCase();
+  if (minutes > 59 || hours > 23 || (meridiem && hours > 12)) return null;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+  if (meridiem === "PM" && hours !== 12) hours += 12;
   return hours * 60 + minutes;
 }
 
