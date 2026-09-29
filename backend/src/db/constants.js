@@ -36,6 +36,7 @@ export const VERIFICATION_STATUSES = Object.freeze([
 
 export const VERIFICATION_METHODS = Object.freeze([
   'STUDENT_ID_CARD',
+  'PHYSICAL_ID_CARD',
   'STAFF_OVERRIDE',
 ]);
 
