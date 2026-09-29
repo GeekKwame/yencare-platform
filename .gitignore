@@ -47,4 +47,6 @@ Thumbs.db
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+dev-dist/
+*/dev-dist/
 

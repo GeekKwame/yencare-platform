@@ -51,7 +51,7 @@ test.describe("Receptionist login Test", () => {
     // Simulate offline
     await context.setOffline(true);
     // Switch date to trigger fetch failure
-    await page.getByRole('button', { name: /Upcoming|Seed day/i }).click();
+    await page.getByRole('button', { name: 'Upcoming (Next 14 Days)', exact: true }).click();
 
     // Check error banner and retry button appear instead of an empty list
     await expect(page.getByText('Could not load appointment roster.').first()).toBeVisible();

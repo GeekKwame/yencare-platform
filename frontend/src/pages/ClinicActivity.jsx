@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getArriveByLabel } from "../data/bookingOptions";
+import { arrivalState } from "../lib/visitRules";
 import { CLINIC_SITE_LABELS } from "../data/mockAppointments";
 import { mapQueueStatus } from "../lib/appointmentView";
 import { arriveAppointment, getQueueStatus } from "../services/appointments";
@@ -169,7 +170,12 @@ export default function ClinicActivity() {
                     ? `IN QUEUE · ${view.queueToken || "—"}`
                     : view.status}
             </p>
-            {view.status === "BOOKED" && (
+            {view.status === "BOOKED" && !arrivalState(view).canArrive && (
+              <p className="mt-3 border-t border-[#E5E7E6] pt-3 text-xs font-semibold text-[#111111]">
+                {arrivalState(view).reason}
+              </p>
+            )}
+            {view.status === "BOOKED" && arrivalState(view).canArrive && (
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#E5E7E6] pt-3">
                 <div>
                   <p className="text-xs font-semibold text-[#111111]">At the clinic now?</p>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ElapsedTimer from "./ElapsedTimer";
+import { staffActionState } from "../../lib/visitRules";
 import { sortWaiting } from "./staffUtils";
 import { Button, StatusBadge } from "../ui";
 
@@ -189,7 +190,9 @@ export default function StaffLiveQueue({
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#176b5f]">
                 Arrived — not yet queued
               </p>
-              {arrived.map((appt) => (
+              {arrived.map((appt) => {
+                const actionState = staffActionState(appt);
+                return (
                 <div key={appt.id} className="rounded-xl border border-[#99D5C8] bg-white p-3">
                   <p className="text-xs font-semibold text-[#173b3a]">{appt.patientName}</p>
                   <p className="text-[10px] text-[#66706B]">
@@ -199,13 +202,20 @@ export default function StaffLiveQueue({
                     variant="accent"
                     size="sm"
                     fullWidth
-                    disabled={updatingId === appt.id}
+                    disabled={updatingId === appt.id || !actionState.canQueue}
+                    aria-describedby={actionState.queueNote ? `${appt.id}-live-queue-reason` : undefined}
                     onClick={() => onCheckInToQueue(appt.id)}
                   >
                     Check In to Queue
                   </Button>
+                  {actionState.queueNote && (
+                    <p id={`${appt.id}-live-queue-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
+                      {actionState.queueNote}
+                    </p>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
