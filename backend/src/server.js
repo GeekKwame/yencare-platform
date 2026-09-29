@@ -25,6 +25,7 @@ import {
   requestRescheduleOtp,
   cancelAppointment,
   rescheduleAppointment,
+  verifyStudentStatus,
 } from "./services/appointmentOps.js";
 
 import { createStaffAuthService } from "./auth/staffAuth.js";
@@ -149,6 +150,8 @@ const app = createApp({
     cancelAppointment,
 
     rescheduleAppointment,
+
+    verifyStudentStatus,
 
     getQueueStatus,
   },

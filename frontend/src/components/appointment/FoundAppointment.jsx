@@ -249,7 +249,7 @@ export default function FoundAppointment({
             <div className="border border-warning-border bg-warning-soft p-3.5 text-sm text-warning">
               <strong className="block text-primary">Not arrived at clinic yet</strong>
               <p className="mt-1 text-xs leading-5">
-                When you get to the clinic within your arrival window, tap I&apos;ve arrived. Reception will verify your ID and add you to the live queue.
+                When you get to the clinic within your arrival window, tap I&apos;ve arrived. Reception will inspect your physical KNUST Student ID Card and add you to the live queue.
               </p>
               {arriveError && (
                 <p className="mt-2 text-xs text-error" role="alert">
@@ -272,7 +272,7 @@ export default function FoundAppointment({
           <div className="border border-accent-border bg-accent-soft p-3.5 text-sm text-accent-hover">
             <strong className="block text-accent">You&apos;ve arrived — waiting for reception</strong>
             <p className="mt-1 text-xs leading-5">
-              Present {view.referenceCode} at the desk. Staff will check you into the live queue and assign your token.
+              Present <strong>{view.referenceCode}</strong> and your <strong>physical KNUST Student ID Card</strong> at the desk. Reception will verify your student card and admit you to the live queue.
             </p>
           </div>
         )}

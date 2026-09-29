@@ -903,6 +903,18 @@ export async function updateAppointmentStatus(idOrReference, status) {
     assertNoShowAllowed(appointment);
   }
 
+  if (status === 'WAITING') {
+    const isExempt =
+      appointment.verificationStatus === 'EXEMPT' ||
+      (appointment.clinicSite === 'knust-hospital' && !appointment.patientId?.studentIndex);
+
+    if (!isExempt && appointment.verificationStatus !== 'VERIFIED') {
+      throw new ValidationError(
+        'Student status must be verified before checking in to the queue',
+      );
+    }
+  }
+
   if (status === 'WAITING' && appointment.status === 'BOOKED') {
     appointment.status = 'CHECKED_IN';
     try {
@@ -965,6 +977,157 @@ export async function updateAppointmentStatus(idOrReference, status) {
     }
   }
 
+  return appointment;
+}
+
+/**
+ * Verify student eligibility at clinic arrival.
+ *
+ * Enforced on reception/admin staff when a student reports to the clinic.
+ * Validates the physical student ID card against the patient record.
+ *
+ * @param {string} idOrReference
+ * @param {{
+ *   studentIndex?: string,
+ *   staffUser: object,
+ *   method?: string,
+ *   action?: 'VERIFY' | 'FAIL',
+ *   reason?: string,
+ *   enqueue?: boolean,
+ * }} options
+ */
+export async function verifyStudentStatus(
+  idOrReference,
+  {
+    studentIndex,
+    staffUser,
+    method = 'STUDENT_ID_CARD',
+    action = 'VERIFY',
+    reason = null,
+    enqueue = false,
+  } = {},
+) {
+  const key = normalizeReferenceInput(idOrReference);
+  if (!key) {
+    throw new ValidationError('Appointment reference or ID is required');
+  }
+
+  if (!staffUser || !['RECEPTIONIST', 'ADMIN'].includes(staffUser.role)) {
+    throw new ForbiddenError('Only reception staff and administrators can verify student status');
+  }
+
+  let appointment = null;
+  if (/^[a-fA-F0-9]{24}$/.test(key)) {
+    appointment = await Appointment.findById(key)
+      .populate('patientId')
+      .populate({ path: 'clinicianId', populate: { path: 'roomId' } })
+      .populate('roomId')
+      .populate('timeSlotId');
+  }
+  if (!appointment) {
+    appointment = await Appointment.findByReference(key);
+  }
+  if (!appointment) {
+    throw new NotFoundError('Appointment not found');
+  }
+
+  assertVisitIsToday(appointment);
+
+  if (appointment.status === 'CANCELLED') {
+    throw new ValidationError('Cannot verify a cancelled appointment');
+  }
+  if (appointment.status === 'NO_SHOW') {
+    throw new ValidationError('Cannot verify a no-show appointment');
+  }
+  if (appointment.status === 'COMPLETED') {
+    throw new ValidationError('Cannot verify an already completed appointment');
+  }
+
+  const staffName = staffUser.name || staffUser.staffId || 'Staff';
+  const staffId = staffUser.staffId || String(staffUser._id || staffUser.id || '');
+
+  if (action === 'FAIL') {
+    appointment.verificationStatus = 'FAILED';
+    appointment.verificationFailureReason = reason || 'Student status could not be verified';
+    appointment.verifiedAt = new Date();
+    appointment.verifiedBy = staffName;
+    appointment.verifiedByStaffId = staffUser._id || null;
+    appointment.verificationMethod = method;
+
+    await recordAuditLog({
+      action: 'VERIFY_STUDENT_FAILED',
+      appointmentId: appointment._id,
+      actorType: 'STAFF',
+      actorId: staffId,
+      performedBy: staffName,
+      reason: appointment.verificationFailureReason,
+    });
+
+    await appointment.save();
+    return appointment;
+  }
+
+  // Action: VERIFY
+  const rawInput = String(studentIndex || '').trim().replace(/\s+/g, '');
+  if (!STUDENT_INDEX_PATTERN.test(rawInput)) {
+    throw new ValidationError('Please enter a valid 8-digit KNUST student index number (e.g. 20612345)');
+  }
+
+  const patient = appointment.patientId;
+  const onRecord = patient?.studentIndex ? String(patient.studentIndex).trim().replace(/\s+/g, '') : null;
+
+  if (onRecord) {
+    if (rawInput !== onRecord) {
+      throw new ValidationError('Provided student index does not match the appointment record');
+    }
+  } else {
+    // If patient record had no index (e.g. general OPD), verify and persist index
+    if (patient && typeof patient.save === 'function') {
+      patient.studentIndex = rawInput;
+      await patient.save();
+    } else if (patient?._id) {
+      await Patient.updateOne({ _id: patient._id }, { $set: { studentIndex: rawInput } });
+    }
+  }
+
+  appointment.verificationStatus = 'VERIFIED';
+  appointment.verifiedAt = new Date();
+  appointment.verifiedBy = staffName;
+  appointment.verifiedByStaffId = staffUser._id || null;
+  appointment.verificationMethod = method;
+  appointment.verificationFailureReason = null;
+
+  if (appointment.status === 'BOOKED') {
+    appointment.status = 'CHECKED_IN';
+  }
+
+  if (enqueue) {
+    if (appointment.status === 'CHECKED_IN') {
+      appointment._originalStatus = 'CHECKED_IN';
+    }
+    appointment.status = 'WAITING';
+    await assignDailyQueueToken(appointment);
+    const roomId = appointment.roomId?._id || appointment.roomId;
+    const waitingAhead = await Appointment.countDocuments({
+      roomId,
+      status: 'WAITING',
+      _id: { $ne: appointment._id },
+    });
+    appointment.estimatedWaitMinutes =
+      (waitingAhead + 1) * AVERAGE_CONSULT_DURATION_MINUTES;
+    notifyQuiet(appointment, buildWaitingSms(appointment), 'queue');
+  }
+
+  await recordAuditLog({
+    action: enqueue ? 'VERIFY_STUDENT_AND_ENQUEUE' : 'VERIFY_STUDENT_SUCCESS',
+    appointmentId: appointment._id,
+    actorType: 'STAFF',
+    actorId: staffId,
+    performedBy: staffName,
+    reason: `Verified via ${method}`,
+  });
+
+  await appointment.save();
   return appointment;
 }
 

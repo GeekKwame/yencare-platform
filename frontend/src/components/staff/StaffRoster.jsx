@@ -15,6 +15,7 @@ export default function StaffRoster({
   onRetry,
   onCheckIn,
   onCheckInToQueue,
+  onOpenVerification,
   onNoShow,
   onOpenWalkIn,
   onOpenRecord,
@@ -139,11 +140,27 @@ export default function StaffRoster({
                     .join(" · ")}
                 </p>
               )}
-              {appt.bookingType === "WALK_IN" && (
-                <span className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {appt.bookingType === "WALK_IN" && (
                   <StatusBadge status="WALK_IN" size="sm" />
-                </span>
-              )}
+                )}
+                {appt.verificationStatus === "VERIFIED" && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                    <span>✓</span> ID Verified
+                  </span>
+                )}
+                {appt.verificationStatus === "FAILED" && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
+                    <span>⚠️</span> ID Failed
+                  </span>
+                )}
+                {appt.verificationStatus === "PENDING" &&
+                  !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                      <span>●</span> ID Pending
+                    </span>
+                  )}
+              </div>
 
               {appt.status === "BOOKED" && (
                 <div className="mt-4">
@@ -182,17 +199,40 @@ export default function StaffRoster({
               )}
 
               {appt.status === "CHECKED_IN" && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onCheckInToQueue(appt.id);
-                  }}
-                  disabled={updatingId === appt.id}
-                  className="mt-4 w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
-                >
-                  {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
-                </button>
+                <div className="mt-4 space-y-2">
+                  {appt.verificationStatus !== "VERIFIED" &&
+                  appt.verificationStatus !== "EXEMPT" &&
+                  !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (onOpenVerification) {
+                          onOpenVerification(appt);
+                        } else {
+                          onCheckInToQueue(appt.id);
+                        }
+                      }}
+                      disabled={updatingId === appt.id}
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60 shadow-sm"
+                    >
+                      <span>🪪</span>
+                      <span>{updatingId === appt.id ? "Updating…" : "Verify Student ID"}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onCheckInToQueue(appt.id);
+                      }}
+                      disabled={updatingId === appt.id}
+                      className="w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:opacity-60"
+                    >
+                      {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
               );

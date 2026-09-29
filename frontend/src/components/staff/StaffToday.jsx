@@ -9,6 +9,7 @@ export default function StaffToday({
   onOpenQueue,
   onOpenWalkIn,
   onCheckInToQueue,
+  onOpenVerification,
   updatingId,
 }) {
   const metrics = rosterMetrics(appointments);
@@ -112,19 +113,49 @@ export default function StaffToday({
                 className="flex flex-col gap-3 rounded-xl border border-[#99D5C8] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <div className="text-sm font-semibold text-[#173b3a]">{appt.patientName}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-[#173b3a]">{appt.patientName}</span>
+                    {appt.verificationStatus === "VERIFIED" ? (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
+                        ✓ ID Verified
+                      </span>
+                    ) : appt.verificationStatus === "FAILED" ? (
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-bold text-rose-800">
+                        ⚠️ ID Failed
+                      </span>
+                    ) : !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">
+                        ● ID Required
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-xs text-gray-500">
                     {appt.reference} · {appt.time}
+                    {appt.studentIndex ? ` · Index ${appt.studentIndex}` : ""}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onCheckInToQueue(appt.id)}
-                  disabled={updatingId === appt.id}
-                  className="shrink-0 rounded-xl bg-[#176b5f] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#14594f] disabled:opacity-60"
-                >
-                  {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
-                </button>
+                {appt.verificationStatus !== "VERIFIED" &&
+                appt.verificationStatus !== "EXEMPT" &&
+                !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) ? (
+                  <button
+                    type="button"
+                    onClick={() => (onOpenVerification ? onOpenVerification(appt) : onCheckInToQueue(appt.id))}
+                    disabled={updatingId === appt.id}
+                    className="shrink-0 flex items-center gap-1 rounded-xl bg-amber-600 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-amber-700 disabled:opacity-60 shadow-sm"
+                  >
+                    <span>🪪</span>
+                    <span>{updatingId === appt.id ? "Updating…" : "Verify Student ID"}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onCheckInToQueue(appt.id)}
+                    disabled={updatingId === appt.id}
+                    className="shrink-0 rounded-xl bg-[#176b5f] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#14594f] disabled:opacity-60"
+                  >
+                    {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
+                  </button>
+                )}
               </div>
             ))}
           </div>

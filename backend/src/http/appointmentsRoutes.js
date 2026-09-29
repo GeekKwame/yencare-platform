@@ -474,6 +474,35 @@ export function createAppointmentsRouter(
     }),
   );
 
+  // POST /api/appointments/:id/verify-student
+  // Receptionist/Admin physically verifies student status against physical ID card
+  router.post(
+    '/:id/verify-student',
+    deskStaff,
+    asyncHandler(async (req, res) => {
+      if (!appointmentService.verifyStudentStatus) {
+        return res.status(501).json({
+          error: 'Student verification service is not available',
+        });
+      }
+
+      const { studentIndex, method, action, reason, enqueue } = req.body || {};
+      const appointment = await appointmentService.verifyStudentStatus(
+        req.params.id,
+        {
+          studentIndex,
+          staffUser: req.staff,
+          method,
+          action,
+          reason,
+          enqueue: Boolean(enqueue),
+        },
+      );
+
+      res.status(200).json(toJson(appointment));
+    }),
+  );
+
   // POST /api/appointments/:id/request-cancel-otp
   // Sends a 4-digit SMS OTP to registered phone before cancellation.
   router.post(

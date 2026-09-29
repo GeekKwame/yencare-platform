@@ -55,5 +55,10 @@ export function mapAppointmentToCard(appt) {
     nhisNumber: patient?.nhisNumber || appt.nhisNumber || "",
     staffChangedTime: appt.staffChangedTime || "",
     staffChangeReason: appt.staffChangeReason || "",
+    verificationStatus: appt.verificationStatus || "PENDING",
+    verifiedAt: appt.verifiedAt || null,
+    verifiedBy: appt.verifiedBy || null,
+    verificationMethod: appt.verificationMethod || null,
+    verificationFailureReason: appt.verificationFailureReason || null,
   };
 }

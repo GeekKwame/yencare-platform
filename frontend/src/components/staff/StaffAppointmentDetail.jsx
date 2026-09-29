@@ -16,6 +16,7 @@ export default function StaffAppointmentDetail({
   updating,
   onBack,
   onCheckInToQueue,
+  onOpenVerification,
   onChangeTime,
   onNoShow,
   onOpenQueue,
@@ -87,11 +88,70 @@ export default function StaffAppointmentDetail({
           </p>
         </div>
 
+        {/* Student Verification Status Banner */}
+        {appointment.verificationStatus === "VERIFIED" ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-emerald-900 flex items-center gap-1.5">
+                <span>✓</span> Student Identity Verified via Physical ID Card
+              </p>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-bold text-[10px] text-emerald-800">
+                VERIFIED
+              </span>
+            </div>
+            <p className="mt-1 text-emerald-700">
+              Verified by <strong>{appointment.verifiedBy || "Staff"}</strong>
+              {appointment.verifiedAt
+                ? ` on ${new Date(appointment.verifiedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`
+                : ""}
+              {appointment.verificationMethod ? ` (${appointment.verificationMethod})` : ""}.
+            </p>
+          </div>
+        ) : appointment.verificationStatus === "FAILED" ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-rose-900 flex items-center gap-1.5">
+                <span>⚠️</span> Student ID Verification Failed
+              </p>
+              <button
+                type="button"
+                onClick={() => onOpenVerification?.(appointment)}
+                className="rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700"
+              >
+                Retry Verification
+              </button>
+            </div>
+            <p className="mt-1 text-rose-700">
+              Reason: {appointment.verificationFailureReason || "Could not verify physical student ID card."}
+            </p>
+          </div>
+        ) : !(appointment.clinicSite === "knust-hospital" && !appointment.studentIndex) ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <p className="font-bold text-amber-950 flex items-center gap-1.5">
+                  <span>🪪</span> Physical Student ID Verification Required
+                </p>
+                <p className="mt-0.5 text-amber-800">
+                  Student must present their physical KNUST Student ID Card at reception before queue admission.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onOpenVerification?.(appointment)}
+                className="shrink-0 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700"
+              >
+                Verify Student ID Now
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {isArrived && (
           <div className="rounded-xl border border-[#99D5C8] bg-[#E7F5F1] p-3 text-xs">
             <p className="font-bold text-[#087F6C]">Student has arrived and is waiting at the desk</p>
             <p className="mt-0.5 text-[#066A5A]">
-              Verify the reference, then check them into the live queue.
+              Verify the student ID card, then admit them into the live queue.
             </p>
           </div>
         )}
@@ -108,18 +168,30 @@ export default function StaffAppointmentDetail({
 
         <div className="divide-y divide-[#E5E7E6] overflow-hidden rounded-xl border border-[#D8DCD9]">
           <Row label="Student index" value={appointment.studentIndex || "N/A (walk-in / general)"} muted />
-          {appointment.nhisNumber ? <Row label="NHIS number" value={appointment.nhisNumber} /> : null}
-          <Row label="Clinic site" value={appointment.clinic} muted />
-          <Row label="Visit type" value={appointment.service} />
-          <Row label="Scheduled date & time" value={`${appointment.date} at ${appointment.time}`} muted />
+          <Row
+            label="Verification status"
+            value={
+              appointment.verificationStatus === "VERIFIED"
+                ? "Verified (Physical KNUST ID Card)"
+                : appointment.verificationStatus === "FAILED"
+                  ? "Failed / Discrepancy"
+                  : appointment.clinicSite === "knust-hospital" && !appointment.studentIndex
+                    ? "Exempt (General Hospital OPD)"
+                    : "Pending Physical Card Inspection"
+            }
+          />
+          {appointment.nhisNumber ? <Row label="NHIS number" value={appointment.nhisNumber} muted /> : null}
+          <Row label="Clinic site" value={appointment.clinic} />
+          <Row label="Visit type" value={appointment.service} muted />
+          <Row label="Scheduled date & time" value={`${appointment.date} at ${appointment.time}`} />
           <Row
             label="Doctor / room"
             value={`${appointment.clinicianName || "Clinician"}${appointment.roomName ? ` (${appointment.roomName})` : ""}`}
+            muted
           />
           <Row
             label="Current queue state"
             value={`${appointment.status}${appointment.queueToken ? ` (${appointment.queueToken})` : ""}`}
-            muted
           />
         </div>
 
@@ -127,19 +199,38 @@ export default function StaffAppointmentDetail({
           {canStaffCheckIn && (
             <>
               <div>
-                <button
-                  type="button"
-                  disabled={updating || !actionState.canCheckIn}
-                  onClick={() => onCheckInToQueue(appointment.id)}
-                  title={actionState.checkInNote || undefined}
-                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-                >
-                  {updating
-                    ? "Updating…"
-                    : isArrived
-                      ? `Check in to live queue (${appointment.patientName})`
-                      : `Check in student (${appointment.patientName})`}
-                </button>
+                {appointment.verificationStatus !== "VERIFIED" &&
+                appointment.verificationStatus !== "EXEMPT" &&
+                !(appointment.clinicSite === "knust-hospital" && !appointment.studentIndex) ? (
+                  <button
+                    type="button"
+                    disabled={updating || !actionState.canCheckIn}
+                    onClick={() => onOpenVerification?.(appointment)}
+                    title="Student identity must be verified with physical ID card before queue admission"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3 text-sm font-bold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 shadow-sm"
+                  >
+                    <span>🪪</span>
+                    <span>
+                      {updating
+                        ? "Updating…"
+                        : `Verify Student ID & Check In (${appointment.patientName})`}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={updating || !actionState.canCheckIn}
+                    onClick={() => onCheckInToQueue(appointment.id)}
+                    title={actionState.checkInNote || undefined}
+                    className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                  >
+                    {updating
+                      ? "Updating…"
+                      : isArrived
+                        ? `Check in to live queue (${appointment.patientName})`
+                        : `Check in student (${appointment.patientName})`}
+                  </button>
+                )}
                 {!actionState.canCheckIn && (
                   <p className="mt-1 text-center text-xs text-gray-500">{actionState.checkInNote}</p>
                 )}

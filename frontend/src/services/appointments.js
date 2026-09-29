@@ -138,3 +138,30 @@ export async function getQueueStatus(reference) {
   );
   return response.data;
 }
+
+/**
+ * Verify student status at clinic arrival.
+ * Receptionist inspects physical student ID card and verifies against patient record.
+ * @param {string} idOrReference
+ * @param {{
+ *   studentIndex?: string,
+ *   method?: 'STUDENT_ID_CARD' | 'STAFF_OVERRIDE',
+ *   action?: 'VERIFY' | 'FAIL',
+ *   reason?: string,
+ *   enqueue?: boolean,
+ * }} [options]
+ */
+export async function verifyStudentStatus(idOrReference, options = {}) {
+  const response = await api.post(
+    `/appointments/${encodeURIComponent(idOrReference)}/verify-student`,
+    {
+      studentIndex: options.studentIndex,
+      method: options.method,
+      action: options.action,
+      reason: options.reason,
+      enqueue: options.enqueue,
+    },
+  );
+  return response.data;
+}
+
