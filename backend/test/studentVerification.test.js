@@ -311,8 +311,8 @@ describe('Student Status Verification at Clinic Arrival', () => {
     assert.match(data.error, /day of the visit/i);
   });
 
-  it('7. Cannot check in to queue (WAITING) without verification for student clinic', async () => {
-    currentBooking = makeBooking({ verificationStatus: 'PENDING' });
+  it('7. Cannot check in to queue (WAITING) if student verification failed', async () => {
+    currentBooking = makeBooking({ verificationStatus: 'FAILED', verificationFailureReason: 'ID discrepancy' });
     stubAppointments(currentBooking);
     const url = await startApp();
 
@@ -332,7 +332,7 @@ describe('Student Status Verification at Clinic Arrival', () => {
 
     assert.equal(res.status, 400);
     const data = await res.json();
-    assert.match(data.error, /verified/i);
+    assert.match(data.error, /verification failed/i);
   });
 
   it('8. Enqueue flag verifies student and enters queue in one step', async () => {

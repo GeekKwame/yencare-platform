@@ -138,30 +138,26 @@ export default function StaffToday({
                   </div>
                 </div>
                 <div className="shrink-0 sm:max-w-[16rem] sm:text-right">
-                  {appt.verificationStatus !== "VERIFIED" &&
-                  appt.verificationStatus !== "EXEMPT" &&
-                  !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) ? (
-                    <button
-                      type="button"
-                      onClick={() => (onOpenVerification ? onOpenVerification(appt) : onCheckInToQueue(appt.id))}
-                      disabled={updatingId === appt.id || !actionState.canQueue}
-                      aria-describedby={actionState.queueNote ? `${appt.id}-today-queue-reason` : undefined}
-                      className="inline-flex items-center gap-1 rounded-xl bg-amber-600 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 shadow-sm"
-                    >
-                      <span>🪪</span>
-                      <span>{updatingId === appt.id ? "Updating…" : "Verify Student ID"}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onCheckInToQueue(appt.id)}
-                      disabled={updatingId === appt.id || !actionState.canQueue}
-                      aria-describedby={actionState.queueNote ? `${appt.id}-today-queue-reason` : undefined}
-                      className="rounded-xl bg-[#176b5f] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
-                    >
-                      {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        appt.verificationStatus !== "VERIFIED" &&
+                        appt.verificationStatus !== "EXEMPT" &&
+                        !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) &&
+                        onOpenVerification
+                      ) {
+                        onOpenVerification(appt);
+                      } else {
+                        onCheckInToQueue(appt.id);
+                      }
+                    }}
+                    disabled={updatingId === appt.id || !actionState.canQueue}
+                    aria-describedby={actionState.queueNote ? `${appt.id}-today-queue-reason` : undefined}
+                    className="rounded-xl bg-[#176b5f] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
+                  >
+                    {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
+                  </button>
                   {actionState.queueNote && (
                     <p id={`${appt.id}-today-queue-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
                       {actionState.queueNote}

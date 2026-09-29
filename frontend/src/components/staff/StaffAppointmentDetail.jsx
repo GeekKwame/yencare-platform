@@ -201,39 +201,30 @@ export default function StaffAppointmentDetail({
           {canStaffCheckIn && (
             <>
               <div>
-                {appointment.verificationStatus !== "VERIFIED" &&
-                appointment.verificationStatus !== "EXEMPT" &&
-                !(appointment.clinicSite === "knust-hospital" && !appointment.studentIndex) ? (
-                  <button
-                    type="button"
-                    disabled={updating || !primaryAllowed}
-                    onClick={() => onOpenVerification?.(appointment)}
-                    aria-describedby={primaryNote ? "detail-checkin-reason" : undefined}
-                    title="Student identity must be verified with physical ID card before queue admission"
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3 text-sm font-bold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 shadow-sm"
-                  >
-                    <span>🪪</span>
-                    <span>
-                      {updating
-                        ? "Updating…"
-                        : `Verify Student ID & Check In (${appointment.patientName})`}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={updating || !primaryAllowed}
-                    onClick={() => onCheckInToQueue(appointment.id)}
-                    aria-describedby={primaryNote ? "detail-checkin-reason" : undefined}
-                    className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-                  >
-                    {updating
-                      ? "Updating…"
-                      : isArrived
-                        ? `Check in to live queue (${appointment.patientName})`
-                        : `Check in student (${appointment.patientName})`}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  disabled={updating || !primaryAllowed}
+                  onClick={() => {
+                    if (
+                      appointment.verificationStatus !== "VERIFIED" &&
+                      appointment.verificationStatus !== "EXEMPT" &&
+                      !(appointment.clinicSite === "knust-hospital" && !appointment.studentIndex) &&
+                      onOpenVerification
+                    ) {
+                      onOpenVerification(appointment);
+                    } else {
+                      onCheckInToQueue(appointment.id);
+                    }
+                  }}
+                  aria-describedby={primaryNote ? "detail-checkin-reason" : undefined}
+                  className="w-full rounded-xl bg-[#176b5f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                >
+                  {updating
+                    ? "Updating…"
+                    : isArrived
+                      ? `Check in to live queue (${appointment.patientName})`
+                      : `Check in student (${appointment.patientName})`}
+                </button>
                 {primaryNote && (
                   <p id="detail-checkin-reason" className="mt-1 text-center text-xs text-gray-600">{primaryNote}</p>
                 )}

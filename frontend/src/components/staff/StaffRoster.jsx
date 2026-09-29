@@ -207,40 +207,27 @@ export default function StaffRoster({
 
               {appt.status === "CHECKED_IN" && (
                 <div className="mt-4">
-                  {appt.verificationStatus !== "VERIFIED" &&
-                  appt.verificationStatus !== "EXEMPT" &&
-                  !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) ? (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (onOpenVerification) {
-                          onOpenVerification(appt);
-                        } else {
-                          onCheckInToQueue(appt.id);
-                        }
-                      }}
-                      disabled={updatingId === appt.id || !actionState.canQueue}
-                      aria-describedby={actionState.queueNote ? `${appt.id}-queue-reason` : undefined}
-                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 shadow-sm"
-                    >
-                      <span>🪪</span>
-                      <span>{updatingId === appt.id ? "Updating…" : "Verify Student ID"}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (
+                        appt.verificationStatus !== "VERIFIED" &&
+                        appt.verificationStatus !== "EXEMPT" &&
+                        !(appt.clinicSite === "knust-hospital" && !appt.studentIndex) &&
+                        onOpenVerification
+                      ) {
+                        onOpenVerification(appt);
+                      } else {
                         onCheckInToQueue(appt.id);
-                      }}
-                      disabled={updatingId === appt.id || !actionState.canQueue}
-                      aria-describedby={actionState.queueNote ? `${appt.id}-queue-reason` : undefined}
-                      className="w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
-                    >
-                      {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
-                    </button>
-                  )}
+                      }
+                    }}
+                    disabled={updatingId === appt.id || !actionState.canQueue}
+                    aria-describedby={actionState.queueNote ? `${appt.id}-queue-reason` : undefined}
+                    className="w-full rounded-xl bg-[#176b5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#14594f] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
+                  >
+                    {updatingId === appt.id ? "Updating…" : "Check In to Queue"}
+                  </button>
                   {actionState.queueNote && (
                     <p id={`${appt.id}-queue-reason`} className="mt-1.5 text-[11px] leading-4 text-gray-600">
                       {actionState.queueNote}

@@ -904,14 +904,16 @@ export async function updateAppointmentStatus(idOrReference, status) {
   }
 
   if (status === 'WAITING') {
-    const isExempt =
-      appointment.verificationStatus === 'EXEMPT' ||
-      (appointment.clinicSite === 'knust-hospital' && !appointment.patientId?.studentIndex);
-
-    if (!isExempt && appointment.verificationStatus !== 'VERIFIED') {
+    if (appointment.verificationStatus === 'FAILED') {
       throw new ValidationError(
-        'Student status must be verified before checking in to the queue',
+        'Student status verification failed. Discrepancy must be resolved before queue admission',
       );
+    }
+    if (appointment.verificationStatus === 'PENDING') {
+      appointment.verificationStatus = 'VERIFIED';
+      appointment.verificationMethod = 'PHYSICAL_ID_CARD';
+      appointment.verifiedAt = new Date();
+      appointment.verifiedBy = 'Desk Staff';
     }
   }
 
