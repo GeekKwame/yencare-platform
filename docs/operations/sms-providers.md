@@ -133,3 +133,24 @@ For team members without access to a physical Ghana handset:
 | mNotify returns `400` with Sender ID error | Sender ID not yet approved by telcos | Register `YenCare` on the dashboard or temporarily use an approved default ID. |
 | `Invalid Ghana phone number` | Number format rejected | Provide a valid 10-digit local number (`0241234567`) or international format (`+233241234567`). |
 | Recipient received no SMS | Insufficient credits or carrier DND | Check remaining SMS balance in mNotify dashboard; verify handset is not on Do-Not-Disturb list. |
+
+---
+
+## 7. Clinical SMS Notification Templates & GSM-7 Compliance
+
+To guarantee reliable delivery across low-cost mobile networks and feature phones across Ghana, all outgoing YenCare messages strictly adhere to the **GSM-7 7-bit character set**:
+- Starts with standard brand header: `YenCare Health\n`.
+- Uses only ASCII/GSM-7 characters (no non-ASCII unicode like `ɛ`, em-dashes, or smart/curly quotes).
+- Sent asynchronously in non-blocking tasks so telecommunication network delays never block HTTP responses or user interactions.
+
+### Template Catalog
+
+| Trigger Event | Target Audience | Copy Template | Purpose |
+|---|---|---|---|
+| **Booking Confirmed** | Patient | `YenCare Health\nYour appointment is confirmed for [Date] at [Time] at [Facility]. Booking ID: [YC-XXXX]. Please arrive 15 minutes before your time.` | Initial booking confirmation with speakable reference code. |
+| **Rescheduled** | Patient | `YenCare Health\nYour appointment [YC-XXXX] has been rescheduled to [Date] at [Time] at [Facility]. Please arrive 15 minutes before your time.` | Notification of confirmed appointment reschedule. |
+| **Cancelled** | Patient | `YenCare Health\nYour appointment [YC-XXXX] on [Date] at [Time] has been cancelled. If you need to rebook, please visit the portal.` | Notification of confirmed appointment cancellation. |
+| **OTP Code** | Patient | `[OTP] Your YenCare verification code is: [XXXX]. Valid for 10 minutes. Do not share this code.` | 4-digit verification code for secure self-service management. |
+| **Patient Called** | Waiting Patient | `YenCare Health\nIt is your turn now! Token [Token] is now called to [Room]. Booking ID: [YC-XXXX]. Please proceed inside immediately.` | Directs the patient to step inside the consultation room. |
+| **Visit Completed** | Attended Patient | `YenCare Health\nVisit completed. Your consultation with [Doctor] at [Facility] is complete. Please proceed to the pharmacy for prescribed medications or laboratory for tests. Booking ID: [YC-XXXX].` | Hospital discharge instructions directing patient to pharmacy or lab. |
+

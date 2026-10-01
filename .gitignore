@@ -49,4 +49,6 @@ Thumbs.db
 /playwright/.auth/
 dev-dist/
 */dev-dist/
-
+# Python
+__pycache__/
+*.py[cod]

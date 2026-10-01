@@ -265,7 +265,13 @@ export function createAppointmentsRouter(
       }
 
       const scope = await resolveDoctorScope(req.staff);
-      if (scope.isDoctor && !scope.clinicianId) {
+      const allowedIds = scope.clinicianIds?.length
+        ? scope.clinicianIds
+        : scope.clinicianId
+          ? [String(scope.clinicianId)]
+          : [];
+
+      if (scope.isDoctor && allowedIds.length === 0) {
         logger.warn('doctor account is not linked to a clinician; returning an empty roster', {
           subsystem: 'appointments',
           requestId: req.id,
@@ -274,13 +280,17 @@ export function createAppointmentsRouter(
         return res.status(200).json([]);
       }
 
+      const clinicianFilter = scope.isDoctor
+        ? (allowedIds.length > 1 ? { $in: allowedIds } : allowedIds[0])
+        : undefined;
+
       const appointments = await appointmentService.listAppointments({
         date: req.query.date,
         fromDate: req.query.fromDate,
         upcoming: req.query.upcoming,
         clinicSite:
           req.query.clinicSite || req.query.clinic,
-        ...(scope.isDoctor ? { clinicianId: scope.clinicianId } : {}),
+        ...(clinicianFilter ? { clinicianId: clinicianFilter } : {}),
       });
 
       res.status(200).json(

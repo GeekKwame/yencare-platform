@@ -8,7 +8,7 @@
 [![Express](https://img.shields.io/badge/Express-4.21-lightgrey.svg)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-7-brightgreen.svg)](https://www.mongodb.com/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-66%20passing-success.svg)](./backend/test/)
+[![Tests](https://img.shields.io/badge/Tests-471%20passing-success.svg)](./backend/test/)
 
 ---
 
@@ -40,10 +40,10 @@ University healthcare corridors frequently suffer from severe overcrowding, long
 - **Resilience Recovery**: Offline network recovery screen (G01) displaying cached reference codes when cellular signal drops.
 
 ### Clinical Operations Workstation
-- **Role-Based Demo Access**: 1-click role switching for `Receptionist`, `Doctor`, and `Admin`.
+- **Role-Based Demo Access**: Quick 1-click role switching for `Receptionist`, `Doctor`, and `Admin`.
 - **Today Dashboard**: Real-time metrics tracking Total Patients, Waiting, In Consult, Completed, Walk-Ins, and No-Shows.
-- **Appointments Roster**: Filterable and searchable daily schedule with one-click check-in.
-- **Dual-Room Live Queue Board**: Queue management for Room 1 and Room 2 with distinct `BOOKED` vs `WALK-IN` badges.
+- **Appointments Roster**: Filterable and searchable daily schedule with physical Student ID verification and one-click queue check-in.
+- **Doctor Consultation Workstation**: Consultation management with multi-site clinic switching, clinician-scoped rosters, turn calls, and visit completions.
 - **Walk-In Registration**: Front-desk intake workflow allocating dedicated daily walk-in tokens (`W-024`).
 - **Public Corridor Display Board**: Full-screen TV display board for waiting areas showing called tokens and room assignments.
 - **Missed Slot Recovery**: Formal No-Show confirmation workflow to release unused consultation slots.
@@ -51,9 +51,10 @@ University healthcare corridors frequently suffer from severe overcrowding, long
 ### Backend REST API & SMS Gateway
 - **Idempotent Patient Registration**: `POST /api/patients` find-or-creates students without identity duplication. JSON returns both **`phone`** (Mongo / populate / SMS) and **`phoneNumber`**.
 - **Fast Identifier Lookup**: `GET /api/patients/:identifier` by 8-digit index or Ghana mobile number.
-- **Clinic Catalog**: `GET /api/rooms`, `GET /api/clinicians`, `GET /api/time-slots` for booking ObjectIds (Postman).
+- **Clinic Catalog**: `GET /api/rooms`, `GET /api/clinicians`, `GET /api/time-slots` with dynamic slot generation.
 - **Double-Booking Engine Guards**: MongoDB engine-level unique compound indexes preventing clinician or room clashes.
 - **Multi-Provider SMS Gateway**: Unified `sendSms(to, message)` engine supporting real Ghana mobile delivery (mNotify), developer simulation (Africa's Talking Sandbox), and offline terminal logging (Mock).
+- **Turn & Discharge Notifications**: Automated, GSM-7 safe SMS dispatch for patient turn calls and visit completions (directing patients to pharmacy or laboratory).
 
 ---
 
@@ -66,7 +67,18 @@ University healthcare corridors frequently suffer from severe overcrowding, long
 | **Backend API** | Node.js 18+, Express 4, Mongoose 8, Native MongoDB Driver | REST API service, business logic, validation |
 | **Persistence** | MongoDB 7 (via Docker Compose or MongoDB Atlas) | Schemas, unique indexes, double-booking prevention |
 | **SMS Gateway** | mNotify API v2, Africa's Talking SDK, Local Mock Provider | Outbound SMS delivery to MTN, Telecel, and AT Ghana |
-| **Testing** | Node.js Native Test Runner (`node:test`) | 66 automated unit and integration tests |
+| **Testing** | Node.js Native Test Runner (`node:test`) | 471 automated unit and integration tests (113 test suites) |
+
+### 3.1 Demo Staff Credentials
+
+All demo accounts use the standard password: **`yencare`**
+
+| Role | Staff Member | Email / Staff ID | Assigned Room | Key Capabilities |
+| :--- | :--- | :--- | :--- | :--- |
+| **Receptionist** | Abena Osei | `abena.osei@yencare.gh` / `stf_01` | Front Reception Desk | Roster lookup, desk check-in, Student ID card verification, walk-in triage |
+| **Doctor** | Dr. Kwame Boateng | `kwame.boateng@yencare.gh` / `stf_02` | **Room 1** *(Clinic)* / **OPD Room 1** *(Hospital)* | Senior Medical Officer, calling next patient, completing visits |
+| **Doctor** | Dr. Ama Serwaa | `ama.serwaa@yencare.gh` / `stf_04` | **Room 2** *(Clinic)* / **OPD Room 2** *(Hospital)* | Medical Officer, calling next patient, completing visits |
+| **Admin** | Kojo Mensah | `kojo.mensah@yencare.gh` / `stf_03` | Operations Office | Full system oversight, emergency overrides, roster configuration |
 
 ---
 
@@ -194,7 +206,7 @@ npm run db:migrate        # Apply collection validators and unique indexes
 npm run db:seed           # Populate sample demo clinicians, rooms, and schedule
 
 # Testing
-npm run test:backend      # Execute all 66 backend unit & integration tests
+npm run test:backend      # Execute all 471 backend unit & integration tests
 npm run sms:test          # Send a test SMS via configured provider (Mock / mNotify / AT)
 ```
 

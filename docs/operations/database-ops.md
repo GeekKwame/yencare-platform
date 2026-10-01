@@ -90,8 +90,8 @@ The migration runner is **strictly idempotent**: running it multiple times will 
 The seed script loads realistic clinical demonstration data:
 
 ### Seed Content
-- **Facilities & Rooms**: OPD Room 1, OPD Room 2, Consultation Room 1, Consultation Room 2.
-- **Clinicians**: Dr. Kwame Boateng (Senior Medical Officer), Dr. Ama Serwaa (Medical Officer), Dr. Kofi Adjei, Dr. Akua Mensah.
+- **Facilities & Rooms**: Room 1, Room 2 (KNUST Students' Clinic); OPD Room 1, OPD Room 2 (KNUST Hospital).
+- **Clinicians**: Dr. Kwame Boateng (Senior Medical Officer · Room 1 / OPD Room 1), Dr. Ama Serwaa (Medical Officer · Room 2 / OPD Room 2).
 - **Demo Patients**: Akosua Boateng, Yaw Boateng, Kweku Mensah.
 - **Time Slots**: 30-minute consultation slots across current and upcoming weekdays.
 

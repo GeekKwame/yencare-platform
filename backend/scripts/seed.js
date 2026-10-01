@@ -43,15 +43,15 @@ const CLINICIANS = [
     available: true,
   },
   {
-    name: 'Dr. Kofi Adjei',
-    title: 'Medical Officer',
+    name: 'Dr. Kwame Boateng',
+    title: 'Senior Medical Officer',
     specialty: 'Hospital General OPD',
     roomName: 'OPD Room 1',
     clinicSite: 'knust-hospital',
     available: true,
   },
   {
-    name: 'Dr. Akua Mensah',
+    name: 'Dr. Ama Serwaa',
     title: 'Medical Officer',
     specialty: 'Hospital General OPD',
     roomName: 'OPD Room 2',
@@ -71,13 +71,9 @@ const PATIENTS = [
 function roomForClinician(clinician, roomsByKey) {
   const roomName =
     clinician.roomName ||
-    (clinician.name === 'Dr. Akua Mensah'
-      ? 'OPD Room 2'
-      : clinician.name === 'Dr. Kofi Adjei'
-        ? 'OPD Room 1'
-        : clinician.name === 'Dr. Ama Serwaa'
-          ? 'Room 2'
-          : 'Room 1');
+    (clinician.name === 'Dr. Ama Serwaa'
+      ? (clinician.clinicSite === 'knust-hospital' ? 'OPD Room 2' : 'Room 2')
+      : (clinician.clinicSite === 'knust-hospital' ? 'OPD Room 1' : 'Room 1'));
   return roomsByKey.get(`${clinician.clinicSite}:${roomName}`);
 }
 

@@ -237,6 +237,7 @@ GET /api/appointments/:reference/queue-status
 Works with the reference alone and returns no personal details (no name, phone, student index, NHIS number or notes). Fields: `referenceCode`, `status`, `appointmentDate`, `appointmentTime`, `clinicSite`, `queueToken`, `position`, `patientsAhead`, `estimatedWaitMinutes`, `roomToken`, `nowServingToken`, `room` (`id`, `name`, `clinicSite`), `clinician` (`id`, `name`, `title`). An unknown reference returns `404`. Used by the patient Queue page, Clinic Activity and the home page booking card.
 
 ### 7.3 Doctor Consultation Controls
-- `POST /api/queue/call-next`: Calls next waiting patient into doctor's consultation room. *(Doctors & Admin only)*
-- `POST /api/queue/advance`: Completes active patient visit and marks consultation finished. *(Doctors only)*
+- `POST /api/queue/call-next`: Calls the next waiting patient into doctor's consultation room. Scoped to the authenticated doctor's clinician records. Dispatches turn notification SMS (`It is your turn now! Token [Token] is now called to [Room]...`). *(Doctors & Admin only)*
+- `POST /api/queue/advance`: Completes active patient visit and marks consultation finished. Automatically triggers outbound Visit Completed SMS directing patient to dispensary/pharmacy or lab (`Visit completed. Your consultation with [Doctor] at [Facility] is complete. Please proceed to the pharmacy...`). *(Doctors only)*
 - `POST /api/queue/no-show`: Marks a patient who failed to arrive after late grace period as `NO_SHOW`.
+

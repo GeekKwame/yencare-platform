@@ -47,14 +47,24 @@ export default function DoctorWorkstation({ staff }) {
         if (cancelled) return;
         const liveRooms = Array.isArray(roomList) ? roomList : [];
         setRooms(liveRooms);
-        const assigned = liveRooms.find(
-          (room) =>
-            staff?.assignedRoom &&
-            String(room.name).toLowerCase() === String(staff.assignedRoom).toLowerCase(),
-        );
         const siteRooms = liveRooms.filter((room) => room.clinicSite === clinicSite);
+        const assigned =
+          siteRooms.find(
+            (room) =>
+              staff?.assignedRoom &&
+              (String(room.name).toLowerCase() === String(staff.assignedRoom).toLowerCase() ||
+                String(room.name).toLowerCase().endsWith(String(staff.assignedRoom).toLowerCase())),
+          ) ||
+          liveRooms.find(
+            (room) =>
+              staff?.assignedRoom &&
+              String(room.name).toLowerCase() === String(staff.assignedRoom).toLowerCase(),
+          );
         const nextRoom = assigned || siteRooms[0] || liveRooms[0];
-        setSelectedRoomId((current) => current || roomKey(nextRoom));
+        setSelectedRoomId((current) => {
+          const isValidCurrent = siteRooms.some((r) => roomKey(r) === current);
+          return isValidCurrent ? current : roomKey(nextRoom);
+        });
       } catch {
         if (!cancelled) setRooms([]);
       }
@@ -169,50 +179,39 @@ export default function DoctorWorkstation({ staff }) {
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          {isDoctor ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#dce8df] bg-[#f7f8f7] px-3.5 py-2 text-xs">
-              <span className="font-semibold text-gray-500">Assigned:</span>
-              <span className="font-bold text-[#173b3a]">{CLINIC_SITE_LABELS[clinicSite] || clinicSite}</span>
-              <span className="text-gray-300">|</span>
-              <span className="font-bold text-[#176b5f]">{selectedName}</span>
-            </div>
-          ) : (
-            <>
-              <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
-                <span className="font-semibold">Clinic site</span>
-                <select
-                  value={clinicSite}
-                  onChange={(event) => {
-                    setClinicSite(event.target.value);
-                    setSelectedRoomId("");
-                  }}
-                  className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
-                >
-                  {Object.entries(CLINIC_SITE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
-                <span className="font-semibold">Active room</span>
-                <select
-                  value={selectedRoomId}
-                  onChange={(event) => setSelectedRoomId(event.target.value)}
-                  className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
-                >
-                  {rooms
-                    .filter((room) => room.clinicSite === clinicSite)
-                    .map((room) => (
-                      <option key={roomKey(room)} value={roomKey(room)}>
-                        {room.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-            </>
-          )}
+          <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+            <span className="font-semibold">Clinic site</span>
+            <select
+              value={clinicSite}
+              onChange={(event) => {
+                setClinicSite(event.target.value);
+                setSelectedRoomId("");
+              }}
+              className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
+            >
+              {Object.entries(CLINIC_SITE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-[#173b3a]">
+            <span className="font-semibold">Active room</span>
+            <select
+              value={selectedRoomId}
+              onChange={(event) => setSelectedRoomId(event.target.value)}
+              className="rounded-xl border border-[#dce8df] bg-white px-3 py-2 text-sm outline-none focus:border-[#176b5f]"
+            >
+              {rooms
+                .filter((room) => room.clinicSite === clinicSite)
+                .map((room) => (
+                  <option key={roomKey(room)} value={roomKey(room)}>
+                    {room.name}
+                  </option>
+                ))}
+            </select>
+          </label>
           <button
             type="button"
             onClick={() => setSelectedDate(accraTodayIso())}

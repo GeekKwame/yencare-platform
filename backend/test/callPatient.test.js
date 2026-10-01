@@ -44,11 +44,11 @@ describe('buildVisitCompletedSms', () => {
     const message = buildVisitCompletedSms({
       referenceCode: 'YC-2002',
       clinicSite: 'knust-hospital',
-      clinicianId: { name: 'Dr. Kofi Adjei' },
+      clinicianId: { name: 'Dr. Kwame Boateng' },
     });
 
     assert.match(message, /KNUST Hospital/);
-    assert.match(message, /Dr\. Kofi Adjei/);
+    assert.match(message, /Dr\. Kwame Boateng/);
     assert.match(message, /Booking ID: YC-2002/);
   });
 

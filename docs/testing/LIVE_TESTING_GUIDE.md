@@ -38,10 +38,10 @@ All demo staff accounts use the default password: **`yencare`**
 
 | Role | Staff Member | Email / Staff ID | Default Location | Key Responsibilities |
 | :--- | :--- | :--- | :--- | :--- |
-| **Receptionist** | Abena Osei | `abena.osei@yencare.gh` / `stf_01` | Front Reception Desk | Roster lookup, desk check-in, walk-in triage |
-| **Medical Doctor 1** | Dr. Kwame Boateng | `kwame.boateng@yencare.gh` / `stf_02` | **Room 1** (Ground Floor) | Room 1 consultations, calling next patient |
-| **Medical Doctor 2** | Dr. Ama Serwaa | `ama.serwaa@yencare.gh` / `stf_04` | **Room 2** (Ground Floor) | Room 2 consultations, calling next patient |
-| **Administrator** | Kojo Mensah | `kojo.mensah@yencare.gh` / `stf_03` | Operations Office | System oversight, roster configuration |
+| **Receptionist** | Abena Osei | `abena.osei@yencare.gh` / `stf_01` | Front Reception Desk | Roster lookup, desk check-in, student ID verification, walk-in triage |
+| **Medical Doctor 1** | Dr. Kwame Boateng | `kwame.boateng@yencare.gh` / `stf_02` | **Room 1** *(Clinic)* / **OPD Room 1** *(Hospital)* | Senior Medical Officer consultations, calling next patient, completing visits |
+| **Medical Doctor 2** | Dr. Ama Serwaa | `ama.serwaa@yencare.gh` / `stf_04` | **Room 2** *(Clinic)* / **OPD Room 2** *(Hospital)* | Medical Officer consultations, calling next patient, completing visits |
+| **Administrator** | Kojo Mensah | `kojo.mensah@yencare.gh` / `stf_03` | Operations Office | System oversight, emergency overrides, roster configuration |
 
 ---
 
@@ -175,9 +175,11 @@ We recommend testers split roles: one person acting as the **Student Patient**, 
    - Click **"Call Next Patient"**.
    - The top waiting ticket transitions to `CALLED`.
    - The Corridor Board updates: announces the token and directs the patient to **Room 1**.
+   - **Patient Notification:** Patient receives live SMS: *"It is your turn now! Token A-XX is now called to Room 1. Booking ID: YC-XXXX. Please proceed inside immediately."*
 6. **Complete Consultation:**
    - After consultation, click **"Complete Visit"**.
    - The status updates to `COMPLETED` and the room resets for the next patient.
+   - **Visit Completed Notification:** Patient receives hospital discharge SMS: *"Visit completed. Your consultation with Dr. Kwame Boateng at KNUST Students' Clinic is complete. Please proceed to the pharmacy for prescribed medications or laboratory for tests. Booking ID: YC-XXXX."*
 7. Repeat the test logging in as **Dr. Ama Serwaa** (`ama.serwaa@yencare.gh` / `yencare`) to verify Room 2 queue isolation.
 
 ---

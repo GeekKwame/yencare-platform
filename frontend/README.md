@@ -31,16 +31,22 @@ The `frontend/` package contains the public-facing web client for the YɛnCare p
 
 ```text
 frontend/
-├── public/                 # Static public assets (favicon.svg, icons.svg)
+├── public/                 # Static public assets (favicon.svg, icons.svg, manifest)
 ├── src/
-│   ├── assets/             # Brand logos (Yencare Logo.png)
+│   ├── assets/             # Brand logos (Yencare Logo.png) and facility photography
 │   ├── components/         # Reusable UI sections & primitives
 │   │   ├── booking/        # Multi-step booking flow wizard
-│   │   │   ├── BookingForm.jsx      # Wizard coordinator & multi-step state container
-│   │   │   ├── WelcomeForm.jsx      # Step 1: Introduction & booking start trigger
-│   │   │   ├── PersonalDetails.jsx  # Step 2: Student details & POST /api/patients registration
-│   │   │   ├── ClinicSelection.jsx  # Step 3: Campus clinic post selection (Main vs GF7)
-│   │   │   └── ServiceSelection.jsx # Step 4: OPD / follow-up / dressing service selector
+│   │   │   ├── BookingForm.jsx        # Wizard coordinator & multi-step draft container
+│   │   │   ├── WelcomeForm.jsx        # Step 1: Introduction & booking start trigger
+│   │   │   ├── PersonalDetails.jsx    # Step 2: Student details & patient registration
+│   │   │   ├── ClinicSelection.jsx    # Step 3: Clinic facility selection (Clinic vs Hospital)
+│   │   │   ├── ClinicianSelection.jsx # Step 4: Attending doctor selection (Dr. Kwame vs Dr. Ama)
+│   │   │   ├── ServiceSelection.jsx   # Step 5: OPD / follow-up / dressing service selector
+│   │   │   ├── TimeSlots.jsx          # Step 6: 30-minute consultation slot selector
+│   │   │   ├── ReviewBooking.jsx      # Step 7: Final summary, disclosure & confirmation
+│   │   │   └── SlotTaken.jsx          # Concurrency collision recovery card
+│   │   ├── appointment/    # Self-service lookup, OTP verify, reschedule & cancel cards
+│   │   ├── staff/          # Staff roster, verification modal, and live queue widgets
 │   │   ├── Nav.jsx         # Main site navigation bar with active route highlighting
 │   │   ├── Hero.jsx        # Value proposition header and quick CTA buttons
 │   │   ├── CareFeature.jsx # Key feature spotlight cards
@@ -49,25 +55,33 @@ frontend/
 │   │   ├── Footer.jsx      # Footer with campus health contact info
 │   │   └── ScrollToTop.jsx # Route transition window scroll reset
 │   │
-│   ├── hooks/
-│   │   └── useApiRequest.js # Custom async state hook for API requests
+│   ├── context/
+│   │   └── StaffAuthContext.jsx # Global staff JWT session provider & demo switcher
+│   │
+│   ├── hooks/              # Custom React hooks (useClinicRoster, useApiRequest)
 │   │
 │   ├── pages/              # Application routed views
-│   │   ├── Home.jsx        # Root landing page (/)
-│   │   ├── Appointments.jsx# Booking & lookup screen (/appointments)
-│   │   ├── Queue.jsx       # Live queue tracking screen (/queue)
-│   │   ├── StaffPortal.jsx # Staff operations dashboard (/staff)
-│   │   └── NotFound.jsx    # 404 error catch-all page (*)
+│   │   ├── Home.jsx             # Root landing page (/)
+│   │   ├── Appointments.jsx     # Booking & lookup screen (/appointments)
+│   │   ├── Queue.jsx            # Live queue tracking screen (/queue)
+│   │   ├── ClinicActivity.jsx   # Pre-check-in waiting intelligence (/activity)
+│   │   ├── StaffLogin.jsx       # Staff portal sign-in with 1-click demo helpers (/staff/login)
+│   │   ├── StaffPortal.jsx      # Reception & admin operations dashboard (/staff)
+│   │   ├── DoctorWorkstation.jsx# Doctor consultation workstation (/staff/doctor)
+│   │   └── NotFound.jsx         # 404 error catch-all page (*)
 │   │
 │   ├── services/           # Backend API integration layer
-│   │   ├── api.js          # Configured Axios instance (VITE_API_BASE_URL with localhost fallback)
+│   │   ├── api.js          # Configured Axios instance with token injection
 │   │   ├── patients.js     # Patient registration & lookup API calls
-│   │   └── appointments.js # Appointment creation client stub
+│   │   ├── appointments.js # Booking creation, arrival, cancel & reschedule
+│   │   ├── queue.js        # Call next patient, advance visit & mark no-show
+│   │   ├── catalog.js      # Facilities, clinicians and time-slots loader
+│   │   └── staffAuth.js    # Staff login, JWT token persistence & demo credentials
 │   │
 │   ├── App.jsx             # Top-level shell router & layout container
-│   │   ├── index.css       # TailwindCSS v4 imports & theme styles
-│   │   └── main.jsx        # Application root mount
-│   │
+│   ├── index.css           # TailwindCSS v4 imports & theme styles
+│   └── main.jsx            # Application root mount
+│
 ├── .env.example            # Environment configuration template
 ├── package.json            # Dependencies and scripts
 └── vite.config.js          # Vite + React + Tailwind v4 plugin configuration

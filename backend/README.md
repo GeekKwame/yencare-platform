@@ -26,8 +26,8 @@ Schema, indexes, and booking write path: [`docs/DATABASE_ARCHITECTURE.md`](./doc
 | `POST` | `/api/appointments/:id/verify-student` | Physical Student ID verification at clinic arrival — **receptionist/admin JWT** |
 | `PATCH` | `/api/appointments/:id/cancel` | Cancel — **staff JWT, or a valid `otpCode` in the body** |
 | `PATCH` | `/api/appointments/:id/reschedule` | Move to `newSlotId` — **staff JWT, or a valid `otpCode` in the body** |
-| `POST` | `/api/queue/call-next` | Call next patient — **doctor/admin JWT** |
-| `POST` | `/api/queue/advance` | Complete consultation — **doctor JWT** |
+| `POST` | `/api/queue/call-next` | Call next patient & dispatch turn SMS — **doctor/admin JWT** |
+| `POST` | `/api/queue/advance` | Complete consultation & dispatch Visit Completed SMS — **doctor JWT** |
 | `POST` | `/api/queue/no-show` | Mark no-show — **staff JWT** |
 | `GET` | `/api/rooms` | Seeded rooms (`id` → `roomId`) |
 | `GET` | `/api/clinicians` | Seeded clinicians (`id` → `clinicianId`) |
@@ -48,7 +48,11 @@ Patients also cannot cancel or reschedule once they are `WAITING` in the live qu
 
 Every response carries an `X-Request-Id` header, and error bodies repeat it as `requestId` for end-to-end tracing.
 
-Staff workstation routes require `Authorization: Bearer <token>` from `POST /api/auth/staff-login`. Demo accounts (password `yencare`): `abena.osei@yencare.gh` (receptionist), `kwame.boateng@yencare.gh` (doctor), `kojo.mensah@yencare.gh` (admin).
+Staff workstation routes require `Authorization: Bearer <token>` from `POST /api/auth/staff-login`. Demo accounts (password `yencare`):
+- `abena.osei@yencare.gh` (`stf_01`): Receptionist (Front Reception Desk)
+- `kwame.boateng@yencare.gh` (`stf_02`): Doctor (Dr. Kwame Boateng · Room 1 / OPD Room 1)
+- `ama.serwaa@yencare.gh` (`stf_04`): Doctor (Dr. Ama Serwaa · Room 2 / OPD Room 2)
+- `kojo.mensah@yencare.gh` (`stf_03`): Admin (Operations & Clinic Management)
 
 ### Status codes
 

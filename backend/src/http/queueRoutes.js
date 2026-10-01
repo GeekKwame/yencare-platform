@@ -16,17 +16,19 @@ async function queueClinicianScope(req, res, mismatchMessage) {
     return requested ? { clinicianId: requested } : {};
   }
 
-  if (!scope.clinicianId) {
+  const allowedIds = scope.clinicianIds?.length ? scope.clinicianIds : (scope.clinicianId ? [String(scope.clinicianId)] : []);
+
+  if (allowedIds.length === 0) {
     res.status(403).json({ error: UNLINKED_DOCTOR_MESSAGE });
     return null;
   }
 
-  if (requested && String(requested) !== String(scope.clinicianId)) {
+  if (requested && !allowedIds.includes(String(requested))) {
     res.status(403).json({ error: mismatchMessage });
     return null;
   }
 
-  return { clinicianId: scope.clinicianId };
+  return { clinicianId: requested || scope.clinicianId };
 }
 
 /**

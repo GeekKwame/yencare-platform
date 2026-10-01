@@ -1,9 +1,9 @@
 # YɛnCare Platform — Issues Resolution & Presentation Readiness Handover
 
-**Date:** 28 September 2026  
+**Date:** 01 October 2026  
 **Audience:** Technical Lead / Incoming Engineering & Product Handover  
-**Status:** Presentation-Ready  
-**Full Test Suite:** 421/421 Passing (0 Failures, 102 Suites)  
+**Status:** Presentation-Ready & Feature-Complete  
+**Full Test Suite:** 471/471 Passing (0 Failures, 113 Suites)  
 **Frontend Build:** Production Vite bundle verified (0 errors)
 
 ---
@@ -218,7 +218,7 @@ For tomorrow's presentation, follow this seamless demonstration flow:
    - If within 60 minutes, the "I've arrived" button is active.
 
 4. **Staff & Doctor Dashboard Demonstration:**
-   - Navigate to `/staff` and log in as Dr. Kwame Boateng (`doctor.boateng@knust.edu.gh`).
+   - Navigate to `/staff` and log in as Dr. Kwame Boateng (`kwame.boateng@yencare.gh`).
    - Notice the dashboard shows "Assigned: KNUST Students' Clinic | Room 1" and the formatted current date.
    - Notice headings match: `Now consulting: Dr. Kwame Boateng` and `Waiting for Dr. Kwame Boateng`.
    - Open Reception Roster: click "Upcoming (Next 14 Days)" to display future appointments without manual day switching.
@@ -232,3 +232,29 @@ For tomorrow's presentation, follow this seamless demonstration flow:
 - **MongoDB Instance:** Ensure MongoDB replica set / URI is active and seeded with `npm --prefix backend run seed`.
 - **SMS Gateway:** For local demo, SMS runs in mock mode (`MNOTIFY_API_KEY` optional). OTP codes are logged to backend stdout for effortless demo entry.
 - **System Clocks:** Both frontend and backend standardize on Africa/Accra (UTC+0, no daylight savings). Ensure demo laptop time is accurate.
+
+---
+
+## 8. Final Feature Additions & Clinical Unification
+
+### 8.1 Visit Completed SMS Notification (Hospital Discharge Story)
+- **Feature:** Immediately upon a clinician completing an in-progress consultation (`CALLED` &rarr; `COMPLETED`) via `advanceQueue`, an automated non-blocking SMS is dispatched to the patient.
+- **Copy & Formatting:** Matches hospital outpatient discharge guidance:
+  ```text
+  YenCare Health
+  Visit completed. Your consultation with Dr. Kwame Boateng at KNUST Students' Clinic is complete. Please proceed to the pharmacy for prescribed medications or laboratory for tests. Booking ID: YC-XXXX.
+  ```
+- **GSM-7 Character Compliance:** Strictly restricted to ASCII/GSM-7 characters (no curly quotes or accented characters) to ensure 100% deliverability across all Ghana telcos.
+- **Engine Safety:** Dispatches asynchronously in background tasks, ensuring carrier latency or network timeouts never block database state updates or staff workstation UI responses.
+
+### 8.2 Clinician Alignment with Staff Credentials Across Facilities
+- **Problem Resolved:** Previously, KNUST Hospital listed unseeded doctor names in the patient selection funnel while demo credentials only existed for Dr. Kwame Boateng and Dr. Ama Serwaa.
+- **Resolution:** Unified all patient-facing booking options and database seeds across both **KNUST Students' Clinic** and **KNUST Hospital**:
+  - **Dr. Kwame Boateng**: *Senior Medical Officer* · Room 1 (Clinic) / OPD Room 1 (Hospital)
+  - **Dr. Ama Serwaa**: *Medical Officer* · Room 2 (Clinic) / OPD Room 2 (Hospital)
+- **Zero Credential Drift:** Maintained exact staff credentials (`kwame.boateng@yencare.gh`, `ama.serwaa@yencare.gh`, `abena.osei@yencare.gh`, `kojo.mensah@yencare.gh` / password `yencare`).
+
+### 8.3 Multi-Site Consultation Capability in Doctor Workstation
+- **Resolution:** Enabled doctors in `DoctorWorkstation.jsx` to seamlessly toggle between clinic facilities (`KNUST Students' Clinic` and `KNUST Hospital`). Active room automatically shifts to their assigned room for that facility (`Room 1` &harr; `OPD Room 1`, `Room 2` &harr; `OPD Room 2`).
+- **Backend Multi-Site Scope:** `clinicianResolver.js`, `queueRoutes.js`, and `appointmentsRoutes.js` now resolve all clinician IDs linked to a doctor by name, enabling doctors to call and review patients across both campus sites without restriction.
+
