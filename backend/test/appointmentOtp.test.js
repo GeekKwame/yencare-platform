@@ -14,9 +14,11 @@ import {
 } from '../src/services/otpService.js';
 import {
   assertAppointmentCancelOtp,
+  assertAppointmentRescheduleOtp,
   buildCancelOtpSms,
   buildRescheduleOtpSms,
   OTP_REQUIRED_MESSAGE,
+  RESCHEDULE_OTP_REQUIRED_MESSAGE,
 } from '../src/services/appointmentOps.js';
 import { maskPhone } from '../src/sms/normalizePhone.js';
 
@@ -487,5 +489,55 @@ describe('OTP Request & Verification Flow Endpoints', () => {
     assert.equal(res.status, 403);
     const body = await res.json();
     assert.match(body.error, /expired/i);
+  });
+
+  it('PATCH /api/appointments/:id/reschedule enforces OTP verification and forwards phone', async () => {
+    let rescheduleCalledWith = null;
+
+    const service = {
+      rescheduleAppointment: async (id, options) => {
+        rescheduleCalledWith = options;
+        await assertAppointmentRescheduleOtp(mockAppointment, options);
+        return {
+          appointment: { ...mockAppointment, status: 'BOOKED', appointmentTime: '11:00' },
+          oldSlotId: 'old-slot',
+          newSlotId: options.newSlotId,
+        };
+      },
+    };
+
+    const { url } = await client(service);
+
+    // 1. Missing OTP code
+    const noOtpRes = await fetch(`${url}/api/appointments/YC-4821/reschedule`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ newSlotId: '68bf2c0e9c1a2b0099999998' }),
+    });
+    assert.equal(noOtpRes.status, 403);
+    const noOtpBody = await noOtpRes.json();
+    assert.equal(noOtpBody.error, RESCHEDULE_OTP_REQUIRED_MESSAGE);
+
+    // 2. Valid OTP code succeeds and forwards phone
+    await storeOtp({
+      appointmentId: mockAppointment._id,
+      referenceCode: mockAppointment.referenceCode,
+      action: 'RESCHEDULE',
+      phone: mockAppointment.patientId.phone,
+      code: '5566',
+    });
+
+    const validRes = await fetch(`${url}/api/appointments/YC-4821/reschedule`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        newSlotId: '68bf2c0e9c1a2b0099999998',
+        otpCode: '5566',
+        phone: '+233241234567',
+      }),
+    });
+    assert.equal(validRes.status, 200);
+    assert.equal(rescheduleCalledWith.otpCode, '5566');
+    assert.equal(rescheduleCalledWith.phone, '+233241234567');
   });
 });

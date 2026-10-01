@@ -1479,6 +1479,7 @@ export async function rescheduleAppointment(
     actorType = null,
     actorId = null,
     actingUserId = null,
+    phone = null,
     otpCode = null,
   } = {},
 ) {
