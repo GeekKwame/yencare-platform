@@ -106,7 +106,7 @@ test.describe('appointment lookup privacy (patient pages)', () => {
 
     const db = await getDb();
     const [clinician, room] = await Promise.all([
-      db.collection('clinicians').findOne({ name: 'Dr. Kofi Adjei', clinicSite: 'knust-hospital' }),
+      db.collection('clinicians').findOne({ name: 'Dr. Kwame Boateng', clinicSite: 'knust-hospital' }),
       db.collection('rooms').findOne({ name: 'OPD Room 1', clinicSite: 'knust-hospital' }),
     ]);
     const today = accraDateFromToday(0);
@@ -158,7 +158,7 @@ test.describe('appointment lookup privacy (patient pages)', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: /General OPD/i }).first().click();
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: /Dr\. Kofi Adjei/ }).first().click();
+    await page.getByRole('button', { name: /Dr\. Kwame Boateng/ }).first().click();
     const clinicianContinue = page.getByRole('button', { name: 'Continue' });
     if (await clinicianContinue.isVisible().catch(() => false)) await clinicianContinue.click();
     await page.getByRole('button', { name: time, exact: true }).click();

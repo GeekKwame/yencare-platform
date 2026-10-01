@@ -106,22 +106,35 @@ async function upsertClinician(data, roomsByKey) {
 }
 
 async function upsertSlot({ clinician, room, clinicSite, date, startTime, endTime, appointmentId = null }) {
-  return TimeSlot.findOneAndUpdate(
-    { clinicianId: clinician._id, date, startTime },
-    {
-      $set: {
-        clinicianId: clinician._id,
-        roomId: room._id,
-        clinicSite,
-        date,
-        startTime,
-        endTime,
-        appointmentId,
-        isBooked: Boolean(appointmentId),
-      },
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  );
+  const existing = await TimeSlot.findOne({
+    $or: [
+      { clinicianId: clinician._id, date, startTime },
+      { roomId: room._id, date, startTime },
+    ],
+  });
+
+  if (existing) {
+    existing.clinicianId = clinician._id;
+    existing.roomId = room._id;
+    existing.clinicSite = clinicSite;
+    existing.date = date;
+    existing.startTime = startTime;
+    existing.endTime = endTime;
+    existing.appointmentId = appointmentId;
+    existing.isBooked = Boolean(appointmentId);
+    return existing.save();
+  }
+
+  return TimeSlot.create({
+    clinicianId: clinician._id,
+    roomId: room._id,
+    clinicSite,
+    date,
+    startTime,
+    endTime,
+    appointmentId,
+    isBooked: Boolean(appointmentId),
+  });
 }
 
 async function upsertAppointment(data) {
@@ -147,11 +160,13 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] room ${doc.name} @ ${doc.clinicSite}`);
   }
 
-  const cliniciansByName = new Map();
+  const cliniciansByKey = new Map();
+  const allClinicians = [];
   for (const clinician of CLINICIANS) {
     const doc = await upsertClinician(clinician, roomsByKey);
-    cliniciansByName.set(doc.name, doc);
-    console.log(`[seed] clinician ${doc.name}`);
+    cliniciansByKey.set(`${doc.clinicSite}:${doc.name}`, doc);
+    allClinicians.push(doc);
+    console.log(`[seed] clinician ${doc.name} @ ${doc.clinicSite}`);
   }
 
   const patientsByIndex = new Map();
@@ -161,8 +176,8 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] patient ${doc.fullName}`);
   }
 
-  const kwame = cliniciansByName.get('Dr. Kwame Boateng');
-  const ama = cliniciansByName.get('Dr. Ama Serwaa');
+  const kwame = cliniciansByKey.get('students-clinic:Dr. Kwame Boateng');
+  const ama = cliniciansByKey.get('students-clinic:Dr. Ama Serwaa');
   const room1 = roomsByKey.get('students-clinic:Room 1');
   const room2 = roomsByKey.get('students-clinic:Room 2');
 
@@ -272,7 +287,7 @@ export async function seed({ dryRun = false } = {}) {
     console.log(`[seed] appointment ${appointment.referenceCode}`);
   }
 
-  for (const clinician of cliniciansByName.values()) {
+  for (const clinician of allClinicians) {
     const room = roomForClinician(clinician, roomsByKey);
     if (!room) continue;
 
@@ -285,9 +300,10 @@ export async function seed({ dryRun = false } = {}) {
     for (const date of dates) {
       for (const time of config.slotTimes) {
         const existing = await TimeSlot.findOne({
-          clinicianId: clinician._id,
-          date,
-          startTime: time.startTime,
+          $or: [
+            { clinicianId: clinician._id, date, startTime: time.startTime },
+            { roomId: room._id, date, startTime: time.startTime },
+          ],
         });
         if (existing?.isBooked) continue;
 
@@ -310,7 +326,7 @@ export async function seed({ dryRun = false } = {}) {
 
   const passwordHash = bcrypt.hashSync(DEMO_STAFF_PASSWORD, 8);
   for (const person of DEMO_STAFF) {
-    const clinicianDoc = cliniciansByName.get(person.name);
+    const clinicianDoc = cliniciansByKey.get(`${person.clinicSite}:${person.name}`);
     await StaffUser.findOneAndUpdate(
       { email: person.email },
       {

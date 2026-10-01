@@ -48,7 +48,7 @@ async function students() {
 async function hospital() {
   const db = await getDb();
   const [clinician, room] = await Promise.all([
-    db.collection('clinicians').findOne({ name: 'Dr. Kofi Adjei', clinicSite: 'knust-hospital' }),
+    db.collection('clinicians').findOne({ name: 'Dr. Kwame Boateng', clinicSite: 'knust-hospital' }),
     db.collection('rooms').findOne({ name: 'OPD Room 1', clinicSite: 'knust-hospital' }),
   ]);
   if (!clinician || !room) throw new Error('Seed data missing: KNUST Hospital clinician/room');

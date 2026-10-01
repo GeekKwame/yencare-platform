@@ -40,9 +40,10 @@ export async function ensureOpenSlots({ days = 14, fromDate } = {}) {
     for (const date of dates) {
       for (const time of slotTimes) {
         const existing = await TimeSlot.findOne({
-          clinicianId: clinician._id,
-          date,
-          startTime: time.startTime,
+          $or: [
+            { clinicianId: clinician._id, date, startTime: time.startTime },
+            { roomId, date, startTime: time.startTime },
+          ],
         });
 
         if (existing) {
