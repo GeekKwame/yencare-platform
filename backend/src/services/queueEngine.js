@@ -9,7 +9,7 @@ import {
   TimeSlot,
 } from '../models/index.js';
 import { NotFoundError, ValidationError } from '../patients/errors.js';
-import { notifyPatientCalled } from './callPatient.js';
+import { notifyPatientCalled, notifyPatientCompleted } from './callPatient.js';
 import { accraTodayIso, isClinicOpen } from '../lib/accraTime.js';
 import { assertVisitIsToday, assertNoShowAllowed } from './visitDayGuard.js';
 import { normalizeReferenceInput } from '../utils/referenceCode.js';
@@ -193,8 +193,16 @@ export async function callNextPatient({ roomId, clinicianId, force = false, comp
 
   if (activeAppointment) {
     if (completePrevious) {
+      if (typeof activeAppointment.populate === 'function') {
+        try {
+          await activeAppointment.populate(['patientId', 'clinicianId', 'roomId']);
+        } catch {
+          /* best effort */
+        }
+      }
       activeAppointment.status = 'COMPLETED';
       await activeAppointment.save();
+      void notifyPatientCompleted(activeAppointment, { room });
     } else if (!force) {
       const holder = clinicianId ? 'You already have' : `Room ${room.name} currently has`;
       const err = new Error(
@@ -327,6 +335,7 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
           { roomId: appointment.roomId, activeAppointmentId: appointment._id },
           { $set: { activeAppointmentId: null } },
         );
+        void notifyPatientCompleted(appointment);
         break;
 
       default: {
@@ -369,6 +378,8 @@ export async function advanceQueue({ appointmentId, referenceCode, roomId, callN
       { roomId: room._id, activeAppointmentId: active._id },
       { $set: { activeAppointmentId: null } },
     );
+
+    void notifyPatientCompleted(active, { room });
 
     let nextResult = null;
     if (callNext) {

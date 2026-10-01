@@ -434,6 +434,32 @@ describe('callNextPatient and advanceQueue clinician scoping', () => {
       },
     );
   });
+
+  it('advanceQueue transitions CALLED to COMPLETED and dispatches completion notification', async () => {
+    const roomId = oid();
+    const appt = fakeAppointment({
+      status: 'CALLED',
+      roomId,
+      patientId: { fullName: 'Ama Serwaa', phone: '+233241234567' },
+      clinicianId: { name: 'Dr. Kwame Boateng' },
+    });
+    mock.method(Appointment, 'findById', () => ({
+      populate: () => ({
+        populate: () => ({
+          populate: () => Promise.resolve(appt),
+        }),
+      }),
+    }));
+    const counterUpdate = mock.method(QueueCounter, 'updateOne', async () => ({}));
+
+    const result = await advanceQueue({ appointmentId: String(appt._id) });
+    assert.equal(appt.status, 'COMPLETED');
+    assert.equal(result.appointment.status, 'COMPLETED');
+    assert.equal(counterUpdate.mock.callCount(), 1);
+    assert.deepEqual(counterUpdate.mock.calls[0].arguments[1], {
+      $set: { activeAppointmentId: null },
+    });
+  });
 });
 describe('doctor isolation in the queue engine', () => {
   afterEach(() => mock.restoreAll());

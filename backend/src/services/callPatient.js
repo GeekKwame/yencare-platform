@@ -81,6 +81,115 @@ export async function notifyPatientCalled(appointment, room) {
   }
 }
 
+/**
+ * @param {{ referenceCode?: string, clinicSite?: string }} appointment
+ * @param {{ room?: { name?: string, clinicSite?: string }, clinician?: { name?: string, clinicSite?: string } }} [context]
+ * @returns {string}
+ */
+export function buildVisitCompletedSms(appointment, { room, clinician } = {}) {
+  const clinicianDoc = clinician || appointment?.clinicianId;
+  const clinicianName =
+    typeof clinicianDoc === 'object' && clinicianDoc?.name
+      ? clinicianDoc.name
+      : typeof clinicianDoc === 'string' && clinicianDoc
+        ? clinicianDoc
+        : null;
+
+  const site =
+    appointment?.clinicSite ||
+    room?.clinicSite ||
+    clinicianDoc?.clinicSite ||
+    'students-clinic';
+
+  const siteLabel =
+    site === 'knust-hospital'
+      ? 'KNUST Hospital'
+      : "KNUST Students' Clinic";
+
+  const consultLine = clinicianName
+    ? `Your consultation with ${clinicianName} at ${siteLabel} is complete.`
+    : `Your consultation at ${siteLabel} is complete.`;
+
+  const lines = [
+    'YenCare Health',
+    '',
+    'Visit completed',
+    consultLine,
+    'Please proceed to the pharmacy for prescribed medications or laboratory for tests.',
+  ];
+
+  if (appointment?.referenceCode) {
+    lines.push(`Booking ID: ${appointment.referenceCode}`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * SMS after a doctor finishes consultation and completes the visit.
+ * Failures never undo the COMPLETED transition.
+ *
+ * @param {object} appointment populated appointment (patientId may be a doc)
+ * @param {{ room?: object, clinician?: object }} [options]
+ * @returns {Promise<{ ok: boolean, error?: string }>}
+ */
+export async function notifyPatientCompleted(appointment, { room, clinician } = {}) {
+  try {
+    let patient =
+      appointment?.patientId && typeof appointment.patientId === 'object'
+        ? appointment.patientId
+        : null;
+
+    if (!patient && appointment?.patientId) {
+      const patientId = appointment.patientId?._id || appointment.patientId;
+      try {
+        const { Patient } = await import('../models/Patient.js');
+        patient = await Patient.findById(patientId).select('fullName phone studentIndex');
+      } catch (err) {
+        logger.warn('could not reload patient for visit completion SMS', {
+          subsystem: 'queue-complete',
+          err,
+        });
+      }
+    }
+
+    const phone = resolveSmsDestination(patient);
+    if (!phone) {
+      const error = 'Patient has no phone number on record';
+      logger.error('cannot send visit completion SMS: no phone on record', {
+        subsystem: 'queue-complete',
+        referenceCode: appointment?.referenceCode || String(appointment?._id || ''),
+      });
+      return { ok: false, error };
+    }
+
+    let clinicianObj = clinician || appointment?.clinicianId;
+    if (clinicianObj && typeof clinicianObj !== 'object') {
+      try {
+        const { Clinician } = await import('../models/Clinician.js');
+        clinicianObj = await Clinician.findById(clinicianObj).select('name title clinicSite');
+      } catch {
+        /* best effort */
+      }
+    }
+
+    const message = buildVisitCompletedSms(appointment, { room, clinician: clinicianObj });
+    const sms = await sendSms(phone, message);
+    if (!sms.ok) {
+      logger.error('visit completion SMS not delivered', {
+        subsystem: 'queue-complete',
+        referenceCode: appointment?.referenceCode,
+        reason: sms.error,
+      });
+    }
+    return sms;
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    logger.error('failed to dispatch visit completion SMS', { subsystem: 'queue-complete', err });
+    return { ok: false, error };
+  }
+}
+
 async function findAppointment(idOrReference) {
   const key = String(idOrReference || '').trim();
   if (!key) return null;

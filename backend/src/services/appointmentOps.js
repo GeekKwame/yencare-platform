@@ -34,6 +34,9 @@ import { sendSms } from '../sms/sendSms.js';
 import { normalizeReferenceInput } from '../utils/referenceCode.js';
 import { assignDailyQueueToken, AVERAGE_CONSULT_DURATION_MINUTES } from './queueEngine.js';
 import { assertVisitIsToday, assertWithinArrivalWindow, assertSlotNotInPast, assertNoShowAllowed } from './visitDayGuard.js';
+import { buildVisitCompletedSms, notifyPatientCompleted } from './callPatient.js';
+
+export { buildVisitCompletedSms, notifyPatientCompleted };
 
 // Used by the real-time layer to notify clients after a successful
 // cancellation/reschedule transaction. Backed by the pluggable event bus so a
@@ -930,6 +933,7 @@ export async function updateAppointmentStatus(idOrReference, status) {
     appointment._originalStatus = 'CHECKED_IN';
   }
 
+  const previousStatus = appointment.status;
   appointment.status = status;
 
   // Prototype: token is assigned when reception puts the student in the live queue.
@@ -961,6 +965,10 @@ export async function updateAppointmentStatus(idOrReference, status) {
 
   if (status === 'WAITING') {
     notifyQuiet(appointment, buildWaitingSms(appointment), 'queue');
+  }
+
+  if (status === 'COMPLETED' && previousStatus === 'CALLED') {
+    void notifyPatientCompleted(appointment);
   }
 
   if (status === 'NO_SHOW') {

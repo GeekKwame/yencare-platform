@@ -6,6 +6,7 @@ import {
   buildArrivalSms,
   buildCancelSms,
   buildRescheduleSms,
+  buildVisitCompletedSms,
   buildWaitingSms,
   sendAppointmentSms,
 } from '../src/services/appointmentOps.js';
@@ -64,6 +65,13 @@ describe('appointment update SMS copy', () => {
       buildArrivalSms({
         clinicSite: 'students-clinic',
         referenceCode: 'YC-1001',
+      }),
+    );
+    assertGsmSafe(
+      buildVisitCompletedSms({
+        referenceCode: 'YC-1001',
+        clinicSite: 'students-clinic',
+        clinicianId: { name: 'Dr. Kwame Boateng' },
       }),
     );
   });
